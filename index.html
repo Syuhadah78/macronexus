@@ -31,7 +31,7 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- MathJax untuk memaparkan rumus LaTeX secara dinamik -->
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -44,6 +44,7 @@
     }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #09090b; }
+    ::-webkit-scrollbar-shadow { background: #09090b; }
     ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #f97316; }
     
@@ -457,41 +458,57 @@
         </div>
       </div>
 
-      <!-- BARISAN ATAS: Tahap Masteri & Prestasi Semasa secara sebaris (Side-by-side) -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-        <!-- Tahap Masteri -->
-        <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between">
-          <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-end mb-4 gap-2">
-            <div>
-              <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider mb-1">Tahap Masteri</div>
-              <div class="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
-                <div id="student-level-badge" class="px-3 py-1.5 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center font-bold border border-orange-500/20 text-xs sm:text-sm shrink-0">L1</div>
-                <span class="truncate max-w-[200px] sm:max-w-none"><span id="student-level-num">Tahap 1</span></span>
+      <!-- BARISAN ATAS: Tahap Masteri, Latihan Selesai & Ketepatan Purata disatukan secara sebaris (3-Column Grid) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        <!-- Lajur 1: Tahap Masteri -->
+        <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between min-h-[140px]">
+          <div class="flex flex-col flex-grow justify-between">
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider mb-1">Tahap Masteri</div>
+                <div class="text-xl sm:text-2xl font-black text-white flex items-center gap-2 truncate">
+                  <div id="student-level-badge" class="px-2.5 py-1 rounded-lg bg-orange-500/10 text-orange-400 flex items-center justify-center font-bold border border-orange-500/20 text-[11px] sm:text-xs shrink-0">L1</div>
+                  <span id="student-level-num" class="truncate">Tahap 1</span>
+                </div>
               </div>
             </div>
-            <div class="w-full sm:w-auto text-left sm:text-right mt-2 sm:mt-0">
-              <div class="text-xs sm:text-sm font-bold text-amber-500"><span id="student-current-xp">0</span> / <span id="student-next-xp">200</span> XP</div>
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-[10px] sm:text-xs text-zinc-400 font-medium">
+                <span>Kemajuan XP</span>
+                <span class="text-amber-500 font-bold"><span id="student-current-xp">0</span> / <span id="student-next-xp">200</span> XP</span>
+              </div>
+              <div class="w-full bg-zinc-950 rounded-full h-1.5 p-0.5 border border-white/5">
+                <div id="student-xp-bar" class="bg-gradient-to-r from-orange-500 via-amber-500 to-gold h-1 rounded-full transition-all duration-1000 ease-out" style="width: 0%;"></div>
+              </div>
             </div>
-          </div>
-          <div class="w-full bg-zinc-950 rounded-full h-1.5 sm:h-2 p-0.5 sm:p-1 border border-white/5">
-            <div id="student-xp-bar" class="bg-gradient-to-r from-orange-500 via-amber-500 to-gold h-1.5 sm:h-2 rounded-full transition-all duration-1000 ease-out" style="width: 0%;"></div>
           </div>
         </div>
 
-        <!-- Prestasi Semasa -->
-        <div class="glass-panel p-5 sm:p-6 rounded-3xl">
-          <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-3">
-            <i data-lucide="bar-chart-2" class="text-brand-gold w-4 h-4"></i> Prestasi Semasa
-          </h3>
-          <div class="grid grid-cols-2 gap-4">
-            <div class="bg-zinc-900/50 p-3 rounded-xl border border-white/5">
-              <div class="text-[10px] text-zinc-400 mb-0.5">Latihan Selesai</div>
-              <div id="stat-student-attempts" class="text-xl sm:text-2xl font-black text-white">0</div>
+        <!-- Lajur 2: Latihan Selesai (Sama saiz) -->
+        <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between min-h-[140px]">
+          <div class="flex flex-col justify-between h-full">
+            <div class="flex items-center gap-2 border-b border-white/5 pb-2 mb-2 shrink-0">
+              <i data-lucide="check-circle" class="text-brand-orange w-4 h-4"></i>
+              <h3 class="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">Latihan Selesai</h3>
             </div>
-            <div class="bg-zinc-900/50 p-3 rounded-xl border border-white/5">
-              <div class="text-[10px] text-zinc-400 mb-0.5">Ketepatan Purata</div>
-              <div id="stat-student-accuracy" class="text-xl sm:text-2xl font-black text-brand-orange">0%</div>
+            <div class="flex-grow flex items-center pt-2">
+              <div id="stat-student-attempts" class="text-3xl sm:text-4xl font-black text-white leading-none">0</div>
             </div>
+            <div class="text-[10px] text-zinc-500 mt-2">Jumlah latihan makroekonomi yang berjaya diselesaikan.</div>
+          </div>
+        </div>
+
+        <!-- Lajur 3: Ketepatan Purata (Sama saiz) -->
+        <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between min-h-[140px]">
+          <div class="flex flex-col justify-between h-full">
+            <div class="flex items-center gap-2 border-b border-white/5 pb-2 mb-2 shrink-0">
+              <i data-lucide="percent" class="text-brand-gold w-4 h-4"></i>
+              <h3 class="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">Ketepatan Purata</h3>
+            </div>
+            <div class="flex-grow flex items-center pt-2">
+              <div id="stat-student-accuracy" class="text-3xl sm:text-4xl font-black text-brand-orange leading-none">0%</div>
+            </div>
+            <div class="text-[10px] text-zinc-500 mt-2">Kadar peratusan jawapan betul yang direkodkan.</div>
           </div>
         </div>
       </div>
