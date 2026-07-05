@@ -120,7 +120,7 @@
         </div>
         <div>
           <label class="block text-[11px] sm:text-xs font-bold text-zinc-400 uppercase tracking-wide mb-1">Kunci API Kecerdasan Buatan (Gemini)</label>
-          <input id="api-config-gemini-input" type="password" placeholder="Tampal API Key peribadi anda di sini" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" />
+          <input id="api-config-gemini-input" type="password" value="AQ.Ab8RN6IoUbVAaEXWEYOvysmiSVa-zIa_xY4QlOzOnO1BfWjtBA" placeholder="Tampal API Key peribadi anda di sini" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" />
         </div>
         <div class="flex flex-col gap-2 pt-3">
           <button onclick="window.saveApiUrlConfig()" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center leading-tight bg-gradient-to-r from-blue-500 to-cyan-500 text-black font-extrabold rounded-xl transition-all shadow-lg hover:scale-[1.02] whitespace-normal break-words text-xs sm:text-sm">
@@ -729,12 +729,13 @@
     window.generateLiveQuestions = async function() {
       const chapter = document.getElementById('ai-gen-chapter').value;
       const dest = document.getElementById('ai-gen-destination').value;
+      const geminiApiKey = document.getElementById('api-config-gemini-input').value;
       const loader = document.getElementById('ai-batch-loader');
       
       loader.classList.remove('hidden'); loader.classList.add('flex');
       
       try {
-        await window.callAppScript({ action: 'generate', chapter: chapter, destination: dest });
+        await window.callAppScript({ action: 'generate', chapter: chapter, destination: dest, apiKey: geminiApiKey });
         window.showCustomModal('Berjaya', 'Soalan telah berjaya dijana dan dikemas kini ke pangkalan data (Google Sheet) anda.', 'check-circle');
       } catch (err) {
         console.warn("API Fail:", err);
