@@ -174,7 +174,8 @@
         </div>
         
         <div class="flex items-center gap-2 sm:gap-4">
-          <button onclick="window.openApiConfigModal()" class="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition-all hidden sm:block" title="Konfigurasi Sistem">
+          <!-- Butang tetapan ini dikawal secara dinamik (Hanya Guru sahaja yang boleh melihatnya) -->
+          <button id="nav-settings-btn" onclick="window.openApiConfigModal()" class="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition-all hidden" title="Konfigurasi Sistem">
             <i data-lucide="settings" class="w-5 h-5"></i>
           </button>
           <div class="text-right hidden md:block">
@@ -398,6 +399,42 @@
           </table>
         </div>
       </div>
+
+      <!-- Lajur Pengumuman Guru & Sembang Kelas (Untuk Guru) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mt-8">
+        <!-- Pengurus Pengumuman Kelas -->
+        <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between h-[380px]">
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-4">
+              <i data-lucide="megaphone" class="text-orange-500 w-4 h-4"></i> Hantar Pengumuman Kelas
+            </h3>
+            <form id="teacher-announcement-form" class="space-y-3">
+              <textarea required id="teacher-announcement-input" placeholder="Tulis pengumuman penting untuk semua pelajar di kelas ini..." class="w-full h-24 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500 resize-none"></textarea>
+              <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold rounded-xl transition-all shadow-lg text-xs sm:text-sm">
+                Siarkan Pengumuman
+              </button>
+            </form>
+          </div>
+          <div class="border-t border-white/5 pt-3 mt-3">
+            <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-2">Pengumuman Terkini:</h4>
+            <div id="teacher-announcements-list" class="overflow-y-auto max-h-[80px] custom-scrollbar space-y-1 text-xs text-zinc-400">
+              <!-- Dinamik -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Pemantauan Mesej Murid -->
+        <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between h-[380px]">
+          <div class="flex flex-col flex-grow overflow-hidden">
+            <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-2 shrink-0">
+              <i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Log Sembang Mesej Pelajar
+            </h3>
+            <div id="teacher-messages-container" class="flex-grow space-y-3 overflow-y-auto pr-1 custom-scrollbar pb-2 min-h-0">
+              <p class="text-zinc-500 text-xs italic">Tiada mesej sedia ada di kelas ini.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- VIEW 4: STUDENT DASHBOARD -->
@@ -420,68 +457,102 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-        <div class="lg:col-span-2 space-y-6">
-          <!-- Quiz Customization Panel (Bab, Set & Mode) -->
-          <div class="glass-panel p-5 sm:p-6 rounded-3xl space-y-4">
-            <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2">
-              <i data-lucide="sliders" class="text-orange-500 w-4 h-4"></i> Tetapan Tersuai Latihan
-            </h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Bab</label>
-                <select id="student-chapter-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
-                  <option value="0" selected>Semua Bab Pilihan Rawak (100 Soalan)</option>
-                  <option value="1">Bab 1: Pengenalan Makroekonomi</option>
-                  <option value="2">Bab 2: Perakaunan Pendapatan Negara</option>
-                  <option value="3">Bab 3: Keseimbangan Pendapatan Negara</option>
-                  <option value="4">Bab 4: Wang, Bank dan Dasar Kewangan</option>
-                  <option value="5">Bab 5: Perdagangan Antarabangsa</option>
-                </select>
+      <!-- BARISAN ATAS: Tahap Masteri & Prestasi Semasa secara sebaris (Side-by-side) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+        <!-- Tahap Masteri -->
+        <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between">
+          <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-end mb-4 gap-2">
+            <div>
+              <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider mb-1">Tahap Masteri</div>
+              <div class="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
+                <div id="student-level-badge" class="px-3 py-1.5 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center font-bold border border-orange-500/20 text-xs sm:text-sm shrink-0">L1</div>
+                <span class="truncate max-w-[200px] sm:max-w-none"><span id="student-level-num">Tahap 1</span></span>
               </div>
-              <div>
-                <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Set/Mod</label>
-                <select id="student-mode-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
-                  <option value="practice">Mod Latihan (Tiada Had Masa)</option>
-                  <option value="exam">Mod Peperiksaan (Bermasa)</option>
-                </select>
-              </div>
+            </div>
+            <div class="w-full sm:w-auto text-left sm:text-right mt-2 sm:mt-0">
+              <div class="text-xs sm:text-sm font-bold text-amber-500"><span id="student-current-xp">0</span> / <span id="student-next-xp">200</span> XP</div>
             </div>
           </div>
+          <div class="w-full bg-zinc-950 rounded-full h-1.5 sm:h-2 p-0.5 sm:p-1 border border-white/5">
+            <div id="student-xp-bar" class="bg-gradient-to-r from-orange-500 via-amber-500 to-gold h-1.5 sm:h-2 rounded-full transition-all duration-1000 ease-out" style="width: 0%;"></div>
+          </div>
+        </div>
 
-          <div class="glass-panel p-5 sm:p-6 rounded-3xl">
-            <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-end mb-4 gap-2">
-              <div>
-                <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider mb-1">Tahap Masteri</div>
-                <div class="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
-                  <div id="student-level-badge" class="px-3 py-1.5 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center font-bold border border-orange-500/20 text-xs sm:text-sm shrink-0">L1</div>
-                  <span class="truncate max-w-[200px] sm:max-w-none"><span id="student-level-num">Tahap 1</span></span>
-                </div>
-              </div>
-              <div class="w-full sm:w-auto text-left sm:text-right mt-2 sm:mt-0">
-                <div class="text-xs sm:text-sm font-bold text-amber-500"><span id="student-current-xp">0</span> / <span id="student-next-xp">200</span> XP</div>
-              </div>
+        <!-- Prestasi Semasa -->
+        <div class="glass-panel p-5 sm:p-6 rounded-3xl">
+          <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-3">
+            <i data-lucide="bar-chart-2" class="text-brand-gold w-4 h-4"></i> Prestasi Semasa
+          </h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-zinc-900/50 p-3 rounded-xl border border-white/5">
+              <div class="text-[10px] text-zinc-400 mb-0.5">Latihan Selesai</div>
+              <div id="stat-student-attempts" class="text-xl sm:text-2xl font-black text-white">0</div>
             </div>
-            <div class="w-full bg-zinc-950 rounded-full h-1.5 sm:h-2 p-0.5 sm:p-1 border border-white/5">
-              <div id="student-xp-bar" class="bg-gradient-to-r from-orange-500 via-amber-500 to-gold h-1.5 sm:h-2 rounded-full transition-all duration-1000 ease-out" style="width: 0%;"></div>
+            <div class="bg-zinc-900/50 p-3 rounded-xl border border-white/5">
+              <div class="text-[10px] text-zinc-400 mb-0.5">Ketepatan Purata</div>
+              <div id="stat-student-accuracy" class="text-xl sm:text-2xl font-black text-brand-orange">0%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BARISAN TENGAH: Tetapan Pilihan Latihan (Terletak di bawah statistik) -->
+      <div class="glass-panel p-5 sm:p-6 rounded-3xl space-y-4">
+        <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2">
+          <i data-lucide="sliders" class="text-orange-500 w-4 h-4"></i> Tetapan Pilihan Latihan
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Bab</label>
+            <select id="student-chapter-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
+              <option value="0" selected>Semua Bab Pilihan Rawak (100 Soalan)</option>
+              <option value="1">Bab 1: Pengenalan Makroekonomi</option>
+              <option value="2">Bab 2: Perakaunan Pendapatan Negara</option>
+              <option value="3">Bab 3: Keseimbangan Pendapatan Negara</option>
+              <option value="4">Bab 4: Wang, Bank dan Dasar Kewangan</option>
+              <option value="5">Bab 5: Perdagangan Antarabangsa</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Set/Mod</label>
+            <select id="student-mode-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
+              <option value="practice">Mod Latihan (Tiada Had Masa)</option>
+              <option value="exam">Mod Peperiksaan (Bermasa)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- BARISAN BAWAH: Ruangan Pengumuman Guru & Sembang Mesej Pelajar -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+        <!-- Lajur Pengumuman Guru -->
+        <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between h-[360px]">
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-4">
+              <i data-lucide="megaphone" class="text-orange-500 w-4 h-4"></i> Pengumuman & Makluman Guru
+            </h3>
+            <div id="student-announcements-container" class="space-y-3 overflow-y-auto max-h-[240px] pr-1 custom-scrollbar">
+              <p class="text-zinc-500 text-xs italic">Tiada pengumuman buat masa ini daripada guru.</p>
             </div>
           </div>
         </div>
 
-        <div class="glass-panel p-5 sm:p-6 rounded-3xl h-full">
-          <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-4">
-            <i data-lucide="bar-chart-2" class="text-brand-gold w-4 h-4"></i> Prestasi Semasa
-          </h3>
-          <div class="space-y-4">
-            <div class="bg-zinc-900/50 p-4 rounded-xl border border-white/5">
-              <div class="text-xs text-zinc-400 mb-1">Jumlah Latihan Selesai</div>
-              <div id="stat-student-attempts" class="text-2xl sm:text-3xl font-black text-white">0</div>
-            </div>
-            <div class="bg-zinc-900/50 p-4 rounded-xl border border-white/5">
-              <div class="text-xs text-zinc-400 mb-1">Ketepatan Purata</div>
-              <div id="stat-student-accuracy" class="text-2xl sm:text-3xl font-black text-brand-orange">0%</div>
+        <!-- Lajur Sembang Mesej Pelajar -->
+        <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between h-[360px]">
+          <div class="flex flex-col flex-grow overflow-hidden">
+            <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-2 shrink-0">
+              <i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Ruangan Mesej Murid
+            </h3>
+            <div id="student-messages-container" class="flex-grow space-y-3 overflow-y-auto pr-1 custom-scrollbar pb-2 min-h-0">
+              <p class="text-zinc-500 text-xs italic">Tiada mesej lagi. Mulakan sembang bersama ahli kelas anda!</p>
             </div>
           </div>
+          <form id="student-message-form" class="flex gap-2 pt-2 border-t border-white/5 mt-2 shrink-0">
+            <input required id="student-msg-input" type="text" placeholder="Tulis mesej anda ke kelas..." class="flex-grow bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500" />
+            <button type="submit" class="bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold px-4 py-2.5 rounded-xl text-xs sm:text-sm hover:scale-[1.02] transition-all">
+              Hantar
+            </button>
+          </form>
         </div>
       </div>
     </div>
@@ -546,7 +617,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, signOut, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // Pautan Google Apps Script Lalai
     const DEFAULT_APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbweTvxaJt8cHPEMf8Q9wrWdExol-VJUSRQ6rDiJE3gn0Vfq4T_4HSKUg8hCo9HNWLo/exec"; 
@@ -577,6 +648,115 @@
       allQuestions: [],
       quizState: { questions: [], currentQuestionIndex: 0, score: 0, xpEarned: 0 }
     };
+
+    // Pendengar (Listeners) Realtime bagi Sembang Mesej & Pengumuman
+    let announcementsUnsubscribe = null;
+    let messagesUnsubscribe = null;
+
+    function listenAnnouncements() {
+      if (announcementsUnsubscribe) announcementsUnsubscribe();
+      if (!auth.currentUser) return;
+      
+      const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'announcements');
+      announcementsUnsubscribe = onSnapshot(colRef, (snapshot) => {
+        const list = [];
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          if (data.classCode === window.state.user.classCode) {
+            list.push({ id: docSnap.id, ...data });
+          }
+        });
+        // Isih pengumuman mengikut tarikh terkini di atas
+        list.sort((a, b) => b.createdAt - a.createdAt);
+        renderAnnouncementsUI(list);
+      }, (err) => {
+        console.error("Gagal menarik pengumuman:", err);
+      });
+    }
+
+    function listenMessages() {
+      if (messagesUnsubscribe) messagesUnsubscribe();
+      if (!auth.currentUser) return;
+
+      const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+      messagesUnsubscribe = onSnapshot(colRef, (snapshot) => {
+        const list = [];
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          if (data.classCode === window.state.user.classCode) {
+            list.push({ id: docSnap.id, ...data });
+          }
+        });
+        // Isih mengikut susunan kronologi sembang masa-nyata
+        list.sort((a, b) => a.createdAt - b.createdAt);
+        renderMessagesUI(list);
+      }, (err) => {
+        console.error("Gagal menarik log sembang:", err);
+      });
+    }
+
+    function renderAnnouncementsUI(list) {
+      const studentContainer = document.getElementById('student-announcements-container');
+      const teacherList = document.getElementById('teacher-announcements-list');
+      
+      let html = '';
+      if (list.length === 0) {
+        html = `<p class="text-zinc-500 text-xs italic">Tiada pengumuman buat masa ini daripada guru.</p>`;
+      } else {
+        list.forEach(ann => {
+          const date = new Date(ann.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          html += `
+            <div class="bg-orange-500/5 border border-orange-500/10 p-3 rounded-xl animate-slide-in">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-xs font-bold text-orange-400">${ann.authorName}</span>
+                <span class="text-[10px] text-zinc-500">${date}</span>
+              </div>
+              <p class="text-xs text-zinc-300 whitespace-normal break-words leading-relaxed">${ann.text}</p>
+            </div>
+          `;
+        });
+      }
+      
+      if (studentContainer) studentContainer.innerHTML = html;
+      if (teacherList) {
+        teacherList.innerHTML = list.length === 0 
+          ? 'Tiada rekod pengumuman sedia ada.' 
+          : list.slice(0, 3).map(a => `• ${a.text.substring(0, 40)}${a.text.length > 40 ? '...' : ''}`).join('<br>');
+      }
+    }
+
+    function renderMessagesUI(list) {
+      const studentContainer = document.getElementById('student-messages-container');
+      const teacherContainer = document.getElementById('teacher-messages-container');
+      
+      let html = '';
+      if (list.length === 0) {
+        html = `<p class="text-zinc-500 text-xs italic">Tiada mesej sedia ada di kelas ini. Mulakan sembang!</p>`;
+      } else {
+        list.forEach(msg => {
+          const isMe = msg.senderId === auth.currentUser?.uid;
+          const date = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          html += `
+            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-0.5">
+              <div class="max-w-[85%] rounded-2xl px-3 py-2 ${isMe ? 'bg-amber-500 text-black rounded-tr-none' : 'bg-zinc-900 text-zinc-200 rounded-tl-none'} text-xs">
+                <div class="font-extrabold text-[10px] mb-0.5 ${isMe ? 'text-black/80' : 'text-amber-400'}">${msg.senderName}</div>
+                <p class="break-words whitespace-normal leading-tight">${msg.text}</p>
+                <div class="text-[9px] text-right mt-1 opacity-60">${date}</div>
+              </div>
+            </div>
+          `;
+        });
+      }
+      
+      if (studentContainer) {
+        studentContainer.innerHTML = html;
+        studentContainer.scrollTop = studentContainer.scrollHeight;
+      }
+      if (teacherContainer) {
+        teacherContainer.innerHTML = html;
+        teacherContainer.scrollTop = teacherContainer.scrollHeight;
+      }
+    }
 
     // Modal UI Helpers
     window.showCustomModal = function(title, message, icon = 'alert-triangle') {
@@ -782,10 +962,12 @@
         btnStudent.className = "p-3 sm:p-4 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-amber-500 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem]";
         btnTeacher.className = "p-3 sm:p-4 rounded-xl border-2 border-zinc-800 hover:border-zinc-700 text-zinc-400 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem]";
         classCodeField.style.display = 'block';
+        document.getElementById('nav-settings-btn').classList.add('hidden'); // Sembunyikan Roda Gigi daripada Pelajar
       } else {
         btnTeacher.className = "p-3 sm:p-4 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-amber-500 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem]";
         btnStudent.className = "p-3 sm:p-4 rounded-xl border-2 border-zinc-800 hover:border-zinc-700 text-zinc-400 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem]";
         classCodeField.style.display = 'none';
+        document.getElementById('nav-settings-btn').classList.remove('hidden'); // Paparkan Roda Gigi hanya untuk Guru
       }
     };
 
@@ -856,6 +1038,12 @@
         document.getElementById('nav-avatar').innerText = window.state.user.name.charAt(0).toUpperCase();
         document.getElementById('navbar').classList.remove('hidden');
 
+        // Mula memantau bilik sembang & pengumuman mengikut kelas
+        if (window.state.user.classCode) {
+          listenAnnouncements();
+          listenMessages();
+        }
+
         if (window.state.role === 'teacher') {
           window.showView('view-teacher-dashboard');
         } else {
@@ -903,6 +1091,12 @@
         document.getElementById('nav-avatar').innerText = window.state.user.name.charAt(0).toUpperCase();
         document.getElementById('navbar').classList.remove('hidden');
 
+        // Memulakan pendengar Firestore
+        if (window.state.user.classCode) {
+          listenAnnouncements();
+          listenMessages();
+        }
+
         if (window.state.role === 'teacher') {
           window.showView('view-teacher-dashboard');
         } else { 
@@ -920,6 +1114,10 @@
     });
 
     window.handleLogout = async function() {
+      // Hentikan penstriman mesej & pengumuman
+      if (announcementsUnsubscribe) { announcementsUnsubscribe(); announcementsUnsubscribe = null; }
+      if (messagesUnsubscribe) { messagesUnsubscribe(); messagesUnsubscribe = null; }
+      
       await signOut(auth);
       document.getElementById('navbar').classList.add('hidden');
       document.getElementById('auth-form').reset();
@@ -949,6 +1147,10 @@
             classCode: randomCode
           });
           window.state.user.classCode = randomCode; 
+
+          // Mula memantau sembang untuk kod kelas baharu
+          listenAnnouncements();
+          listenMessages();
         } catch (err) {
           console.error("Gagal menyimpan kelas:", err);
         }
@@ -974,6 +1176,11 @@
             document.getElementById('display-class-name').innerText = classSnap.data().className;
             document.getElementById('display-class-code').innerText = code;
             window.showCustomModal('Berjaya', `Bersambung ke sesi kelas ${code} (${classSnap.data().className}).`, 'check-circle');
+            
+            // Pasang pendengar sembang
+            listenAnnouncements();
+            listenMessages();
+            
             loadTeacherStudents();
           } else {
             window.showCustomModal('Ralat', 'Kod kelas tidak wujud dalam pangkalan data.', 'alert-triangle');
@@ -981,6 +1188,57 @@
         } catch (err) {
           console.error("Ralat menyambung kelas:", err);
         }
+      }
+    });
+
+    // Hantar Mesej (Pelajar)
+    document.getElementById('student-message-form')?.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const input = document.getElementById('student-msg-input');
+      const text = input.value.trim();
+      if (!text || !auth.currentUser) return;
+      
+      try {
+        const docId = "MSG-" + Date.now();
+        const msgDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'messages', docId);
+        
+        await setDoc(msgDocRef, {
+          classCode: window.state.user.classCode,
+          text: text,
+          senderName: window.state.user.name,
+          senderId: auth.currentUser.uid,
+          createdAt: Date.now()
+        });
+        input.value = '';
+      } catch (err) {
+        console.error("Ralat menghantar mesej:", err);
+        alert("Gagal menghantar mesej: " + err.message);
+      }
+    });
+
+    // Siarkan Pengumuman (Guru)
+    document.getElementById('teacher-announcement-form')?.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const input = document.getElementById('teacher-announcement-input');
+      const text = input.value.trim();
+      if (!text || !auth.currentUser) return;
+
+      try {
+        const docId = "ANN-" + Date.now();
+        const annDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'announcements', docId);
+        
+        await setDoc(annDocRef, {
+          classCode: window.state.user.classCode,
+          text: text,
+          authorName: window.state.user.name + " (Guru)",
+          authorId: auth.currentUser.uid,
+          createdAt: Date.now()
+        });
+        input.value = '';
+        window.showCustomModal('Berjaya', 'Pengumuman telah berjaya disiarkan ke kelas!', 'check-circle');
+      } catch (err) {
+        console.error("Gagal menyiarkan pengumuman:", err);
+        alert("Gagal menyiarkan pengumuman: " + err.message);
       }
     });
 
@@ -1321,6 +1579,13 @@ Contoh output yang wajib dipatuhi:
               document.getElementById('navbar').classList.remove('hidden');
 
               window.setAuthRole(window.state.role);
+
+              // Aktifkan pendengar mesej & pengumuman mengikut kod kelas terkini pengguna
+              if (window.state.user.classCode) {
+                listenAnnouncements();
+                listenMessages();
+              }
+
               if (window.state.role === 'teacher') {
                 window.showView('view-teacher-dashboard');
               } else {
