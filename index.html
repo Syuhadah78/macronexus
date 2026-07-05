@@ -238,7 +238,6 @@
               </svg>
               Teruskan dengan Google / DELIMA
             </button>
-            <p class="text-[10px] text-zinc-500 mt-2 text-center">Sistem mengesan secara automatik peranan Guru (g-) dan Pelajar (m-).</p>
           </div>
 
           <div class="flex items-center gap-3 my-5">
@@ -1054,7 +1053,6 @@ Contoh output yang wajib dipatuhi:
   }
 ]`;
 
-        // Menggunakan generationConfig responseMimeType: "application/json" untuk memaksa output JSON tulen tanpa hiasan markdown
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1125,47 +1123,62 @@ Contoh output yang wajib dipatuhi:
       }
     };
 
+    // FUNGSI PENYEGARKAN YANG TELAH DIPERBAIKI (TIDAK LAGI TERSEKAT)
     window.syncStudentQuestions = async function(isSilent = false) {
       if (!isSilent) {
         window.showView('view-loading');
         document.getElementById('loading-text').innerText = "Menyelaraskan soalan terkini...";
       }
+
+      let success = false;
+
+      // 1. Cuba dapatkan soalan daripada Google Sheet
       try {
-        // Ambil dari Google Sheet
         const res = await window.callAppScript({ action: 'fetch_all' });
-        if(res && res.questions && res.questions.length > 0) {
-           window.state.allQuestions = res.questions;
-           if (!isSilent) window.showCustomModal('Disegerak', `Sebanyak ${res.questions.length} soalan ditarik dari Google Sheet.`, 'refresh-cw');
-           return;
+        if (res && res.questions && res.questions.length > 0) {
+          window.state.allQuestions = res.questions;
+          if (!isSilent) {
+            window.showCustomModal('Disegerak', `Sebanyak ${res.questions.length} soalan ditarik dari Google Sheet.`, 'refresh-cw');
+          }
+          success = true;
         }
       } catch (err) {
         console.warn("Gagal dapatkan dari Google Sheet. Mencuba Firestore sebagai sandaran...", err.message);
       }
 
-      // Sandaran dari Firestore
-      try {
-        const questionsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'questions');
-        const querySnapshot = await getDocs(questionsColRef);
-        let allQ = [];
-        
-        querySnapshot.forEach(docSnap => {
-          if (docSnap.exists() && Array.isArray(docSnap.data().questions)) {
-             allQ = allQ.concat(docSnap.data().questions);
-          }
-        });
+      // 2. Sandaran daripada Firestore jika Google Sheet gagal ditarik
+      if (!success) {
+        try {
+          const questionsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'questions');
+          const querySnapshot = await getDocs(questionsColRef);
+          let allQ = [];
+          
+          querySnapshot.forEach(docSnap => {
+            if (docSnap.exists() && Array.isArray(docSnap.data().questions)) {
+               allQ = allQ.concat(docSnap.data().questions);
+            }
+          });
 
-        if (allQ.length > 0) {
-           window.state.allQuestions = allQ;
-           if (!isSilent) window.showCustomModal('Disegerak (Firestore)', `Sebanyak ${allQ.length} soalan berjaya ditarik dari pangkalan data awan.`, 'refresh-cw');
-           return;
+          if (allQ.length > 0) {
+             window.state.allQuestions = allQ;
+             if (!isSilent) {
+               window.showCustomModal('Disegerak (Firestore)', `Sebanyak ${allQ.length} soalan berjaya ditarik dari pangkalan data awan.`, 'refresh-cw');
+             }
+             success = true;
+          } else {
+             throw new Error("Tiada soalan dalam pangkalan data awan.");
+          }
+        } catch (err2) {
+          console.error("Ralat sandaran Firestore:", err2);
+          if (!isSilent) {
+            window.showCustomModal('Ralat Segerak', 'Gagal menyegerak. Google Sheet tidak sah dan pangkalan data awan kosong.', 'alert-triangle');
+          }
         }
-        throw new Error("Tiada soalan dalam pangkalan data awan.");
-      } catch (err2) {
-        if (!isSilent) {
-          window.showCustomModal('Ralat Segerak', 'Gagal menyegerak. Google Sheet tidak sah dan pangkalan data awan kosong.', 'alert-triangle');
-        }
-      } finally {
-        if (!isSilent) window.showView('view-student-dashboard');
+      }
+
+      // 3. DIJAMIN: Tukar semula skrin kembali ke dashboard pelajar agar tidak tersekat pada skrin loading
+      if (!isSilent) {
+        window.showView('view-student-dashboard');
       }
     };
 
@@ -1187,7 +1200,7 @@ Contoh output yang wajib dipatuhi:
       if (filteredQuestions.length === 0) {
         console.warn("Menggunakan soalan lalai (Mock Data).");
         filteredQuestions = [
-          { q: "Apakah matlamat utama makroekonomi sesebuah negara?", opts: ["Tingkatkan inflasi", "Guna tenaga penuh", "Kurang pelaburan"], ans: 1, chapter: "1" },
+          { q: "Apakah matlamat utama makroekonomi sesbuah negara?", opts: ["Tingkatkan inflasi", "Guna tenaga penuh", "Kurang pelaburan"], ans: 1, chapter: "1" },
           { q: "Manakah antara berikut BUKAN fungsi wang?", opts: ["Alat pertukaran", "Alat nilai", "Alat inflasi"], ans: 2, chapter: "4" }
         ];
         window.showCustomModal('Makluman', 'Menggunakan soalan lalai sistem kerana set soalan Google Sheet kosong.', 'alert-triangle');
