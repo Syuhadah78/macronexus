@@ -31,7 +31,7 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- MathJax untuk memaparkan rumus LaTeX secara dinamik -->
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -317,7 +317,7 @@
             <i data-lucide="users" class="w-5 h-5"></i>
           </div>
           <div id="stat-teacher-students" class="text-2xl sm:text-3xl font-black text-white mb-1">0</div>
-          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Pelajar Hack</div>
+          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Pelajar Aktif</div>
         </div>
         <div class="glass-panel p-4 sm:p-6 rounded-3xl relative overflow-hidden">
           <div class="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-br from-amber-500 to-yellow-500 opacity-5 rounded-bl-full"></div>
@@ -1021,7 +1021,7 @@
       document.getElementById('stat-student-accuracy').innerText = `${acc}%`;
     }
 
-    // AI Generation (Direct calling to gemini-1.5-flash with proper JSON payload)
+    // AI Generation (Menggunakan Structured JSON Output untuk penyelesaian mutlak ralat)
     window.generateLiveQuestions = async function() {
       const chapterSelect = document.getElementById('ai-gen-chapter');
       const chapterText = chapterSelect.options[chapterSelect.selectedIndex].text;
@@ -1037,25 +1037,47 @@
       document.getElementById('loader-status-text').innerText = "AI Gemini sedang merangka soalan...";
       
       try {
-        const promptText = `Hasilkan 5 soalan kuiz pelbagai pilihan (A, B, C) untuk subjek Makroekonomi STPM peringkat Pra-Universiti bagi topik: ${chapterText}.\nBerikan respons HANYA dalam format JSON array yang sah, tanpa sebarang teks penjelasan tambahan di luar JSON.\nStruktur JSON yang WAJIB dipatuhi:\n[\n  { "q": "Teks soalan?", "opts": ["Pilihan A", "Pilihan B", "Pilihan C"], "ans": 0, "chapter": "${chapterVal}" }\n]`;
+        const promptText = `Hasilkan 5 soalan kuiz pelbagai pilihan (A, B, C) untuk subjek Makroekonomi STPM peringkat Pra-Universiti bagi topik: ${chapterText}.
+Kembalikan data dalam format JSON array yang sah sahaja, di mana setiap objek mempunyai kunci:
+- "q": Teks soalan
+- "opts": Tatasusunan (array) mengandungi tepat 3 pilihan jawapan
+- "ans": Indeks integer bagi jawapan yang betul (0 untuk opts[0], 1 untuk opts[1], atau 2 untuk opts[2])
+- "chapter": "${chapterVal}"
 
+Contoh output yang wajib dipatuhi:
+[
+  {
+    "q": "Apakah takrif makroekonomi?",
+    "opts": ["Kajian gelagat ekonomi secara menyeluruh", "Kajian gelagat firma individu", "Kajian harga barang tunggal"],
+    "ans": 0,
+    "chapter": "${chapterVal}"
+  }
+]`;
+
+        // Menggunakan generationConfig responseMimeType: "application/json" untuk memaksa output JSON tulen tanpa hiasan markdown
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+          body: JSON.stringify({ 
+            contents: [{ parts: [{ text: promptText }] }],
+            generationConfig: {
+              responseMimeType: "application/json"
+            }
+          })
         });
 
-        if (!response.ok) throw new Error("Gagal berhubung dengan pelayan Gemini API.");
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          const errMsg = errorData.error?.message || `Status: ${response.status} ${response.statusText}`;
+          throw new Error(`Ralat Pelayan Gemini: ${errMsg}`);
+        }
         
         const data = await response.json();
-        let rawJsonText = data.candidates[0].content.parts[0].text;
-        
-        // Pembersihan blok markdown if any
-        rawJsonText = rawJsonText.replace(/```json/gi, '').replace(/```/g, '').trim();
+        const rawJsonText = data.candidates[0].content.parts[0].text.trim();
         const generatedQuestions = JSON.parse(rawJsonText);
 
         if (destination === 'csv') {
-          // PROSES JANA CSV TEMPATAN SECARA LANGSUNG (Direct Local CSV Download fallback)
+          // PROSES JANA CSV TEMPATAN SECARA LANGSUNG
           let csvContent = "data:text/csv;charset=utf-8,";
           csvContent += "QuestionID,Chapter,Topic,Difficulty,Question,OptionA,OptionB,OptionC,OptionD,CorrectAnswer,Explanation,ImageURL,Formula,Type,Tags,Status\n";
           
@@ -1097,7 +1119,7 @@
         }
       } catch (err) {
         console.error("AI Generation Fail:", err);
-        window.showCustomModal('Ralat AI', 'Gagal menjana soalan. Pastikan kunci API Gemini anda betul dan format respons JSON disokong.', 'alert-triangle');
+        window.showCustomModal('Ralat Penjana AI', `Gagal menjana soalan.\nSebab: ${err.message}`, 'alert-triangle');
       } finally {
         loader.classList.remove('flex'); loader.classList.add('hidden');
       }
