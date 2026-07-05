@@ -464,7 +464,7 @@
                 <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider mb-1">Tahap Masteri</div>
                 <div class="text-xl sm:text-2xl font-black text-white flex items-center gap-2 truncate">
                   <div id="student-level-badge" class="px-2.5 py-1 rounded-lg bg-orange-500/10 text-orange-400 flex items-center justify-center font-bold border border-orange-500/20 text-[11px] sm:text-xs shrink-0">L1</div>
-                  <span class="truncate max-w-[200px] sm:max-w-none"><span id="student-level-num">Tahap 1</span></span>
+                  <span id="student-level-num" class="truncate font-black">Tahap 1</span>
                 </div>
               </div>
             </div>
@@ -514,20 +514,36 @@
         <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2">
           <i data-lucide="sliders" class="text-orange-500 w-4 h-4"></i> Tetapan Pilihan Latihan
         </h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Bab</label>
             <select id="student-chapter-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
               <option value="0" selected>Semua Bab Pilihan Rawak (100 Soalan)</option>
-              <option value="1">Bab 1: Pengenalan Makroekonomi</option>
-              <option value="2">Bab 2: Perakaunan Pendapatan Negara</option>
-              <option value="3">Bab 3: Keseimbangan Pendapatan Negara</option>
-              <option value="4">Bab 4: Wang, Bank dan Dasar Kewangan</option>
-              <option value="5">Bab 5: Perdagangan Antarabangsa</option>
+              <option value="1">Bab 1: Pengenalan Makroekonomi (20 Soalan)</option>
+              <option value="2">Bab 2: Perakaunan Pendapatan Negara (20 Soalan)</option>
+              <option value="3">Bab 3: Keseimbangan Pendapatan Negara (20 Soalan)</option>
+              <option value="4">Bab 4: Wang, Bank dan Dasar Kewangan (20 Soalan)</option>
+              <option value="5">Bab 5: Perdagangan Antarabangsa (20 Soalan)</option>
             </select>
           </div>
           <div>
-            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Set/Mod</label>
+            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Set Soalan</label>
+            <select id="student-set-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
+              <option value="all" selected>Semua Set Soalan</option>
+              <option value="Set 1">Set 1 (Tab 1)</option>
+              <option value="Set 2">Set 2 (Tab 2)</option>
+              <option value="Set 3">Set 3 (Tab 3)</option>
+              <option value="Set 4">Set 4 (Tab 4)</option>
+              <option value="Set 5">Set 5 (Tab 5)</option>
+              <option value="Set 6">Set 6 (Tab 6)</option>
+              <option value="Set 7">Set 7 (Tab 7)</option>
+              <option value="Set 8">Set 8 (Tab 8)</option>
+              <option value="Set 9">Set 9 (Tab 9)</option>
+              <option value="Set 10">Set 10 (Tab 10)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Mod</label>
             <select id="student-mode-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
               <option value="practice">Mod Latihan (Tiada Had Masa)</option>
               <option value="exam">Mod Peperiksaan (Bermasa)</option>
@@ -635,8 +651,8 @@
     // KUNCI API GEMINI (Disediakan secara dinamik oleh persekitaran preview runtime sandbox)
     const apiKey = ""; 
 
-    // Pautan Google Apps Script Lalai
-    const DEFAULT_APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbweTvxaJt8cHPEMf8Q9wrWdExol-VJUSRQ6rDiJE3gn0Vfq4T_4HSKUg8hCo9HNWLo/exec"; 
+    // Pautan Google Apps Script Lalai (DIKEMASKINI DENGAN URL TERBAHARU ANDA)
+    const DEFAULT_APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbzkhklS7Uw0x4CdnkE0QKlddYmPjjCIFGJ-F6mTlpOGXrpzzenc2Jpnr-Lq9f75Yeg/exec"; 
 
     // Muatkan Config Firebase Dinamik atau fallback kepada lalai
     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
@@ -1474,16 +1490,28 @@ Contoh output yang wajib dipatuhi:
 
     window.startQuizFlow = async function() {
       const chapterVal = document.getElementById('student-chapter-selector').value;
+      const setVal = document.getElementById('student-set-selector').value;
       if (!window.state.allQuestions || window.state.allQuestions.length === 0) {
          await window.syncStudentQuestions(true); 
       }
 
       let filteredQuestions = [];
       if (window.state.allQuestions && window.state.allQuestions.length > 0) {
-        if (chapterVal == "0") {
-          filteredQuestions = window.state.allQuestions;
-        } else {
-          filteredQuestions = window.state.allQuestions.filter(q => q.chapter == chapterVal);
+        filteredQuestions = window.state.allQuestions;
+        
+        // Tapis mengikut Bab
+        if (chapterVal !== "0") {
+          filteredQuestions = filteredQuestions.filter(q => q.chapter == chapterVal);
+        }
+        
+        // Tapis mengikut Set
+        if (setVal !== "all") {
+          filteredQuestions = filteredQuestions.filter(q => {
+            if (q.set) {
+              return q.set.toLowerCase() === setVal.toLowerCase();
+            }
+            return true; // Sokongan ke belakang jika q.set tiada
+          });
         }
       }
 
