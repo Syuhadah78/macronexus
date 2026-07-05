@@ -785,14 +785,14 @@
         const user = result.user;
         const emailStr = user.email ? user.email.toLowerCase() : "";
         
+        let detectedRole = window.state.role;
+
         // PENGESANAN AKAUN DELIMA KPM (Menyokong @moe-dl.edu.my dan @moe-dl.ed.my)
         if (emailStr.includes('@moe-dl.edu.my') || emailStr.includes('@moe-dl.ed.my')) {
           if (emailStr.startsWith('g-')) {
-            window.state.role = 'teacher';
-            window.setAuthRole('teacher');
+            detectedRole = 'teacher';
           } else if (emailStr.startsWith('m-')) {
-            window.state.role = 'student';
-            window.setAuthRole('student');
+            detectedRole = 'student';
           }
         }
 
@@ -802,8 +802,22 @@
         if (snapshot.exists()) {
           const dbData = snapshot.val();
           window.state.user = { ...window.state.user, ...dbData };
-          window.state.role = dbData.role || window.state.role;
+          
+          // Memaksa peranan mengikut format e-mel DELIMA jika terdapat perbezaan dalam pangkalan data
+          if (emailStr.includes('@moe-dl.edu.my') || emailStr.includes('@moe-dl.ed.my')) {
+            window.state.role = detectedRole;
+            if (dbData.role !== detectedRole) {
+              await update(userRef, { role: detectedRole });
+              window.state.user.role = detectedRole;
+            }
+          } else {
+            window.state.role = dbData.role || window.state.role;
+          }
         } else {
+          // Akaun Pertama Kali Dicipta (Google)
+          window.state.role = detectedRole;
+          window.setAuthRole(detectedRole);
+
           let classCode = "";
           if (window.state.role === 'student') {
             classCode = document.getElementById('auth-classcode').value || prompt("Sila masukkan Kod Kelas anda.");
@@ -821,6 +835,7 @@
           });
         }
 
+        window.setAuthRole(window.state.role);
         document.getElementById('nav-user-name').innerText = window.state.user.name;
         document.getElementById('nav-user-role').innerText = window.state.role === 'teacher' ? 'Guru' : 'Pelajar';
         document.getElementById('nav-avatar').innerText = window.state.user.name.charAt(0).toUpperCase();
