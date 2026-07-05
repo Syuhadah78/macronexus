@@ -488,18 +488,12 @@
        D. SKRIP LOGIK & FIREBASE & APPSCRIPT INTEGRATION
        ========================================== -->
   <script type="module">
-    // Import SDK Firebase Modules
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, signInAnonymously, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-    // ----------------------------------------------------
-    // TETAPAN LALAI (DEFAULT) URL GOOGLE APPS SCRIPT
-    // Tukar pautan ini dengan pautan Web App Google Apps Script anda yang sebenar
-    // ----------------------------------------------------
     const DEFAULT_APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbwYOUR_APP_SCRIPT_URL_HERE/exec"; 
 
-    // Konfigurasi Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyCDAGpmffFqw0ImEjmQmpmcRsoZ-v3UMqw",
       authDomain: "macronexus-7805.firebaseapp.com",
@@ -510,53 +504,91 @@
       appId: "1:1048525857157:web:df15601fd73ccb2cdae4ec"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
     
-    // Konfigurasi Google Auth Provider
     const googleProvider = new GoogleAuthProvider();
     googleProvider.setCustomParameters({ prompt: 'select_account' }); 
 
-    // App State Global
     window.state = {
       role: 'student',
       currentView: 'view-loading',
-      user: {
-        name: '', email: '', classCode: '', level: 1, xp: 0, attempts: 0, correct: 0, totalQuestionsAnswered: 0
-      },
-      allQuestions: [], // Menyimpan semua 100 soalan dari Google Sheet
-      quizState: {
-        questions: [], currentQuestionIndex: 0, score: 0, xpEarned: 0
+      user: { name: '', email: '', classCode: '', level: 1, xp: 0, attempts: 0, correct: 0, totalQuestionsAnswered: 0 },
+      allQuestions: [],
+      quizState: { questions: [], currentQuestionIndex: 0, score: 0, xpEarned: 0 }
+    };
+
+    // Modal Functions
+    window.showCustomModal = function(title, message, icon = 'alert-triangle') {
+      const modal = document.getElementById('custom-modal');
+      document.getElementById('modal-title').innerText = title;
+      document.getElementById('modal-message').innerText = message;
+      document.getElementById('modal-icon').setAttribute('data-lucide', icon);
+      lucide.createIcons();
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    };
+
+    window.closeCustomModal = function() {
+      const modal = document.getElementById('custom-modal');
+      modal.classList.add('opacity-0');
+      setTimeout(() => modal.classList.add('hidden'), 300);
+    };
+
+    window.openApiConfigModal = function() {
+      const modal = document.getElementById('api-config-modal');
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    };
+
+    window.closeApiConfigModal = function() {
+      const modal = document.getElementById('api-config-modal');
+      modal.classList.add('opacity-0');
+      setTimeout(() => modal.classList.add('hidden'), 300);
+    };
+
+    window.saveApiUrlConfig = function() {
+      window.showCustomModal('Berjaya', 'Konfigurasi telah disimpan.', 'check-circle');
+      window.closeApiConfigModal();
+    };
+
+    window.resumeExistingClass = function() {
+      document.getElementById('teacher-resume-modal').classList.add('hidden');
+      window.showView('view-teacher-dashboard');
+    };
+
+    window.startNewClassFlow = function() {
+      document.getElementById('teacher-resume-modal').classList.add('hidden');
+      document.getElementById('display-class-code').innerText = 'JANA KELAS';
+      window.showView('view-teacher-dashboard');
+    };
+
+    window.closeTeacherResumeModal = function() {
+      document.getElementById('teacher-resume-modal').classList.add('hidden');
+    };
+
+    window.closeConfirmDeleteModal = function() {
+      const modal = document.getElementById('confirm-delete-modal');
+      if (modal) {
+        modal.classList.add('opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 300);
       }
     };
 
-    // ==========================================
-    // API CALLER KE GOOGLE APPS SCRIPT
-    // ==========================================
+    // API Caller
     window.callAppScript = async function(payload) {
       const inputEl = document.getElementById('api-config-url-input');
       const url = (inputEl && inputEl.value) ? inputEl.value : DEFAULT_APPSCRIPT_URL;
-
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
-        });
-        
-        if (!response.ok) throw new Error("Gagal berhubung dengan Google Apps Script");
-        return await response.json();
-      } catch (error) {
-        console.error("Ralat panggil AppScript API:", error);
-        throw error;
-      }
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error("Gagal berhubung dengan Google Apps Script");
+      return await response.json();
     };
 
-    // ==========================================
-    // UI Helpers
-    // ==========================================
     window.showView = function(viewId) {
       const views = ['view-loading', 'view-auth', 'view-teacher-dashboard', 'view-student-dashboard', 'view-quiz', 'view-results'];
       views.forEach(id => {
@@ -588,15 +620,12 @@
       }
     };
 
-    // ==========================================
-    // GOOGLE / DELIMA LOGIN LOGIC
-    // ==========================================
     window.loginWithGoogle = async function() {
       try {
         const result = await signInWithPopup(auth, googleProvider);
         const user = result.user;
-        
         const emailStr = user.email ? user.email.toLowerCase() : "";
+        
         if (emailStr.endsWith('@moe-dl.edu.my')) {
           if (emailStr.startsWith('g-')) window.state.role = 'teacher';
           else if (emailStr.startsWith('m-')) window.state.role = 'student';
@@ -638,22 +667,16 @@
         } else {
           updateStudentDashboardUI();
           window.showView('view-student-dashboard');
-          // Segerak Soalan secara senyap pada saat pelajar log masuk
           window.syncStudentQuestions(true); 
         }
-
       } catch (error) {
         console.error(error);
         alert("Gagal log masuk dengan Google: " + error.message);
       }
     };
 
-    // ==========================================
-    // MANUAL LOGIN LOGIC
-    // ==========================================
     document.getElementById('auth-form').addEventListener('submit', async function(e) {
       e.preventDefault();
-      
       const submitBtn = document.getElementById('btn-auth-submit');
       submitBtn.innerHTML = '<div class="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>';
       submitBtn.disabled = true;
@@ -690,10 +713,8 @@
         } else { 
           updateStudentDashboardUI(); 
           window.showView('view-student-dashboard'); 
-          // Segerak Soalan secara senyap pada saat pelajar log masuk
           window.syncStudentQuestions(true);
         }
-
       } catch (error) {
         console.error(error);
         alert("Ralat semasa log masuk: " + error.message);
@@ -708,6 +729,60 @@
       document.getElementById('navbar').classList.add('hidden');
       document.getElementById('auth-form').reset();
       window.showView('view-auth');
+    };
+
+    document.getElementById('create-class-form').addEventListener('submit', async function(e) {
+      e.preventDefault(); 
+      const name = document.getElementById('new-class-name').value;
+      const randomCode = 'MKR' + Math.floor(1000 + Math.random() * 9000);
+      
+      document.getElementById('active-class-banner').classList.remove('hidden');
+      document.getElementById('display-class-name').innerText = name;
+      document.getElementById('display-class-code').innerText = randomCode;
+
+      if (auth.currentUser) {
+        try {
+          await set(ref(db, 'classes/' + randomCode), {
+            className: name,
+            teacherId: auth.currentUser.uid,
+            createdAt: Date.now()
+          });
+          await update(ref(db, 'users/' + auth.currentUser.uid), {
+            classCode: randomCode
+          });
+        } catch (err) {
+          console.error("Gagal menyimpan kelas:", err);
+        }
+      }
+      window.showCustomModal('Berjaya', `Kelas ${name} telah dicipta dengan kod ${randomCode}. Berikan kod ini kepada pelajar anda.`, 'check-circle');
+    });
+
+    document.getElementById('resume-class-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const code = document.getElementById('resume-class-input').value.toUpperCase();
+      document.getElementById('active-class-banner').classList.remove('hidden');
+      document.getElementById('display-class-name').innerText = "Kelas Disambung";
+      document.getElementById('display-class-code').innerText = code;
+      window.showCustomModal('Berjaya', `Bersambung ke sesi kelas ${code}.`, 'check-circle');
+    });
+
+    window.copyClassCode = function() {
+      const code = document.getElementById('display-class-code').innerText;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(() => {
+          window.showCustomModal('Disalin', `Kod kelas ${code} berjaya disalin!`, 'check-circle');
+        }).catch(err => {
+          console.error("Clipboard API failed:", err);
+        });
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = code;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("Copy");
+        textArea.remove();
+        window.showCustomModal('Disalin', `Kod kelas ${code} berjaya disalin!`, 'check-circle');
+      }
     };
 
     function updateStudentDashboardUI() {
@@ -727,9 +802,6 @@
       document.getElementById('stat-student-accuracy').innerText = `${acc}%`;
     }
 
-    // ==========================================
-    // FUNGSI GURU: JANA SOALAN DIRECT GEMINI API & SIMPAN FIREBASE/SHEET
-    // ==========================================
     window.generateLiveQuestions = async function() {
       const chapterSelect = document.getElementById('ai-gen-chapter');
       const chapterText = chapterSelect.options[chapterSelect.selectedIndex].text;
@@ -744,12 +816,7 @@
       document.getElementById('loader-status-text').innerText = "AI Gemini sedang merangka soalan...";
       
       try {
-        const promptText = `Hasilkan 5 soalan kuiz pelbagai pilihan (A, B, C) untuk subjek Makroekonomi STPM peringkat Pra-Universiti bagi topik: ${chapterText}. 
-Berikan respons HANYA dalam format JSON array yang sah.
-Struktur JSON yang WAJIB dipatuhi:
-[
-  { "q": "Teks soalan?", "opts": ["Pilihan 1", "Pilihan 2", "Pilihan 3"], "ans": 0, "chapter": "${chapterVal}" }
-]`;
+        const promptText = `Hasilkan 5 soalan kuiz pelbagai pilihan (A, B, C) untuk subjek Makroekonomi STPM peringkat Pra-Universiti bagi topik: ${chapterText}.\nBerikan respons HANYA dalam format JSON array yang sah.\nStruktur JSON yang WAJIB dipatuhi:\n[\n  { "q": "Teks soalan?", "opts": ["Pilihan 1", "Pilihan 2", "Pilihan 3"], "ans": 0, "chapter": "${chapterVal}" }\n]`;
 
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
           method: 'POST',
@@ -764,7 +831,6 @@ Struktur JSON yang WAJIB dipatuhi:
         rawJsonText = rawJsonText.replace(/```json/g, '').replace(/```/g, '').trim();
         const generatedQuestions = JSON.parse(rawJsonText);
 
-        // Hantar dan simpan soalan ke Google Sheet melalui AppScript
         await window.callAppScript({ action: 'save', questions: generatedQuestions, chapter: chapterVal });
 
         window.showCustomModal('Berjaya', `Soalan AI bagi ${chapterText} telah dijana dan disimpan ke Google Sheet.`, 'check-circle');
@@ -776,21 +842,15 @@ Struktur JSON yang WAJIB dipatuhi:
       }
     };
 
-    // ==========================================
-    // FUNGSI PELAJAR: FETCH/SEGERAK SOALAN DARI GOOGLE SHEET
-    // ==========================================
     window.syncStudentQuestions = async function(isSilent = false) {
       if (!isSilent) {
         window.showView('view-loading');
         document.getElementById('loading-text').innerText = "Menyelaraskan soalan terkini dari Google Sheet...";
       }
-      
       try {
-        // Ambil SEMUA soalan dari Google Sheet (100 soalan)
         const res = await window.callAppScript({ action: 'fetch_all' });
-        
         if(res && res.questions && res.questions.length > 0) {
-           window.state.allQuestions = res.questions; // Simpan di memori sementara
+           window.state.allQuestions = res.questions;
            if (!isSilent) window.showCustomModal('Disegerak', `Sebanyak ${res.questions.length} soalan telah dikemas kini dari Google Sheet.`, 'refresh-cw');
         } else {
            throw new Error("Tiada soalan ditemui");
@@ -803,31 +863,25 @@ Struktur JSON yang WAJIB dipatuhi:
       } finally {
         if (!isSilent) window.showView('view-student-dashboard');
       }
-    }
+    };
 
     window.startQuizFlow = async function() {
       const chapterVal = document.getElementById('student-chapter-selector').value;
-      
-      // Jika bank soalan masih kosong, cuba muat turun secara paksa
       if (!window.state.allQuestions || window.state.allQuestions.length === 0) {
-         await window.syncStudentQuestions(false);
+         await window.syncStudentQuestions(true); 
       }
 
       let filteredQuestions = [];
-      
       if (window.state.allQuestions && window.state.allQuestions.length > 0) {
         if (chapterVal == "0") {
-          // Bab Pilihan Rawak (semua bab disatukan)
           filteredQuestions = window.state.allQuestions;
         } else {
-          // Tapis soalan berdasarkan nilai bab
           filteredQuestions = window.state.allQuestions.filter(q => q.chapter == chapterVal);
         }
       }
 
       if (filteredQuestions.length === 0) {
         console.warn("Menggunakan soalan lalai (Mock Data).");
-        // Soalan Lalai (Fallback) jika tiada soalan
         filteredQuestions = [
           { q: "Apakah matlamat utama makroekonomi sesebuah negara?", opts: ["Tingkatkan inflasi", "Guna tenaga penuh", "Kurang pelaburan"], ans: 1 },
           { q: "Manakah antara berikut BUKAN fungsi wang?", opts: ["Alat pertukaran", "Alat nilai", "Alat inflasi"], ans: 2 }
@@ -835,7 +889,6 @@ Struktur JSON yang WAJIB dipatuhi:
         window.showCustomModal('Makluman', 'Menggunakan soalan lalai sistem kerana set soalan Google Sheet kosong.', 'alert-triangle');
       }
 
-      // Kocok soalan (Shuffle array)
       filteredQuestions = filteredQuestions.sort(() => Math.random() - 0.5);
 
       window.state.quizState.questions = filteredQuestions;
@@ -887,11 +940,11 @@ Struktur JSON yang WAJIB dipatuhi:
       if (window.state.quizState.currentQuestionIndex < window.state.quizState.questions.length) {
         renderQuestion();
       } else {
-        finishQuiz();
+        window.finishQuiz();
       }
     };
 
-    async function finishQuiz() {
+    window.finishQuiz = async function() {
       const total = window.state.quizState.questions.length;
       const acc = Math.round((window.state.quizState.score / total) * 100);
       const xpEarned = window.state.quizState.score === 0 ? 0 : window.state.quizState.score * 50; 
@@ -905,7 +958,6 @@ Struktur JSON yang WAJIB dipatuhi:
         window.state.user.level += 1;
       }
 
-      // Simpan skor pengguna ke dalam Firebase
       if (auth.currentUser) {
         try {
           await update(ref(db, 'users/' + auth.currentUser.uid), {
@@ -919,7 +971,7 @@ Struktur JSON yang WAJIB dipatuhi:
       document.getElementById('results-accuracy').innerText = `${acc}%`;
       document.getElementById('results-xp-gained').innerText = `+${xpEarned} XP`;
       window.showView('view-results');
-    }
+    };
 
     window.exitQuiz = function() {
       if (confirm("Mahu batal latihan? Markah tidak akan direkodkan.")) window.backToDashboard();
@@ -932,13 +984,11 @@ Struktur JSON yang WAJIB dipatuhi:
 
     document.addEventListener("DOMContentLoaded", () => {
       lucide.createIcons();
-      // Set APPSCRIPT URL dalam kotak input Configuration Modal
       const inputEl = document.getElementById('api-config-url-input');
       if (inputEl) inputEl.value = DEFAULT_APPSCRIPT_URL;
 
       setTimeout(() => window.showView('view-auth'), 800);
     });
-
   </script>
 </body>
 </html>
