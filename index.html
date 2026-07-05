@@ -103,6 +103,27 @@
     </div>
   </div>
 
+  <!-- MODAL PENGESAHAN PADAM PELAJAR -->
+  <div id="confirm-delete-modal" class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
+    <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-red-500/20 text-center transform scale-95 transition-transform duration-300" id="confirm-delete-content">
+      <div class="inline-flex p-4 rounded-full bg-red-500/10 text-red-500 mb-4 shadow-lg shadow-red-500/10">
+        <i data-lucide="user-x" class="w-8 h-8 sm:w-10 sm:h-10"></i>
+      </div>
+      <h3 class="text-xl sm:text-2xl font-bold text-white mb-2">Keluarkan Pelajar?</h3>
+      <p class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-6 break-words">
+        Adakah anda pasti ingin mengeluarkan <strong id="delete-student-name" class="text-red-400"></strong> daripada kelas anda? Tindakan ini akan mengosongkan rekod kod kelas mereka.
+      </p>
+      <div class="flex flex-col gap-3">
+        <button id="btn-confirm-delete-execute" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center leading-tight bg-gradient-to-r from-red-600 to-orange-600 text-white font-extrabold rounded-xl transition-all shadow-lg hover:scale-[1.02] text-xs sm:text-sm">
+          Ya, Keluarkan
+        </button>
+        <button onclick="window.closeConfirmDeleteModal()" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center leading-tight bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl transition-all border border-white/5 text-xs sm:text-sm">
+          Batal
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- API URL & AI Config Modal -->
   <div id="api-config-modal" class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
     <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-blue-500/20 transform scale-95 transition-transform duration-300" id="api-config-content">
@@ -288,6 +309,34 @@
         </div>
       </div>
 
+      <!-- Kad Statistik Papan Pemuka Guru -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-8">
+        <div class="glass-panel p-4 sm:p-6 rounded-3xl relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-br from-orange-500 to-amber-500 opacity-5 rounded-bl-full"></div>
+          <div class="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500 mb-3 sm:mb-4">
+            <i data-lucide="users" class="w-5 h-5"></i>
+          </div>
+          <div id="stat-teacher-students" class="text-2xl sm:text-3xl font-black text-white mb-1">0</div>
+          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Pelajar Aktif</div>
+        </div>
+        <div class="glass-panel p-4 sm:p-6 rounded-3xl relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-br from-amber-500 to-yellow-500 opacity-5 rounded-bl-full"></div>
+          <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 mb-3 sm:mb-4">
+            <i data-lucide="target" class="w-5 h-5"></i>
+          </div>
+          <div id="stat-teacher-attempts" class="text-2xl sm:text-3xl font-black text-white mb-1">0</div>
+          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Latihan Selesai</div>
+        </div>
+        <div class="glass-panel p-4 sm:p-6 rounded-3xl relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-br from-yellow-500 to-gold opacity-5 rounded-bl-full"></div>
+          <div class="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-500 mb-3 sm:mb-4">
+            <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+          </div>
+          <div id="stat-teacher-accuracy" class="text-2xl sm:text-3xl font-black text-white mb-1">0%</div>
+          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Ketepatan Kelas</div>
+        </div>
+      </div>
+
       <!-- AI Question Generator Widget -->
       <div class="glass-panel p-4 sm:p-6 rounded-3xl border border-orange-500/10 mt-8">
         <h2 class="text-base sm:text-xl font-bold text-white flex items-center gap-2 mb-4 leading-tight">
@@ -300,6 +349,9 @@
               <option value="0" selected>Semua Bab Pilihan (100 Soalan - 20/Bab)</option>
               <option value="1">Bab 1: Pengenalan Makroekonomi (20 Soalan)</option>
               <option value="2">Bab 2: Perakaunan Pendapatan Negara (20 Soalan)</option>
+              <option value="3">Bab 3: Keseimbangan Pendapatan Negara (20 Soalan)</option>
+              <option value="4">Bab 4: Wang, Bank dan Dasar Kewangan (20 Soalan)</option>
+              <option value="5">Bab 5: Perdagangan Antarabangsa (20 Soalan)</option>
             </select>
           </div>
           <div>
@@ -383,6 +435,9 @@
                   <option value="0" selected>Semua Bab Pilihan Rawak (100 Soalan)</option>
                   <option value="1">Bab 1: Pengenalan Makroekonomi</option>
                   <option value="2">Bab 2: Perakaunan Pendapatan Negara</option>
+                  <option value="3">Bab 3: Keseimbangan Pendapatan Negara</option>
+                  <option value="4">Bab 4: Wang, Bank dan Dasar Kewangan</option>
+                  <option value="5">Bab 5: Perdagangan Antarabangsa</option>
                 </select>
               </div>
               <div>
@@ -494,7 +549,7 @@
     import { getAuth, signInAnonymously, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-    const DEFAULT_APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbwYOUR_APP_SCRIPT_URL_HERE/exec"; 
+    const DEFAULT_APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbweTvxaJt8cHPEMf8Q9wrWdExol-VJUSRQ6rDiJE3gn0Vfq4T_4HSKUg8hCo9HNWLo/exec"; 
 
     const firebaseConfig = {
       apiKey: "AIzaSyCDAGpmffFqw0ImEjmQmpmcRsoZ-v3UMqw",
@@ -582,6 +637,11 @@
     window.callAppScript = async function(payload) {
       const inputEl = document.getElementById('api-config-url-input');
       const url = (inputEl && inputEl.value) ? inputEl.value : DEFAULT_APPSCRIPT_URL;
+      
+      if (url.includes("YOUR_APP_SCRIPT_URL_HERE")) {
+        throw new Error("Sila masukkan pautan URL Google Apps Script yang sah di menu tetapan (⚙️).");
+      }
+
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -589,6 +649,99 @@
       });
       if (!response.ok) throw new Error("Gagal berhubung dengan Google Apps Script");
       return await response.json();
+    };
+
+    // Fungsi Khas: Ambil Senarai Pelajar untuk Dashboard Guru
+    async function loadTeacherStudents() {
+      const teacherClassCode = window.state.user.classCode || "";
+      
+      if (teacherClassCode) {
+        document.getElementById('active-class-banner').classList.remove('hidden');
+        document.getElementById('display-class-code').innerText = teacherClassCode;
+        
+        try {
+          const classSnap = await get(ref(db, 'classes/' + teacherClassCode));
+          if (classSnap.exists()) {
+            document.getElementById('display-class-name').innerText = classSnap.val().className;
+          }
+        } catch (e) {
+          console.error("Gagal mengambil nama kelas:", e);
+        }
+      }
+
+      const usersRef = ref(db, 'users');
+      try {
+        const snapshot = await get(usersRef);
+        if (snapshot.exists()) {
+          const allUsers = snapshot.val();
+          const tableBody = document.getElementById('students-table-body');
+          tableBody.innerHTML = '';
+          
+          let studentCount = 0;
+          let totalAttempts = 0;
+          let totalCorrect = 0;
+          let totalQAnswered = 0;
+          let studentRowsHtml = '';
+
+          for (const uid in allUsers) {
+            const u = allUsers[uid];
+            if (u.role === 'student' && u.classCode === teacherClassCode) {
+              studentCount++;
+              totalAttempts += (u.attempts || 0);
+              totalCorrect += (u.correct || 0);
+              totalQAnswered += (u.totalQuestionsAnswered || 0);
+
+              studentRowsHtml += `
+                <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                  <td class="p-3 sm:p-4 font-medium text-white">${u.name}</td>
+                  <td class="p-3 sm:p-4 text-zinc-400 font-mono uppercase">${u.classCode || '-'}</td>
+                  <td class="p-3 sm:p-4"><span class="px-2 py-1 rounded bg-orange-500/10 text-orange-400 font-bold text-xs">Lvl ${u.level || 1}</span></td>
+                  <td class="p-3 sm:p-4 text-brand-gold font-bold">${u.xp || 0} XP</td>
+                  <td class="p-3 sm:p-4 text-center">
+                    <button onclick="window.deleteStudent('${uid}', '${u.name}')" class="text-red-500 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-500/10 transition-colors" title="Keluarkan Pelajar">
+                      <i data-lucide="user-x" class="w-4 h-4 inline-block"></i>
+                    </button>
+                  </td>
+                </tr>
+              `;
+            }
+          }
+
+          if (studentCount === 0) {
+            tableBody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-zinc-500">Tiada pelajar berdaftar di bawah kelas anda buat masa ini.</td></tr>';
+          } else {
+            tableBody.innerHTML = studentRowsHtml;
+            lucide.createIcons();
+          }
+
+          document.getElementById('stat-teacher-students').innerText = studentCount;
+          document.getElementById('stat-teacher-attempts').innerText = totalAttempts;
+          
+          const avgAccuracy = totalQAnswered ? Math.round((totalCorrect / totalQAnswered) * 100) : 0;
+          document.getElementById('stat-teacher-accuracy').innerText = `${avgAccuracy}%`;
+        }
+      } catch (err) {
+        console.error("Gagal menarik senarai pelajar:", err);
+      }
+    }
+
+    // Fungsi Khas: Keluarkan Pelajar
+    window.deleteStudent = function(uid, name) {
+      const modal = document.getElementById('confirm-delete-modal');
+      document.getElementById('delete-student-name').innerText = name;
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.remove('opacity-0'), 10);
+
+      document.getElementById('btn-confirm-delete-execute').onclick = async function() {
+        try {
+          await update(ref(db, 'users/' + uid), { classCode: "" });
+          window.closeConfirmDeleteModal();
+          window.showCustomModal('Berjaya', `${name} telah dikeluarkan dari kelas anda.`, 'check-circle');
+          loadTeacherStudents();
+        } catch (e) {
+          console.error("Gagal mengeluarkan pelajar:", e);
+        }
+      };
     };
 
     window.showView = function(viewId) {
@@ -602,6 +755,10 @@
         target.classList.remove('hidden');
         window.state.currentView = viewId;
         lucide.createIcons();
+
+        if (viewId === 'view-teacher-dashboard') {
+          loadTeacherStudents();
+        }
       }
     };
 
@@ -758,20 +915,37 @@
           await update(ref(db, 'users/' + auth.currentUser.uid), {
             classCode: randomCode
           });
+          window.state.user.classCode = randomCode; // Kemaskini state kelas guru
         } catch (err) {
           console.error("Gagal menyimpan kelas:", err);
         }
       }
       window.showCustomModal('Berjaya', `Kelas ${name} telah dicipta dengan kod ${randomCode}. Berikan kod ini kepada pelajar anda.`, 'check-circle');
+      loadTeacherStudents(); // Muat semula jadual pelajar
     });
 
-    document.getElementById('resume-class-form').addEventListener('submit', function(e) {
+    document.getElementById('resume-class-form').addEventListener('submit', async function(e) {
       e.preventDefault();
       const code = document.getElementById('resume-class-input').value.toUpperCase();
-      document.getElementById('active-class-banner').classList.remove('hidden');
-      document.getElementById('display-class-name').innerText = "Kelas Disambung";
-      document.getElementById('display-class-code').innerText = code;
-      window.showCustomModal('Berjaya', `Bersambung ke sesi kelas ${code}.`, 'check-circle');
+      
+      if (auth.currentUser) {
+        try {
+          const classSnap = await get(ref(db, 'classes/' + code));
+          if (classSnap.exists()) {
+            await update(ref(db, 'users/' + auth.currentUser.uid), { classCode: code });
+            window.state.user.classCode = code;
+            document.getElementById('active-class-banner').classList.remove('hidden');
+            document.getElementById('display-class-name').innerText = classSnap.val().className;
+            document.getElementById('display-class-code').innerText = code;
+            window.showCustomModal('Berjaya', `Bersambung ke sesi kelas ${code} (${classSnap.val().className}).`, 'check-circle');
+            loadTeacherStudents();
+          } else {
+            window.showCustomModal('Ralat', 'Kod kelas tidak wujud dalam pangkalan data.', 'alert-triangle');
+          }
+        } catch (err) {
+          console.error("Ralat menyambung kelas:", err);
+        }
+      }
     });
 
     window.copyClassCode = function() {
@@ -839,12 +1013,19 @@
         rawJsonText = rawJsonText.replace(/```json/g, '').replace(/```/g, '').trim();
         const generatedQuestions = JSON.parse(rawJsonText);
 
-        await window.callAppScript({ action: 'save', questions: generatedQuestions, chapter: chapterVal });
+        try {
+          // Cuba simpan ke Google Sheet dahulu
+          await window.callAppScript({ action: 'save', questions: generatedQuestions, chapter: chapterVal });
+        } catch (scriptErr) {
+          // Sandaran (Fallback): Simpan ke Firebase jika Google Sheet gagal
+          console.warn("Simpan ke Sheet Gagal. Menyimpan terus ke Firebase...");
+          await set(ref(db, 'questions/bab_' + chapterVal), generatedQuestions);
+        }
 
-        window.showCustomModal('Berjaya', `Soalan AI bagi ${chapterText} telah dijana dan disimpan ke Google Sheet.`, 'check-circle');
+        window.showCustomModal('Berjaya', `Soalan AI bagi ${chapterText} telah dijana dan disimpan dengan jayanya.`, 'check-circle');
       } catch (err) {
         console.error("AI Generation Fail:", err);
-        window.showCustomModal('Ralat AI', 'Gagal menjana/menyimpan soalan. Sila pastikan pautan AppScript telah dikonfigurasi.', 'alert-triangle');
+        window.showCustomModal('Ralat AI', 'Gagal menjana soalan. Sila pastikan sambungan internet stabil.', 'alert-triangle');
       } finally {
         loader.classList.remove('flex'); loader.classList.add('hidden');
       }
@@ -853,20 +1034,39 @@
     window.syncStudentQuestions = async function(isSilent = false) {
       if (!isSilent) {
         window.showView('view-loading');
-        document.getElementById('loading-text').innerText = "Menyelaraskan soalan terkini dari Google Sheet...";
+        document.getElementById('loading-text').innerText = "Menyelaraskan soalan terkini...";
       }
       try {
+        // Ambil dari Google Sheet
         const res = await window.callAppScript({ action: 'fetch_all' });
         if(res && res.questions && res.questions.length > 0) {
            window.state.allQuestions = res.questions;
-           if (!isSilent) window.showCustomModal('Disegerak', `Sebanyak ${res.questions.length} soalan telah dikemas kini dari Google Sheet.`, 'refresh-cw');
-        } else {
-           throw new Error("Tiada soalan ditemui");
+           if (!isSilent) window.showCustomModal('Disegerak', `Sebanyak ${res.questions.length} soalan ditarik dari Google Sheet.`, 'refresh-cw');
+           return;
         }
       } catch (err) {
-        console.error(err);
+        console.warn("Gagal dapatkan dari Google Sheet. Mencuba Firebase sebagai sandaran...", err.message);
+      }
+
+      // Sandaran dari Firebase Database
+      try {
+        const snapshot = await get(ref(db, 'questions'));
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          let allQ = [];
+          for (const key in data) {
+             if (Array.isArray(data[key])) allQ = allQ.concat(data[key]);
+          }
+          if (allQ.length > 0) {
+             window.state.allQuestions = allQ;
+             if (!isSilent) window.showCustomModal('Disegerak (Firebase)', `Sebanyak ${allQ.length} soalan berjaya ditarik dari pangkalan data awan.`, 'refresh-cw');
+             return;
+          }
+        }
+        throw new Error("Tiada soalan dalam pangkalan data awan.");
+      } catch (err2) {
         if (!isSilent) {
-          window.showCustomModal('Ralat Segerak', 'Gagal menyegerak dengan Google Sheet. Pastikan pautan Google Apps Script berfungsi.', 'alert-triangle');
+          window.showCustomModal('Ralat Segerak', 'Gagal menyegerak. Google Sheet tidak sah dan pangkalan data awan kosong.', 'alert-triangle');
         }
       } finally {
         if (!isSilent) window.showView('view-student-dashboard');
