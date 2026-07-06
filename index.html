@@ -108,14 +108,11 @@
         // Jika peranan adalah pelajar, simpan profil ke Firestore
         if (profile.role === 'student' && db) {
           try {
-            // [RULE 1] Jalur profil peribadi pelajar
             const privateDocRef = doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'profile', 'main');
-            // [RULE 3] Jalur profil awam pelajar untuk dilihat oleh guru kelas
             const studentDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'students', firebaseUser.uid);
             
             const privateDoc = await getDoc(privateDocRef);
             if (privateDoc.exists()) {
-              // Jika pelajar sudah ada profil di Firestore, gunakan data sedia ada
               Object.assign(profile, privateDoc.data());
             } else {
               await setDoc(privateDocRef, profile);
@@ -126,7 +123,6 @@
           }
         } else if (profile.role === 'teacher' && db) {
           try {
-            // [RULE 1] Jalur profil peribadi guru
             const privateDocRef = doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'profile', 'main');
             const privateDoc = await getDoc(privateDocRef);
             if (privateDoc.exists()) {
@@ -154,7 +150,7 @@
         }
 
       } catch (error) {
-        console.error("Kesalahan log masuk Google:", error);
+        console.error("Ralat log masuk Google:", error);
         if (window.showCustomModal) {
           window.showCustomModal("Ralat Log Masuk", "Gagal log masuk menggunakan Google/DELIMa. Sila cuba lagi.", "alert-triangle");
         }
@@ -310,18 +306,18 @@
         </div>
         
         <div class="flex items-center gap-2 sm:gap-4">
-          <!-- Tombol pengaturan dikawal secara dinamis (Hanya Guru yang boleh melihatnya) -->
+          <!-- Butang tetapan ini dikawal secara dinamik (Hanya Guru sahaja yang boleh melihatnya) -->
           <button id="nav-settings-btn" onclick="window.openApiConfigModal()" class="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition-all hidden" title="Konfigurasi Sistem">
             <i data-lucide="settings" class="w-5 h-5"></i>
           </button>
           <div class="text-right hidden md:block">
-            <div id="nav-user-name" class="text-sm font-semibold text-white">Memuat...</div>
+            <div id="nav-user-name" class="text-sm font-semibold text-white">Memuat turun...</div>
             <div id="nav-user-role" class="text-xs text-amber-500 capitalize">Pengguna</div>
           </div>
           <div id="nav-avatar" class="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-extrabold shadow-lg shadow-orange-500/20 border border-white/10 uppercase shrink-0 text-xs sm:text-sm">
             M
           </div>
-          <button onclick="window.handleLogout()" class="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition-all" title="Keluar">
+          <button onclick="window.handleLogout()" class="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition-all" title="Log Keluar">
             <i data-lucide="log-out" class="w-5 h-5"></i>
           </button>
         </div>
@@ -348,7 +344,7 @@
             <i data-lucide="globe-2" class="h-7 w-7 sm:h-8 sm:w-8 text-white"></i>
           </div>
           <h2 class="text-2xl sm:text-3xl font-black text-white mb-1 leading-tight">MacroNexus</h2>
-          <p class="text-brand-amber font-semibold text-[11px] sm:text-xs mb-3">Menghubungkan Ilmu, Membina Keunggulan</p>
+          <p class="text-brand-amber font-semibold text-[11px] sm:text-xs mb-3">Menghubung Ilmu, Membina Kecemerlangan</p>
           <p class="text-zinc-400 text-xs sm:text-sm px-2">Sistem Pembelajaran Pintar STPM Makroekonomi</p>
         </div>
 
@@ -385,14 +381,14 @@
 
           <div class="space-y-4">
             <div>
-              <label class="block text-[11px] sm:text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Nama Lengkap</label>
+              <label class="block text-[11px] sm:text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Nama Penuh</label>
               <input required id="auth-name" type="text" placeholder="Contoh: Muhammad Alif" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all" />
             </div>
 
             <div id="field-class-code">
-              <label id="label-classcode" class="block text-[11px] sm:text-xs font-bold text-zinc-400 tracking-wide mb-1 whitespace-normal break-words">Kode Kelas (Wajib Untuk Pelajar)</label>
+              <label id="label-classcode" class="block text-[11px] sm:text-xs font-bold text-zinc-400 tracking-wide mb-1 whitespace-normal break-words">Kod Kelas (Wajib Untuk Pelajar)</label>
               <input id="auth-classcode" type="text" placeholder="Contoh: MKR8291" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all uppercase" />
-              <p id="desc-classcode" class="text-[10px] text-zinc-500 mt-1.5 leading-tight break-words">Dapatkan kode kelas dari guru Anda.</p>
+              <p id="desc-classcode" class="text-[10px] text-zinc-500 mt-1.5 leading-tight break-words">Dapatkan kod kelas dari guru anda.</p>
             </div>
           </div>
 
@@ -408,25 +404,25 @@
       <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 sm:gap-6 border-b border-white/5 pb-5 sm:pb-6">
         <div class="w-full lg:w-auto">
           <h1 class="text-2xl sm:text-3xl font-black text-white leading-tight">Panel Pengajar</h1>
-          <p class="text-zinc-400 text-xs sm:text-sm mt-1 leading-relaxed break-words">Kelola kelas, buat soal AI, dan pantau prestasi.</p>
+          <p class="text-zinc-400 text-xs sm:text-sm mt-1 leading-relaxed break-words">Urus kelas, jana soalan AI, dan pantau prestasi.</p>
         </div>
         
         <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-          <!-- Form Buat Kelas Baru -->
+          <!-- Form Bina Kelas Baharu -->
           <form id="create-class-form" class="flex flex-col sm:flex-row gap-2 w-full">
-            <input required id="new-class-name" type="text" placeholder="Nama Kelas Baru" class="bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 outline-none w-full sm:w-44 text-xs sm:text-sm text-center sm:text-left" />
+            <input required id="new-class-name" type="text" placeholder="Nama Kelas Baharu" class="bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 outline-none w-full sm:w-44 text-xs sm:text-sm text-center sm:text-left" />
             <button type="submit" class="bg-gradient-to-tr from-orange-500 to-amber-500 text-black px-4 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all shrink-0 text-xs sm:text-sm shadow-lg hover:scale-105 min-h-[3rem] whitespace-normal text-center break-words">
-              <i data-lucide="plus" class="w-4 h-4 shrink-0"></i> <span>Buat Kelas</span>
+              <i data-lucide="plus" class="w-4 h-4 shrink-0"></i> <span>Bina Kelas</span>
             </button>
           </form>
 
           <div class="hidden sm:block w-px bg-white/10 mx-1"></div>
           
-          <!-- Form Masuk Kembali Kelas -->
+          <!-- Form Masuk Semula Kelas -->
           <form id="resume-class-form" class="flex flex-col sm:flex-row gap-2 w-full mt-2 sm:mt-0 border-t sm:border-t-0 border-white/5 pt-3 sm:pt-0">
-            <input required id="resume-class-input" type="text" placeholder="Kode Kelas Lama" class="bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-zinc-500 outline-none w-full sm:w-48 text-xs sm:text-sm uppercase text-center sm:text-left" />
+            <input required id="resume-class-input" type="text" placeholder="Kod Kelas Lama" class="bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-zinc-500 outline-none w-full sm:w-48 text-xs sm:text-sm uppercase text-center sm:text-left" />
             <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all shrink-0 text-xs sm:text-sm border border-white/5 shadow-lg hover:scale-105 min-h-[3rem] whitespace-normal text-center break-words">
-              <i data-lucide="log-in" class="w-4 h-4 shrink-0"></i> <span>Masuk Kembali</span>
+              <i data-lucide="log-in" class="w-4 h-4 shrink-0"></i> <span>Masuk Semula</span>
             </button>
           </form>
         </div>
@@ -435,11 +431,11 @@
       <div id="active-class-banner" class="hidden bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div class="w-full sm:w-auto">
           <h3 class="text-orange-400 font-bold text-lg leading-tight break-words" id="display-class-name">Nama Kelas</h3>
-          <p class="text-xs text-zinc-400 mt-1 leading-relaxed break-words">Berikan kode ini kepada siswa Anda untuk mendaftar masuk.</p>
+          <p class="text-xs text-zinc-400 mt-1 leading-relaxed break-words">Berikan kod ini kepada pelajar anda untuk mendaftar masuk.</p>
         </div>
         <div class="bg-zinc-950 px-4 py-2.5 rounded-xl border border-zinc-800 flex items-center justify-between gap-4 w-full sm:w-auto">
           <span class="text-lg sm:text-2xl font-black text-white tracking-widest uppercase truncate" id="display-class-code">MKR000</span>
-          <button onclick="window.copyClassCode()" class="text-zinc-400 hover:text-white transition-colors shrink-0 p-2 bg-zinc-900 rounded-lg min-w-[2.25rem] min-h-[2.25rem] flex items-center justify-center" title="Salin Kode">
+          <button onclick="window.copyClassCode()" class="text-zinc-400 hover:text-white transition-colors shrink-0 p-2 bg-zinc-900 rounded-lg min-w-[2.25rem] min-h-[2.25rem] flex items-center justify-center" title="Salin Kod">
             <i data-lucide="copy" class="w-4 h-4"></i>
           </button>
         </div>
@@ -453,7 +449,7 @@
             <i data-lucide="users" class="w-5 h-5"></i>
           </div>
           <div id="stat-teacher-students" class="text-2xl sm:text-3xl font-black text-white mb-1">0</div>
-          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Siswa Aktif</div>
+          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Pelajar Aktif</div>
         </div>
         <div class="glass-panel p-4 sm:p-6 rounded-3xl relative overflow-hidden">
           <div class="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-br from-amber-500 to-yellow-500 opacity-5 rounded-bl-full"></div>
@@ -469,7 +465,7 @@
             <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
           </div>
           <div id="stat-teacher-accuracy" class="text-2xl sm:text-3xl font-black text-white mb-1">0%</div>
-          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Akurasi Kelas</div>
+          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Ketepatan Kelas</div>
         </div>
       </div>
 
@@ -482,7 +478,7 @@
           <div>
             <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Liputan Bab</label>
             <select id="ai-gen-chapter" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
-              <option value="0" selected>Semua Bab Pilihan (100 Soalan - 20/Bab)</option>
+              <option value="0" selected>Semua Soalan (100 Soalan - 20/Bab)</option>
               <option value="1">Bab 1: Pengenalan Makroekonomi (20 Soalan)</option>
               <option value="2">Bab 2: Perakaunan Pendapatan Negara (20 Soalan)</option>
               <option value="3">Bab 3: Keseimbangan Pendapatan Negara (20 Soalan)</option>
@@ -493,8 +489,8 @@
           <div>
             <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Target Penyimpanan AI</label>
             <select id="ai-gen-destination" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
-              <option value="sheet" selected>Simpan Otomatis ke Google Sheet Baru</option>
-              <option value="csv">Buat & Unduh File CSV</option>
+              <option value="sheet" selected>Simpan Terus ke Google Sheet Baru</option>
+              <option value="csv">Jana & Muat Turun Fail CSV</option>
             </select>
           </div>
           <div class="flex flex-col justify-end md:col-span-1 sm:col-span-2">
@@ -507,7 +503,7 @@
         <div id="ai-batch-loader" class="hidden flex-col items-center py-6 bg-zinc-950 rounded-2xl border border-orange-500/10 mt-4 px-4 text-center">
           <div class="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-3"></div>
           <p id="loader-status-text" class="text-sm font-bold text-amber-500 leading-tight">Berkomunikasi dengan Google Apps Script...</p>
-          <p id="loader-progress-text" class="text-[10px] sm:text-xs text-zinc-400 mt-1 max-w-sm">Mohon tunggu sementara sistem menyusun pertanyaan untuk Anda.</p>
+          <p id="loader-progress-text" class="text-[10px] sm:text-xs text-zinc-400 mt-1 max-w-sm">Sila tunggu sementara pelayan menyusun soalan untuk anda.</p>
         </div>
       </div>
 
@@ -515,23 +511,23 @@
       <div class="bg-zinc-950 border border-white/5 rounded-3xl overflow-hidden shadow-xl mt-8">
         <div class="p-4 sm:p-6 border-b border-white/5">
           <h2 class="text-base sm:text-xl font-bold text-white flex items-center gap-2 leading-tight">
-            <i data-lucide="users" class="text-orange-400 w-5 h-5 shrink-0"></i> Daftar Siswa
+            <i data-lucide="users" class="text-orange-400 w-5 h-5 shrink-0"></i> Senarai Pelajar
           </h2>
         </div>
         <div class="overflow-x-auto custom-scrollbar">
           <table class="w-full text-left border-collapse min-w-[500px]">
             <thead>
               <tr class="bg-zinc-900 text-zinc-400 text-[10px] sm:text-xs">
-                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Nama Siswa</th>
-                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Kode Kelas</th>
-                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Tingkat</th>
+                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Nama Pelajar</th>
+                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Kod Kelas</th>
+                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Tahap</th>
                 <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">XP</th>
                 <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Ketepatan</th>
                 <th class="p-3 sm:p-4 font-bold uppercase tracking-wider text-center">Tindakan</th>
               </tr>
             </thead>
             <tbody id="students-table-body" class="divide-y divide-white/5 text-xs sm:text-sm">
-              <tr><td colspan="6" class="p-6 text-center text-zinc-500">Tidak ada siswa yang ditemukan.</td></tr>
+              <tr><td colspan="6" class="p-6 text-center text-zinc-500">Tiada pelajar ditemui.</td></tr>
             </tbody>
           </table>
         </div>
@@ -546,16 +542,16 @@
               <i data-lucide="megaphone" class="text-orange-500 w-4 h-4"></i> Siarkan Pengumuman Kelas
             </h3>
             <form id="teacher-announcement-form" class="space-y-3">
-              <textarea required id="teacher-announcement-input" placeholder="Tuliskan pengumuman penting untuk semua siswa di kelas ini..." class="w-full h-24 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500 resize-none"></textarea>
+              <textarea required id="teacher-announcement-input" placeholder="Tuliskan pengumuman penting untuk semua pelajar di kelas ini..." class="w-full h-24 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500 resize-none"></textarea>
               <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold rounded-xl transition-all shadow-lg text-xs sm:text-sm">
                 Siarkan Pengumuman
               </button>
             </form>
           </div>
           <div class="border-t border-white/5 pt-3 mt-3">
-            <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-2">Pengumuman Terbaru:</h4>
+            <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-2">Pengumuman Terkini:</h4>
             <div id="teacher-announcements-list" class="overflow-y-auto max-h-[80px] custom-scrollbar space-y-1 text-xs text-zinc-400">
-              <!-- Dinamis -->
+              <!-- Dinamik -->
               <p class="text-zinc-600 italic">Belum ada pengumuman.</p>
             </div>
           </div>
@@ -565,11 +561,11 @@
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between h-[380px]">
           <div class="flex flex-col flex-grow overflow-hidden">
             <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-2 shrink-0">
-              <i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Log Pesan Obrolan Siswa
+              <i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Log Sembang Mesej Pelajar
             </h3>
             <div id="teacher-messages-container" class="flex-grow space-y-3 overflow-y-auto pr-1 custom-scrollbar pb-2 min-h-0">
-              <!-- Dinamis -->
-              <p class="text-zinc-500 text-xs italic">Belum ada pesan masuk di kelas ini.</p>
+              <!-- Dinamik -->
+              <p class="text-zinc-500 text-xs italic">Belum ada mesej di kelas ini.</p>
             </div>
           </div>
         </div>
@@ -583,122 +579,130 @@
         <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6">
           <div class="w-full md:w-auto">
             <h1 id="welcome-student-title" class="text-2xl sm:text-3xl font-black text-white mb-2 leading-tight break-words">Selamat Belajar! 📚</h1>
-            <p id="student-live-cloud-text" class="text-zinc-400 max-w-lg text-xs sm:text-sm leading-relaxed break-words">Prestasi dan skor kuis Anda kini disimpan secara langsung ke Google Sheets kelas!</p>
+            <p id="student-live-cloud-text" class="text-zinc-400 max-w-lg text-xs sm:text-sm leading-relaxed break-words">Prestasi dan skor kuiz anda kini disimpan secara live ke Google Sheets!</p>
           </div>
         </div>
       </div>
 
-      <!-- Ruangan Pengumuman Khas untuk Pelajar -->
-      <div class="glass-panel p-5 sm:p-6 rounded-3xl border border-orange-500/20">
-        <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 mb-3">
-          <i data-lucide="megaphone" class="text-orange-500 w-5 h-5 shrink-0"></i> Pengumuman Kelas
-        </h3>
-        <div id="student-announcements-list" class="space-y-3 max-h-32 overflow-y-auto custom-scrollbar pr-2">
-           <p class="text-zinc-500 text-xs italic">Belum ada pengumuman dari guru Anda saat ini.</p>
-        </div>
-      </div>
-
-      <!-- Config & Stats Grid -->
+      <!-- Baris 1: Tahap Masteri & Statistik Sebaris -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-        <!-- Left Column: Level Mastery & Set Selection -->
-        <div class="lg:col-span-2 space-y-6">
-          <div class="glass-panel p-5 sm:p-6 rounded-3xl">
-            <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-end mb-4 gap-2">
-              <div>
-                <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider mb-1">Tingkat Penguasaan</div>
-                <div class="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
-                  <div id="student-level-badge" class="px-3 py-1.5 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center font-bold border border-orange-500/20 text-xs sm:text-sm shrink-0">
-                    L1
-                  </div>
-                  <span class="truncate max-w-[200px] sm:max-w-none"><span id="student-level-num">Tingkat 1</span></span>
+        
+        <!-- Tahap Penguasaan -->
+        <div class="glass-panel p-5 sm:p-6 rounded-3xl lg:col-span-2 flex flex-col justify-center">
+          <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-end mb-4 gap-2">
+            <div>
+              <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider mb-1">Tahap Penguasaan</div>
+              <div class="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
+                <div id="student-level-badge" class="px-3 py-1.5 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center font-bold border border-orange-500/20 text-xs sm:text-sm shrink-0">
+                  L1
                 </div>
-              </div>
-              <div class="w-full sm:w-auto text-left sm:text-right mt-2 sm:mt-0">
-                <div class="text-xs sm:text-sm font-bold text-amber-500"><span id="student-current-xp">0</span> / <span id="student-next-xp">200</span> XP</div>
+                <span class="truncate max-w-[200px] sm:max-w-none"><span id="student-level-num">Tahap 1</span></span>
               </div>
             </div>
-            <div class="w-full bg-zinc-950 rounded-full h-1.5 sm:h-2 p-0.5 sm:p-1 border border-white/5">
-              <div id="student-xp-bar" class="bg-gradient-to-r from-orange-500 via-amber-500 to-gold h-1.5 sm:h-2 rounded-full transition-all duration-1000 ease-out w-0"></div>
+            <div class="w-full sm:w-auto text-left sm:text-right mt-2 sm:mt-0">
+              <div class="text-xs sm:text-sm font-bold text-amber-500"><span id="student-current-xp">0</span> / <span id="student-next-xp">200</span> XP</div>
             </div>
           </div>
-
-          <!-- Quiz Customization Panel (Bab, Set & Mode) -->
-          <div class="glass-panel p-5 sm:p-6 rounded-3xl space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-3 gap-3">
-              <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                <i data-lucide="sliders" class="text-orange-500 w-4 h-4"></i> Tetapan Pilihan Latihan
-              </h3>
-              <div class="flex gap-2 w-full sm:w-auto shrink-0">
-                <button onclick="window.syncStudentQuestions()" class="flex-1 sm:flex-none bg-zinc-900 hover:bg-zinc-800 text-amber-500 font-extrabold text-[11px] sm:text-xs px-4 py-2 rounded-xl border border-white/5 flex items-center justify-center gap-1.5 min-h-[2.5rem] transition-all">
-                  <i data-lucide="refresh-cw" class="w-3.5 h-3.5 shrink-0"></i> <span>Kemaskini Soalan</span>
-                </button>
-                <button onclick="window.startQuizFlow()" class="flex-1 sm:flex-none bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold text-[11px] sm:text-xs px-5 py-2 rounded-xl shadow-lg flex items-center justify-center gap-1.5 min-h-[2.5rem] transition-all">
-                  <i data-lucide="play" class="w-3.5 h-3.5 fill-current shrink-0"></i> <span>Mula Latihan</span>
-                </button>
-              </div>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Bab</label>
-                <select id="student-chapter-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
-                  <option value="0" selected>Semua Soalan</option>
-                  <option value="1">Bab 1: Pengenalan Makroekonomi (20 Soalan)</option>
-                  <option value="2">Bab 2: Perakaunan Pendapatan Negara (20 Soalan)</option>
-                  <option value="3">Bab 3: Keseimbangan Pendapatan Negara (20 Soalan)</option>
-                  <option value="4">Bab 4: Wang, Bank dan Dasar Kewangan (20 Soalan)</option>
-                  <option value="5">Bab 5: Perdagangan Antarabangsa (20 Soalan)</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Set Soalan</label>
-                <select id="student-set-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
-                  <option value="0" selected>Set Soalan</option>
-                  <option value="1">Set 1</option>
-                  <option value="2">Set 2</option>
-                  <option value="3">Set 3</option>
-                  <option value="4">Set 4</option>
-                  <option value="5">Set 5</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Mode Latihan</label>
-                <select id="student-mode-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
-                  <option value="onebyone" selected>Satu Demi Satu (Fokus)</option>
-                  <option value="exam">Mode Ujian (Multi-View)</option>
-                </select>
-              </div>
-            </div>
+          <div class="w-full bg-zinc-950 rounded-full h-1.5 sm:h-2 p-0.5 sm:p-1 border border-white/5">
+            <div id="student-xp-bar" class="bg-gradient-to-r from-orange-500 via-amber-500 to-gold h-1.5 sm:h-2 rounded-full transition-all duration-1000 ease-out w-0"></div>
           </div>
         </div>
 
-        <!-- Right Column: Stats Cards -->
-        <div class="lg:col-span-1">
-          <div class="grid grid-cols-2 gap-3 sm:gap-4 h-full">
-            <div class="glass-panel p-4 sm:p-5 rounded-2xl flex flex-col items-center justify-center text-center">
-              <i data-lucide="target" class="w-5 h-5 sm:w-6 sm:h-6 text-orange-400 mb-2 shrink-0"></i>
-              <div id="stat-student-questions" class="text-lg sm:text-2xl font-black text-white font-mono">0</div>
-              <div class="text-[9px] sm:text-[10px] text-zinc-500 font-bold uppercase tracking-wider mt-1 leading-tight break-words">Soalan Terjawab</div>
-            </div>
-            <div class="glass-panel p-4 sm:p-5 rounded-2xl text-center flex flex-col items-center justify-center">
-              <i data-lucide="trophy" class="w-5 h-5 sm:w-6 sm:h-6 text-amber-400 mb-2 shrink-0"></i>
-              <div id="stat-student-accuracy" class="text-lg sm:text-2xl font-black text-white font-mono">0%</div>
-              <div class="text-[9px] sm:text-[10px] text-zinc-500 font-bold uppercase tracking-wider mt-1 leading-tight break-words">Ketepatan</div>
-            </div>
+        <!-- Kad Statistik (Soalan Terjawab & Ketepatan) -->
+        <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:col-span-1">
+          <div class="glass-panel p-4 sm:p-5 rounded-2xl flex flex-col items-center justify-center text-center">
+            <i data-lucide="target" class="w-5 h-5 sm:w-6 sm:h-6 text-orange-400 mb-2 shrink-0"></i>
+            <div id="stat-student-questions" class="text-lg sm:text-2xl font-black text-white font-mono">0</div>
+            <div class="text-[9px] sm:text-[10px] text-zinc-500 font-bold uppercase tracking-wider mt-1 leading-tight break-words">Soalan Terjawab</div>
+          </div>
+          <div class="glass-panel p-4 sm:p-5 rounded-2xl text-center flex flex-col items-center justify-center">
+            <i data-lucide="trophy" class="w-5 h-5 sm:w-6 sm:h-6 text-amber-400 mb-2 shrink-0"></i>
+            <div id="stat-student-accuracy" class="text-lg sm:text-2xl font-black text-white font-mono">0%</div>
+            <div class="text-[9px] sm:text-[10px] text-zinc-500 font-bold uppercase tracking-wider mt-1 leading-tight break-words">Ketepatan</div>
           </div>
         </div>
       </div>
-      
-      <!-- Hantar Mesej ke Guru (Untuk Pelajar) -->
-      <div class="glass-panel p-5 sm:p-6 rounded-3xl mt-8">
-         <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-4">
-           <i data-lucide="message-circle" class="text-amber-500 w-4 h-4"></i> Kirim Pesan ke Guru
-         </h3>
-         <form id="student-message-form" class="flex flex-col sm:flex-row gap-3">
-            <input required id="student-message-input" type="text" placeholder="Ada soalan tentang makroekonomi? Taip di sini..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-1 focus:ring-amber-500 outline-none transition-all" />
-            <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-bold px-6 py-3 rounded-xl transition-all shrink-0 text-xs sm:text-sm flex items-center justify-center gap-2">
-              <i data-lucide="send" class="w-4 h-4"></i> Kirim
+
+      <!-- Baris 2: Tetapan Pilihan Latihan (Teratur) -->
+      <div class="glass-panel p-5 sm:p-6 rounded-3xl space-y-4 border border-orange-500/20">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-3 gap-3">
+          <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+            <i data-lucide="sliders" class="text-orange-500 w-4 h-4"></i> Tetapan Pilihan Latihan
+          </h3>
+          <div class="flex gap-2 w-full sm:w-auto shrink-0">
+            <button onclick="window.syncStudentQuestions()" class="flex-1 sm:flex-none bg-zinc-900 hover:bg-zinc-800 text-amber-500 font-extrabold text-[11px] sm:text-xs px-4 py-2 rounded-xl border border-white/5 flex items-center justify-center gap-1.5 min-h-[2.5rem] transition-all">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 shrink-0"></i> <span>Kemaskini Soalan</span>
             </button>
-         </form>
+            <button onclick="window.startQuizFlow()" class="flex-1 sm:flex-none bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold text-[11px] sm:text-xs px-5 py-2 rounded-xl shadow-lg flex items-center justify-center gap-1.5 min-h-[2.5rem] transition-all">
+              <i data-lucide="play" class="w-3.5 h-3.5 fill-current shrink-0"></i> <span>Mula Latihan</span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Pilihan Dropdown Disusun Semula: Set, Bab, Mod Latihan -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Set Soalan</label>
+            <select id="student-set-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
+              <option value="0" selected>Set Soalan</option>
+              <option value="1">Set 1</option>
+              <option value="2">Set 2</option>
+              <option value="3">Set 3</option>
+              <option value="4">Set 4</option>
+              <option value="5">Set 5</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Bab</label>
+            <select id="student-chapter-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
+              <option value="0" selected>Semua Soalan</option>
+              <option value="1">Bab 1: Pengenalan Makroekonomi</option>
+              <option value="2">Bab 2: Perakaunan Pendapatan Negara</option>
+              <option value="3">Bab 3: Keseimbangan Pendapatan Negara</option>
+              <option value="4">Bab 4: Wang, Bank dan Dasar Kewangan</option>
+              <option value="5">Bab 5: Perdagangan Antarabangsa</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Mod Latihan</label>
+            <select id="student-mode-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
+              <option value="onebyone" selected>Satu Persatu</option>
+              <option value="exam">Semua Soalan Sekaligus (20 Soalan)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Baris 3: Pengumuman Kelas & Mesej Murid (Sebaris) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+        <!-- Pengumuman Kelas -->
+        <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col h-[380px]">
+          <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 mb-3 border-b border-white/5 pb-2 shrink-0">
+            <i data-lucide="megaphone" class="text-orange-500 w-5 h-5 shrink-0"></i> Pengumuman Kelas
+          </h3>
+          <div id="student-announcements-list" class="flex-grow space-y-3 overflow-y-auto custom-scrollbar pr-2 min-h-0">
+             <p class="text-zinc-500 text-xs italic">Tiada pengumuman dari guru anda setakat ini.</p>
+          </div>
+        </div>
+
+        <!-- Mesej Murid -->
+        <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between h-[380px]">
+          <div class="flex flex-col flex-grow overflow-hidden">
+            <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-2 shrink-0">
+              <i data-lucide="message-circle" class="text-amber-500 w-5 h-5 shrink-0"></i> Mesej Murid
+            </h3>
+            <div id="student-messages-container" class="flex-grow space-y-3 overflow-y-auto pr-1 custom-scrollbar pb-2 min-h-0">
+              <p class="text-zinc-500 text-xs italic">Belum ada mesej di kelas ini.</p>
+            </div>
+            
+            <form id="student-message-form" class="flex gap-2 pt-3 border-t border-white/5 mt-2 shrink-0">
+              <input required id="student-message-input" type="text" placeholder="Taip mesej atau soalan anda di sini..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-white text-xs sm:text-sm focus:ring-1 focus:ring-amber-500 outline-none transition-all" />
+              <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-bold px-4 py-2 rounded-xl transition-all shrink-0 text-xs flex items-center justify-center gap-1.5">
+                <i data-lucide="send" class="w-4 h-4"></i> Hantar
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -707,7 +711,7 @@
     <div id="view-quiz" class="hidden max-w-3xl mx-auto space-y-6 animate-slide-in">
       <div class="glass-panel p-4 sm:p-5 rounded-2xl flex items-center justify-between border border-white/5">
         <div class="flex items-center gap-3">
-          <button onclick="window.exitQuiz()" class="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition-all" title="Batalkan Latihan">
+          <button onclick="window.exitQuiz()" class="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition-all" title="Kembali / Batal Latihan">
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
           </button>
           <div>
@@ -755,10 +759,10 @@
           Batal Latihan
         </button>
         <button id="btn-quiz-submit" class="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-extrabold px-8 py-3.5 rounded-xl transition-all shadow-lg text-center leading-tight whitespace-normal break-words text-xs sm:text-sm min-h-[3rem]">
-          Konfirmasi Jawaban
+          Sahkan Jawapan
         </button>
         <button id="btn-quiz-next" class="hidden w-full sm:w-auto bg-zinc-800 hover:bg-zinc-700 text-white font-extrabold px-8 py-3.5 rounded-xl transition-all border border-white/10 text-center leading-tight whitespace-normal break-words text-xs sm:text-sm min-h-[3rem]">
-          Soalan Selanjutnya
+          Soalan Seterusnya
         </button>
       </div>
     </div>
@@ -774,7 +778,7 @@
 
         <div class="space-y-2">
           <h2 class="text-2xl sm:text-3xl font-black text-white">Latihan Selesai!</h2>
-          <p class="text-zinc-400 text-xs sm:text-sm leading-normal px-2">Hebat! Anda telah berhasil menyelesaikan seri tantangan makroekonomi ini.</p>
+          <p class="text-zinc-400 text-xs sm:text-sm leading-normal px-2">Hebat! Anda telah berjaya menyelesaikan siri cabaran makroekonomi ini.</p>
         </div>
 
         <div class="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
@@ -894,7 +898,7 @@
               }
 
               document.getElementById('nav-user-name').innerText = window.state.user.name || "Siswa";
-              document.getElementById('nav-user-role').innerText = window.state.role === 'teacher' ? 'Guru' : 'Siswa';
+              document.getElementById('nav-user-role').innerText = window.state.role === 'teacher' ? 'Guru' : 'Pelajar';
               document.getElementById('nav-avatar').innerText = (window.state.user.name || "M").charAt(0).toUpperCase();
               document.getElementById('navbar').classList.remove('hidden');
 
@@ -994,8 +998,8 @@
 
         try {
             // Autentikasi Firebase secara anonim jika belum masuk
-            if (!auth.currentUser) {
-                await window.signInAnonymously(auth);
+            if (!window.auth.currentUser) {
+                await window.signInAnonymously(window.auth);
             }
 
             if (window.state.role === 'teacher') {
@@ -1010,7 +1014,7 @@
                 return;
               }
 
-              window.state.user = { id: auth.currentUser.uid, name, role: 'teacher', classCode: null, className: null };
+              window.state.user = { id: window.auth.currentUser.uid, name, role: 'teacher', classCode: null, className: null };
               localStorage.setItem('macronexus_user_profile', JSON.stringify(window.state.user));
               
               // Simpan profil guru ke Firebase sesuai Aturan keamanan
@@ -1020,7 +1024,7 @@
               syncDatabaseWithBackend();
             } else {
               window.state.user = {
-                id: auth.currentUser.uid,
+                id: window.auth.currentUser.uid,
                 name, role: 'student', classCode: rawClassCode,
                 xp: 0,
                 level: 1,
@@ -1040,7 +1044,7 @@
             }
         } catch (error) {
              console.error("Kesalahan log masuk:", error);
-             window.showCustomModal("Kesalahan", "Gagal mendaftar. Silakan coba lagi.", "alert-triangle");
+             window.showCustomModal("Ralat", "Gagal mendaftar. Sila cuba lagi.", "alert-triangle");
              window.showView('view-auth');
         }
       });
@@ -1143,7 +1147,7 @@
         localStorage.setItem('makroverse_api_config', JSON.stringify(window.state.apiConfig));
         
         window.closeApiConfigModal();
-        window.showCustomModal("Simpan Berhasil", "Konfigurasi tautan sistem eksternal Anda telah diperbarui dengan aman.", "check-circle", true);
+        window.showCustomModal("Simpan Berjaya", "Konfigurasi pautan sistem luaran anda telah dikemas kini dengan selamat.", "check-circle", true);
         window.fetchQuestionsFromCloud().then(() => syncDatabaseWithBackend());
       };
 
@@ -1155,6 +1159,16 @@
       function escapeJs(str) {
         if (!str) return '';
         return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+      }
+
+      // Fungsi Penjanaan Warna Rawak untuk Pengirim Mesej
+      function getColorClassForString(str) {
+        const colors = ['text-red-400', 'text-green-400', 'text-blue-400', 'text-yellow-400', 'text-purple-400', 'text-pink-400', 'text-indigo-400', 'text-teal-400', 'text-cyan-400', 'text-rose-400'];
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return colors[Math.abs(hash) % colors.length];
       }
 
       // ==========================================
@@ -1217,7 +1231,7 @@
 
       function syncDatabaseWithBackend() {
         document.getElementById('nav-user-name').innerText = window.state.user.name;
-        document.getElementById('nav-user-role').innerText = window.state.role === 'teacher' ? 'Guru' : 'Siswa';
+        document.getElementById('nav-user-role').innerText = window.state.role === 'teacher' ? 'Guru' : 'Pelajar';
         document.getElementById('nav-avatar').innerText = window.state.user.name.charAt(0).toUpperCase();
 
         if (window.state.role === 'teacher') {
@@ -1265,7 +1279,7 @@
             });
             renderStudentsTable();
         }, (error) => {
-            console.error("Kesalahan memantau data siswa dari Firestore:", error);
+            console.error("Ralat memantau data pelajar dari Firestore:", error);
         });
       }
 
@@ -1274,7 +1288,7 @@
         tbody.innerHTML = '';
 
         if (window.state.students.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-zinc-500">Tidak ada siswa yang terdaftar di kelas ini.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-zinc-500">Tiada pelajar berdaftar dalam kelas ini.</td></tr>`;
           updateTeacherStats(0, 0, 0);
           return;
         }
@@ -1291,14 +1305,14 @@
           tr.className = "hover:bg-white/5 transition-colors border-b border-white/5";
           tr.innerHTML = `
             <td class="p-3 sm:p-4 font-bold text-white whitespace-nowrap">${escapeHtml(student.name)}</td>
-            <td class="p-3 sm:p-4 text-zinc-400 font-mono text-[11px] sm:text-xs tracking-wider uppercase">${escapeHtml(student.classCode || 'TIDAK ADA')}</td>
+            <td class="p-3 sm:p-4 text-zinc-400 font-mono text-[11px] sm:text-xs tracking-wider uppercase">${escapeHtml(student.classCode || 'TIADA')}</td>
             <td class="p-3 sm:p-4 whitespace-nowrap">
               <span class="px-2 py-1 rounded bg-orange-500/10 text-orange-400 font-bold text-[10px] sm:text-xs">Lvl ${student.level || 1}</span>
             </td>
             <td class="p-3 sm:p-4 font-bold text-amber-400 font-mono whitespace-nowrap">${student.xp || 0} XP</td>
             <td class="p-3 sm:p-4 font-bold font-mono text-emerald-400 whitespace-nowrap">${accuracy}%</td>
             <td class="p-3 sm:p-4 text-center whitespace-nowrap">
-              <button onclick="window.confirmDeleteStudent('${student.id}', '${escapeJs(student.name)}')" class="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all" title="Keluarkan Siswa">
+              <button onclick="window.confirmDeleteStudent('${student.id}', '${escapeJs(student.name)}')" class="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all" title="Keluarkan Pelajar">
                 <i data-lucide="user-x" class="w-4 h-4"></i>
               </button>
             </td>
@@ -1334,7 +1348,7 @@
         const percent = Math.min(100, Math.max(0, Math.round((relativeXpInLevel / levelRange) * 100)));
 
         document.getElementById('student-level-badge').innerText = "L" + level;
-        document.getElementById('student-level-num').innerText = "Tingkat " + level;
+        document.getElementById('student-level-num').innerText = "Tahap " + level;
         document.getElementById('student-current-xp').innerText = currentXp;
         document.getElementById('student-next-xp').innerText = nextLevelXp;
         document.getElementById('student-xp-bar').style.width = percent + "%";
@@ -1351,18 +1365,18 @@
 
       window.syncStudentQuestions = async function() {
         window.showView('view-loading');
-        document.getElementById('loading-text').innerText = "Mengunduh bank soal dari Google Sheets...";
+        document.getElementById('loading-text').innerText = "Memuat turun bank soalan dari Google Sheets...";
         
         const success = await window.fetchQuestionsFromCloud();
         
         if (success) {
             window.updateStudentDashboardUI();
             window.showView('view-student-dashboard');
-            window.showCustomModal("Pembaruan Berhasil", "Berhasil mengunduh " + window.globalQuestions.length + " pertanyaan terbaru.", "check-circle", true);
+            window.showCustomModal("Kemaskini Berjaya", "Berjaya memuat turun " + window.globalQuestions.length + " soalan terbaru.", "check-circle", true);
         } else {
             window.updateStudentDashboardUI();
             window.showView('view-student-dashboard');
-            window.showCustomModal("Kesalahan Pembaruan", "Gagal mengunduh soal. Pastikan tautan App Script Anda tepat.", "alert-triangle", false);
+            window.showCustomModal("Ralat Semasa Kemaskini", "Gagal memuat turun soalan. Pastikan pautan App Script anda tepat.", "alert-triangle", false);
         }
       };
 
@@ -1393,7 +1407,7 @@
                  input.value = '';
              } catch(err) {
                  console.error("Gagal menyiarkan pengumuman:", err);
-                 window.showCustomModal("Kesalahan", "Gagal mempublikasikan pengumuman.", "alert-triangle");
+                 window.showCustomModal("Ralat", "Gagal menyiarkan pengumuman.", "alert-triangle");
              }
           });
       }
@@ -1424,7 +1438,7 @@
              renderAnnouncements(announcements);
 
          }, (error) => {
-             console.error("Kesalahan saat memantau pengumuman:", error);
+             console.error("Ralat saat memantau pengumuman:", error);
          });
       }
 
@@ -1445,7 +1459,7 @@
           const studentList = document.getElementById('student-announcements-list');
           if (studentList) {
               if (announcements.length === 0) {
-                  studentList.innerHTML = '<p class="text-zinc-500 text-xs italic">Belum ada pengumuman dari guru Anda saat ini.</p>';
+                  studentList.innerHTML = '<p class="text-zinc-500 text-xs italic">Tiada pengumuman dari guru anda setakat ini.</p>';
               } else {
                   studentList.innerHTML = announcements.map(a => 
                       `<div class="bg-orange-500/10 p-3 rounded-lg border border-orange-500/20 text-xs text-zinc-300">
@@ -1457,7 +1471,7 @@
           }
       }
 
-      // 2. Pesan Siswa (Dilihat oleh Guru)
+      // 2. Pesan Siswa (Dihantar oleh Pelajar, Dilihat oleh Guru dan Pelajar lain)
       const formMesej = document.getElementById('student-message-form');
       if (formMesej) {
           formMesej.addEventListener('submit', async (e) => {
@@ -1477,17 +1491,15 @@
                      senderId: window.auth.currentUser.uid
                  });
                  input.value = '';
-                 window.showCustomModal("Terkirim", "Pesan Anda telah berhasil dikirimkan kepada guru.", "check-circle", true);
              } catch(err) {
-                 console.error("Gagal mengirim pesan:", err);
-                 window.showCustomModal("Kesalahan", "Gagal mengirimkan pesan.", "alert-triangle");
+                 console.error("Gagal menghantar mesej:", err);
+                 window.showCustomModal("Ralat", "Gagal menghantar mesej.", "alert-triangle");
              }
           });
       }
 
       function listenMessages() {
          if (!window.auth || !window.auth.currentUser || !window.state.user.classCode) return;
-         if (window.state.role !== 'teacher') return;
 
          if (unsubscribeMessages) unsubscribeMessages();
 
@@ -1505,29 +1517,53 @@
              msgs.sort((a, b) => {
                  const timeA = a.timestamp ? a.timestamp.toMillis() : Date.now();
                  const timeB = b.timestamp ? b.timestamp.toMillis() : Date.now();
-                 return timeB - timeA;
+                 return timeA - timeB; // Ascending supaya mesej baharu di bawah
              });
 
-             const container = document.getElementById('teacher-messages-container');
-             if (container) {
+             // Paparkan ke Kontena Guru
+             const teacherContainer = document.getElementById('teacher-messages-container');
+             if (teacherContainer) {
                  if (msgs.length === 0) {
-                     container.innerHTML = '<p class="text-zinc-500 text-xs italic">Belum ada pesan masuk di kelas ini.</p>';
+                     teacherContainer.innerHTML = '<p class="text-zinc-500 text-xs italic">Belum ada mesej masuk di kelas ini.</p>';
                  } else {
-                     container.innerHTML = msgs.map(m => {
-                         const date = m.timestamp ? new Date(m.timestamp.toMillis()).toLocaleString('ms-MY', {hour: '2-digit', minute:'2-digit', day:'numeric', month:'short'}) : 'Baru saja';
+                     teacherContainer.innerHTML = msgs.map(m => {
+                         const date = m.timestamp ? new Date(m.timestamp.toMillis()).toLocaleString('ms-MY', {hour: '2-digit', minute:'2-digit', day:'numeric', month:'short'}) : 'Baru sahaja';
+                         const colorClass = getColorClassForString(m.senderId || m.senderName);
                          return `<div class="bg-zinc-900/50 p-3 rounded-xl border border-white/5 text-xs text-zinc-300">
                                     <div class="flex justify-between items-center mb-1">
-                                        <strong class="text-amber-400">${escapeHtml(m.senderName)}</strong>
+                                        <strong class="${colorClass}">${escapeHtml(m.senderName)}</strong>
                                         <span class="text-[9px] text-zinc-500">${date}</span>
                                     </div>
                                     <p>${escapeHtml(m.text)}</p>
                                  </div>`;
                      }).join('');
+                     teacherContainer.scrollTop = teacherContainer.scrollHeight;
+                 }
+             }
+             
+             // Paparkan ke Kontena Pelajar
+             const studentContainer = document.getElementById('student-messages-container');
+             if (studentContainer) {
+                 if (msgs.length === 0) {
+                     studentContainer.innerHTML = '<p class="text-zinc-500 text-xs italic">Belum ada mesej di kelas ini.</p>';
+                 } else {
+                     studentContainer.innerHTML = msgs.map(m => {
+                         const date = m.timestamp ? new Date(m.timestamp.toMillis()).toLocaleString('ms-MY', {hour: '2-digit', minute:'2-digit', day:'numeric', month:'short'}) : 'Baru sahaja';
+                         const colorClass = getColorClassForString(m.senderId || m.senderName);
+                         return `<div class="bg-zinc-900/50 p-3 rounded-xl border border-white/5 text-xs text-zinc-300">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <strong class="${colorClass}">${escapeHtml(m.senderName)}</strong>
+                                        <span class="text-[9px] text-zinc-500">${date}</span>
+                                    </div>
+                                    <p>${escapeHtml(m.text)}</p>
+                                 </div>`;
+                     }).join('');
+                     studentContainer.scrollTop = studentContainer.scrollHeight;
                  }
              }
 
          }, (error) => {
-             console.error("Kesalahan saat memantau pesan masuk:", error);
+             console.error("Ralat saat memantau mesej:", error);
          });
       }
 
@@ -1647,7 +1683,7 @@
         const btn = document.getElementById('btn-generate-batch');
 
         if (!window.state.apiConfig.gasUrl) {
-            window.showCustomModal("Tidak Ada Tautan", "Harap atur URL App Script di menu Pengaturan terlebih dahulu.", "alert-circle", false);
+            window.showCustomModal("Tiada Pautan", "Sila tetapkan URL App Script di menu Tetapan terlebih dahulu.", "alert-circle", false);
             return;
         }
 
@@ -1665,7 +1701,7 @@
         if (!geminiKey) {
             loader.classList.add('hidden');
             btn.disabled = false;
-            window.showCustomModal("Tidak Ada Kunci API", "Sistem memerlukan Kunci API Gemini untuk menjana soal secara otomatis. Silakan masukkan di ikon Pengaturan di sudut atas.", "alert-triangle", false);
+            window.showCustomModal("Tiada Kunci API", "Sistem memerlukan Kunci API Gemini untuk menjana soalan secara terus. Sila masukkannya dalam ikon Tetapan di penjuru atas.", "alert-triangle", false);
             return;
         }
 
@@ -1681,7 +1717,7 @@
 
         for (let m = 0; m < modelsToTry.length; m++) {
           const currentModel = modelsToTry[m];
-          updateStatus("Mendapatkan respons AI (" + currentModel + ")...", "Mengirimkan instruksi...");
+          updateStatus("Mendapatkan respons AI (" + currentModel + ")...", "Menghantar arahan...");
           
           const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/" + currentModel + ":generateContent?key=" + geminiKey;
           
@@ -1743,7 +1779,7 @@
               throw new Error(apiErrorLog || "Semua model gagal dihubungi.");
           }
 
-          updateStatus("Memformat hasil...", "Menyiapkan integrasi ke Google Sheets...");
+          updateStatus("Memformat hasil...", "Menyiapkan penyegerakan ke Google Sheets...");
           const cleanedJsonText = cleanJsonString(resultJsonRaw);
           const cleanJson = JSON.parse(cleanedJsonText);
           
@@ -1795,19 +1831,19 @@
           const destinationMode = document.getElementById('ai-gen-destination').value;
           
           if (destinationMode === 'sheet') {
-            updateStatus("Menyimpan ke Awan...", "Membuat tab Set baru...");
+            updateStatus("Menyimpan ke Awan...", "Mencipta tab Set baharu...");
             const res = await makeCloudCall('saveQuestions', { questionsJson: JSON.stringify(gasPayload) });
             
             if (res.success) {
                 await window.fetchQuestionsFromCloud(); 
                 loader.classList.add('hidden');
                 btn.disabled = false;
-                window.showCustomModal("Proses Selesai!", "Soal-soal telah berhasil dibuat dan disimpan ke Set " + nextSetNum + " di pangkalan data Google Sheet Anda.", "sparkles", true);
+                window.showCustomModal("Proses Selesai!", "Soalan-soalan telah berjaya dijana dan disimpan ke Set " + nextSetNum + " di pangkalan data Google Sheet anda.", "sparkles", true);
             } else {
                 throw new Error("Gagal menyinkronisasikan ke dalam Sheet.");
             }
           } else {
-            updateStatus("Menyiapkan dokumen CSV...", "Merangkai isi file...");
+            updateStatus("Menyiapkan dokumen CSV...", "Merangkai isi fail...");
             const headers = ["QuestionID", "Chapter", "Topic", "Difficulty", "Question", "OptionA", "OptionB", "OptionC", "OptionD", "CorrectAnswer", "Explanation", "ImageURL", "Formula", "Type", "Tags", "Status"];
             
             let csvContent = headers.join(",") + "\n";
@@ -1832,20 +1868,20 @@
 
             loader.classList.add('hidden');
             btn.disabled = false;
-            window.showCustomModal("CSV Siap!", "File Makroverse_Set_" + nextSetNum + "_Questions.csv berhasil diunduh. Silakan salin isi file ini ke Google Sheet secara manual.", "check-circle", true);
+            window.showCustomModal("CSV Sedia!", "Fail Makroverse_Set_" + nextSetNum + "_Questions.csv berjaya dimuat turun. Sila tampal isi fail ini ke Google Sheet secara manual.", "check-circle", true);
           }
 
         } catch (err) {
           console.error(err);
           loader.classList.add('hidden');
           btn.disabled = false;
-          window.showCustomModal("Kendala Pemrosesan", "Gagal menghubungi pelayan AI atau terdapat kerusakan struktur balasan. Rincian Kesalahan:<br><pre class='text-xs mt-2 text-red-400 text-left bg-zinc-950 p-2 rounded max-h-32 overflow-y-auto whitespace-pre-wrap'>" + err.message + "</pre><br><span class='text-[10px] text-zinc-500'>Periksa kembali sisa kuota dan ketepatan API Key Gemini Anda.</span>", "alert-triangle", false);
+          window.showCustomModal("Ralat Pemprosesan", "Gagal menghubungi pelayan AI atau terdapat kerosakan struktur balasan. Butiran Ralat:<br><pre class='text-xs mt-2 text-red-400 text-left bg-zinc-950 p-2 rounded max-h-32 overflow-y-auto whitespace-pre-wrap'>" + err.message + "</pre><br><span class='text-[10px] text-zinc-500'>Sila semak kembali kunci API Gemini anda.</span>", "alert-triangle", false);
         }
       };
 
 
       // ==========================================
-      // ALUR LATIHAN KUIS (QUIZ NAVIGATION)
+      // ALUR LATIHAN KUIZ (QUIZ NAVIGATION)
       // ==========================================
       window.startQuizFlow = function() {
         const selectedChap = document.getElementById('student-chapter-selector').value;
@@ -1855,7 +1891,7 @@
         let pool = window.globalQuestions;
 
         if (pool.length === 0) {
-          window.showCustomModal("Bank Soal Kosong", "Belum ada materi pertanyaan yang tesedia. Minta bimbingan guru Anda untuk menerbitkan materi Google Sheet yang baru.", "info");
+          window.showCustomModal("Bank Soalan Kosong", "Belum ada soalan yang sedia ada. Minta bimbingan guru anda untuk menerbitkan materi Google Sheet yang baharu.", "info");
           return;
         }
 
@@ -1869,7 +1905,7 @@
         }
 
         if (tabFilteredPool.length === 0) {
-          window.showCustomModal("Soal Tidak Ditemukan", "Tidak ada kecocokan materi untuk pilihan Kategori Set yang Anda cari. Silakan mencoba opsi lainnya.", "info");
+          window.showCustomModal("Soalan Tidak Ditemui", "Tiada padanan soalan untuk pilihan Set/Bab anda cari. Sila mencuba tetapan yang lain.", "info");
           return;
         }
 
@@ -1886,7 +1922,7 @@
         window.state.quizState.questions = [...setFilteredPool];
         
         if (window.state.quizState.questions.length === 0) {
-          window.showCustomModal("Kosong", "Sistem tidak dapat mengumpulkan soal yang memadai untuk pilihan Anda ini.", "info");
+          window.showCustomModal("Kosong", "Sistem tidak dapat mengumpulkan soalan yang memadai untuk pilihan anda ini.", "info");
           window.exitQuiz();
           return;
         }
@@ -1994,7 +2030,7 @@
       document.getElementById('btn-quiz-submit').addEventListener('click', () => {
         const selected = window.state.quizState.answers[window.state.quizState.currentIndex];
         if (selected === undefined) {
-          window.showCustomModal("Jawaban Kosong", "Anda harus memilih salah satu jawaban sebelum memverifikasi.", "alert-circle");
+          window.showCustomModal("Jawapan Kosong", "Anda perlu memilih sekurang-kurangnya satu jawapan sebelum memverifikasi.", "alert-circle");
           return;
         }
 
@@ -2017,7 +2053,7 @@
 
         const expBox = document.getElementById('quiz-explanation-box');
         const expText = document.getElementById('quiz-explanation-text');
-        expText.innerHTML = q.explanation || "Tidak ada detail konseptual yang dilampirkan oleh guru untuk pertanyaan ini.";
+        expText.innerHTML = q.explanation || "Tiada butiran tambahan disertakan bagi soalan ini.";
         expBox.classList.remove('hidden');
 
         document.getElementById('btn-quiz-submit').classList.add('hidden');
@@ -2039,7 +2075,7 @@
         const container = document.getElementById('quiz-multi-view');
         container.innerHTML = '';
 
-        document.getElementById('quiz-chapter-indicator').innerText = "Bab " + window.state.quizState.chapter + " — " + window.state.quizState.set + " (Mode Ujian Terbuka)";
+        document.getElementById('quiz-chapter-indicator').innerText = "Bab " + window.state.quizState.chapter + " — " + window.state.quizState.set + " (Mod Peperiksaan Terbuka)";
 
         window.state.quizState.questions.forEach((q, qIndex) => {
           const qWrapper = document.createElement('div');
@@ -2075,10 +2111,10 @@
         submitBtnWrapper.className = "pt-4 flex flex-col sm:flex-row justify-end gap-3";
         submitBtnWrapper.innerHTML = `
           <button onclick="window.exitQuiz()" class="w-full sm:w-auto bg-zinc-800 hover:bg-zinc-700 text-white font-extrabold px-8 py-3.5 rounded-xl transition-all border border-white/10 text-center leading-tight whitespace-normal break-words text-xs sm:text-sm min-h-[3rem]">
-            Batalkan Pengujian
+            Batalkan Ujian
           </button>
           <button onclick="window.submitExamSheet()" class="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold px-8 py-3.5 rounded-xl transition-all shadow-lg text-center leading-tight whitespace-normal break-words text-xs sm:text-sm min-h-[3rem]">
-            Serahkan Lembar Jawaban
+            Hantar Semua Jawapan
           </button>
         `;
         container.appendChild(submitBtnWrapper);
@@ -2095,7 +2131,7 @@
 
         window.state.quizState.answers[qIndex] = optIndex;
         const btn = document.getElementById("multi-q-" + qIndex + "-opt-" + optIndex);
-        btn.className = "w-full text-left p-3 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-white transition-all font-bold flex items-center gap-3 break-words whitespace-normal leading-relaxed";
+        btn.className = "w-full text-left p-3 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-white transition-all font-bold flex items-center gap-2 break-words whitespace-normal leading-relaxed";
       };
 
       window.submitExamSheet = function() {
@@ -2103,7 +2139,7 @@
         const answeredCount = Object.keys(window.state.quizState.answers).length;
 
         if (answeredCount < totalQ) {
-          if (!confirm(`Sistem mendeteksi Anda hanya menjawab ${answeredCount}/${totalQ} soal. Yakin untuk menyimpannya sekarang?`)) {
+          if (!confirm(`Sistem mendapati anda hanya menjawab ${answeredCount}/${totalQ} soalan. Yakin untuk menghantarnya sekarang?`)) {
             return;
           }
         }
@@ -2134,7 +2170,7 @@
         const calculatedLevel = Math.floor(user.xp / 200) + 1;
         if (calculatedLevel > (user.level || 1)) {
           setTimeout(() => {
-            window.showCustomModal("Syabas! Peningkatan Tahap 🎉", `Anda baru saja melangkah naik ke Tahap ${calculatedLevel}! Lanjutkan momentum belajar Anda.`, "award", true);
+            window.showCustomModal("Syabas! Peningkatan Tahap 🎉", `Anda baru sahaja melangkah naik ke Tahap ${calculatedLevel}! Lanjutkan momentum belajar anda.`, "award", true);
           }, 800);
         }
         user.level = calculatedLevel;
@@ -2173,7 +2209,7 @@
                 });
 
              } catch(e) {
-                 console.error("Sinkronisasi skor Firestore tertunda", e);
+                 console.error("Penyegerakan skor Firestore tertunda", e);
              }
         }
 
@@ -2192,7 +2228,7 @@
       }
 
       window.exitQuiz = function() {
-        if (confirm("Apakah Anda benar-benar yakin ingin membatalkan sesi ujian berjalan ini? Pencapaian dan XP tidak akan direkam.")) {
+        if (confirm("Adakah anda benar-benar pasti ingin membatalkan sesi ujian yang sedang berjalan ini? Semua pencapaian dan XP tidak akan direkodkan.")) {
           if (window.state.quizState.timerInterval) clearInterval(window.state.quizState.timerInterval);
           window.backToDashboard();
         }
