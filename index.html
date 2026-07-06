@@ -583,130 +583,130 @@
         <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6">
           <div class="w-full md:w-auto">
             <h1 id="welcome-student-title" class="text-2xl sm:text-3xl font-black text-white mb-2 leading-tight break-words">Selamat Belajar! 📚</h1>
-            <p id="student-live-cloud-text" class="text-zinc-400 max-w-lg text-xs sm:text-sm leading-relaxed break-words">Prestasi dan skor kuiz anda kini disimpan secara live ke Google Sheets!</p>
+            <p id="student-live-cloud-text" class="text-zinc-400 max-w-lg text-xs sm:text-sm leading-relaxed break-words">Prestasi dan skor kuis Anda kini disimpan secara langsung ke Google Sheets kelas!</p>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0 mt-4 md:mt-0">
+            <button onclick="window.syncStudentQuestions()" class="w-full sm:w-auto bg-zinc-900 hover:bg-zinc-800 text-amber-500 font-extrabold text-xs sm:text-sm px-5 py-3.5 rounded-2xl border border-white/5 shadow-lg flex items-center justify-center gap-2 min-h-[3rem] hover:scale-[1.02] transition-all whitespace-normal break-words text-center">
+              <i data-lucide="refresh-cw" class="w-4 h-4 shrink-0"></i> <span>Perbarui Pertanyaan</span>
+            </button>
+            <button onclick="window.startQuizFlow()" class="w-full sm:w-auto shrink-0 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-extrabold text-xs sm:text-sm px-5 py-3.5 rounded-2xl shadow-xl shadow-orange-500/25 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 min-h-[3rem] whitespace-normal text-center break-words leading-tight">
+              <i data-lucide="play" class="w-4 h-4 fill-current shrink-0"></i> <span>Mula Latihan</span>
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- Baris 1: Tahap Masteri, Soalan Terjawab & Ketepatan Sebaris -->
+      <!-- Ruangan Pengumuman Khas untuk Pelajar -->
+      <div class="glass-panel p-5 sm:p-6 rounded-3xl border border-orange-500/20">
+        <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 mb-3">
+          <i data-lucide="megaphone" class="text-orange-500 w-5 h-5 shrink-0"></i> Pengumuman Kelas
+        </h3>
+        <div id="student-announcements-list" class="space-y-3 max-h-32 overflow-y-auto custom-scrollbar pr-2">
+           <p class="text-zinc-500 text-xs italic">Belum ada pengumuman dari guru Anda saat ini.</p>
+        </div>
+      </div>
+
+      <!-- Config & Stats Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-        
-        <!-- Tahap Penguasaan -->
-        <div class="glass-panel p-5 sm:p-6 rounded-3xl lg:col-span-2 flex flex-col justify-center">
-          <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-end mb-4 gap-2">
-            <div>
-              <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider mb-1">Tahap Penguasaan</div>
-              <div class="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
-                <div id="student-level-badge" class="px-3 py-1.5 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center font-bold border border-orange-500/20 text-xs sm:text-sm shrink-0">
-                  L1
+        <!-- Left Column: Level Mastery & Set Selection -->
+        <div class="lg:col-span-2 space-y-6">
+          <div class="glass-panel p-5 sm:p-6 rounded-3xl">
+            <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-end mb-4 gap-2">
+              <div>
+                <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider mb-1">Tingkat Penguasaan</div>
+                <div class="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
+                  <div id="student-level-badge" class="px-3 py-1.5 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center font-bold border border-orange-500/20 text-xs sm:text-sm shrink-0">
+                    L1
+                  </div>
+                  <span class="truncate max-w-[200px] sm:max-w-none"><span id="student-level-num">Tingkat 1</span></span>
                 </div>
-                <span class="truncate max-w-[200px] sm:max-w-none"><span id="student-level-num">Tahap 1</span></span>
+              </div>
+              <div class="w-full sm:w-auto text-left sm:text-right mt-2 sm:mt-0">
+                <div class="text-xs sm:text-sm font-bold text-amber-500"><span id="student-current-xp">0</span> / <span id="student-next-xp">200</span> XP</div>
               </div>
             </div>
-            <div class="w-full sm:w-auto text-left sm:text-right mt-2 sm:mt-0">
-              <div class="text-xs sm:text-sm font-bold text-amber-500"><span id="student-current-xp">0</span> / <span id="student-next-xp">200</span> XP</div>
+            <div class="w-full bg-zinc-950 rounded-full h-1.5 sm:h-2 p-0.5 sm:p-1 border border-white/5">
+              <div id="student-xp-bar" class="bg-gradient-to-r from-orange-500 via-amber-500 to-gold h-1.5 sm:h-2 rounded-full transition-all duration-1000 ease-out w-0"></div>
             </div>
           </div>
-          <div class="w-full bg-zinc-950 rounded-full h-1.5 sm:h-2 p-0.5 sm:p-1 border border-white/5">
-            <div id="student-xp-bar" class="bg-gradient-to-r from-orange-500 via-amber-500 to-gold h-1.5 sm:h-2 rounded-full transition-all duration-1000 ease-out w-0"></div>
+
+          <!-- Quiz Customization Panel (Bab, Set & Mode) -->
+          <div class="glass-panel p-5 sm:p-6 rounded-3xl space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-3 gap-3">
+              <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                <i data-lucide="sliders" class="text-orange-500 w-4 h-4"></i> Tetapan Pilihan Latihan
+              </h3>
+              <div class="flex gap-2 w-full sm:w-auto shrink-0">
+                <button onclick="window.syncStudentQuestions()" class="flex-1 sm:flex-none bg-zinc-900 hover:bg-zinc-800 text-amber-500 font-extrabold text-[11px] sm:text-xs px-4 py-2 rounded-xl border border-white/5 flex items-center justify-center gap-1.5 min-h-[2.5rem] transition-all">
+                  <i data-lucide="refresh-cw" class="w-3.5 h-3.5 shrink-0"></i> <span>Kemaskini Soalan</span>
+                </button>
+                <button onclick="window.startQuizFlow()" class="flex-1 sm:flex-none bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold text-[11px] sm:text-xs px-5 py-2 rounded-xl shadow-lg flex items-center justify-center gap-1.5 min-h-[2.5rem] transition-all">
+                  <i data-lucide="play" class="w-3.5 h-3.5 fill-current shrink-0"></i> <span>Mula Latihan</span>
+                </button>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Set Soalan</label>
+                <select id="student-set-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
+                  <option value="0" selected>Set Soalan</option>
+                  <option value="1">Set 1</option>
+                  <option value="2">Set 2</option>
+                  <option value="3">Set 3</option>
+                  <option value="4">Set 4</option>
+                  <option value="5">Set 5</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Bab</label>
+                <select id="student-chapter-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
+                  <option value="0" selected>Semua Soalan</option>
+                  <option value="1">Bab 1: Pengenalan Makroekonomi</option>
+                  <option value="2">Bab 2: Perakaunan Pendapatan Negara</option>
+                  <option value="3">Bab 3: Keseimbangan Pendapatan Negara</option>
+                  <option value="4">Bab 4: Wang, Bank dan Dasar Kewangan</option>
+                  <option value="5">Bab 5: Perdagangan Antarabangsa</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Mod Latihan</label>
+                <select id="student-mode-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
+                  <option value="onebyone" selected>Satu Persatu</option>
+                  <option value="exam">Semua Soalan Sekaligus (20 Soalan)</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Kad Statistik (Soalan Terjawab & Ketepatan) -->
-        <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:col-span-1">
-          <div class="glass-panel p-4 sm:p-5 rounded-2xl flex flex-col items-center justify-center text-center">
-            <i data-lucide="target" class="w-5 h-5 sm:w-6 sm:h-6 text-orange-400 mb-2 shrink-0"></i>
-            <div id="stat-student-questions" class="text-lg sm:text-2xl font-black text-white font-mono">0</div>
-            <div class="text-[9px] sm:text-[10px] text-zinc-500 font-bold uppercase tracking-wider mt-1 leading-tight break-words">Soalan Terjawab</div>
-          </div>
-          <div class="glass-panel p-4 sm:p-5 rounded-2xl text-center flex flex-col items-center justify-center">
-            <i data-lucide="trophy" class="w-5 h-5 sm:w-6 sm:h-6 text-amber-400 mb-2 shrink-0"></i>
-            <div id="stat-student-accuracy" class="text-lg sm:text-2xl font-black text-white font-mono">0%</div>
-            <div class="text-[9px] sm:text-[10px] text-zinc-500 font-bold uppercase tracking-wider mt-1 leading-tight break-words">Ketepatan</div>
+        <!-- Right Column: Stats Cards -->
+        <div class="lg:col-span-1">
+          <div class="grid grid-cols-2 gap-3 sm:gap-4 h-full">
+            <div class="glass-panel p-4 sm:p-5 rounded-2xl flex flex-col items-center justify-center text-center">
+              <i data-lucide="target" class="w-5 h-5 sm:w-6 sm:h-6 text-orange-400 mb-2 shrink-0"></i>
+              <div id="stat-student-questions" class="text-lg sm:text-2xl font-black text-white font-mono">0</div>
+              <div class="text-[9px] sm:text-[10px] text-zinc-500 font-bold uppercase tracking-wider mt-1 leading-tight break-words">Soalan Terjawab</div>
+            </div>
+            <div class="glass-panel p-4 sm:p-5 rounded-2xl text-center flex flex-col items-center justify-center">
+              <i data-lucide="trophy" class="w-5 h-5 sm:w-6 sm:h-6 text-amber-400 mb-2 shrink-0"></i>
+              <div id="stat-student-accuracy" class="text-lg sm:text-2xl font-black text-white font-mono">0%</div>
+              <div class="text-[9px] sm:text-[10px] text-zinc-500 font-bold uppercase tracking-wider mt-1 leading-tight break-words">Ketepatan</div>
+            </div>
           </div>
         </div>
       </div>
-
-      <!-- Baris 2: Tetapan Pilihan Latihan (Teratur) -->
-      <div class="glass-panel p-5 sm:p-6 rounded-3xl space-y-4 border border-orange-500/20">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-3 gap-3">
-          <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-            <i data-lucide="sliders" class="text-orange-500 w-4 h-4"></i> Tetapan Pilihan Latihan
-          </h3>
-          <div class="flex gap-2 w-full sm:w-auto shrink-0">
-            <button onclick="window.syncStudentQuestions()" class="flex-1 sm:flex-none bg-zinc-900 hover:bg-zinc-800 text-amber-500 font-extrabold text-[11px] sm:text-xs px-4 py-2 rounded-xl border border-white/5 flex items-center justify-center gap-1.5 min-h-[2.5rem] transition-all">
-              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 shrink-0"></i> <span>Kemaskini Soalan</span>
+      
+      <!-- Hantar Mesej ke Guru (Untuk Pelajar) -->
+      <div class="glass-panel p-5 sm:p-6 rounded-3xl mt-8">
+         <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-4">
+           <i data-lucide="message-circle" class="text-amber-500 w-4 h-4"></i> Kirim Pesan ke Guru
+         </h3>
+         <form id="student-message-form" class="flex flex-col sm:flex-row gap-3">
+            <input required id="student-message-input" type="text" placeholder="Ada soalan tentang makroekonomi? Taip di sini..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-1 focus:ring-amber-500 outline-none transition-all" />
+            <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-bold px-6 py-3 rounded-xl transition-all shrink-0 text-xs sm:text-sm flex items-center justify-center gap-2">
+              <i data-lucide="send" class="w-4 h-4"></i> Kirim
             </button>
-            <button onclick="window.startQuizFlow()" class="flex-1 sm:flex-none bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold text-[11px] sm:text-xs px-5 py-2 rounded-xl shadow-lg flex items-center justify-center gap-1.5 min-h-[2.5rem] transition-all">
-              <i data-lucide="play" class="w-3.5 h-3.5 fill-current shrink-0"></i> <span>Mula Latihan</span>
-            </button>
-          </div>
-        </div>
-        
-        <!-- Pilihan Dropdown Disusun Semula: Set, Bab, Mod Latihan -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Set Soalan</label>
-            <select id="student-set-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
-              <option value="0" selected>Set Soalan</option>
-              <option value="1">Set 1</option>
-              <option value="2">Set 2</option>
-              <option value="3">Set 3</option>
-              <option value="4">Set 4</option>
-              <option value="5">Set 5</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Bab</label>
-            <select id="student-chapter-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
-              <option value="0" selected>Semua Soalan</option>
-              <option value="1">Bab 1: Pengenalan Makroekonomi</option>
-              <option value="2">Bab 2: Perakaunan Pendapatan Negara</option>
-              <option value="3">Bab 3: Keseimbangan Pendapatan Negara</option>
-              <option value="4">Bab 4: Wang, Bank dan Dasar Kewangan</option>
-              <option value="5">Bab 5: Perdagangan Antarabangsa</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Mod Latihan</label>
-            <select id="student-mode-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
-              <option value="onebyone" selected>Satu Persatu</option>
-              <option value="exam">Semua Soalan Sekaligus (20 Soalan)</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Baris 3: Pengumuman Kelas & Mesej Murid (Sebaris) -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-        <!-- Pengumuman Kelas -->
-        <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col h-[380px]">
-          <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 mb-3 border-b border-white/5 pb-2 shrink-0">
-            <i data-lucide="megaphone" class="text-orange-500 w-5 h-5 shrink-0"></i> Pengumuman Kelas
-          </h3>
-          <div id="student-announcements-list" class="flex-grow space-y-3 overflow-y-auto custom-scrollbar pr-2 min-h-0">
-             <p class="text-zinc-500 text-xs italic">Tiada pengumuman dari guru anda setakat ini.</p>
-          </div>
-        </div>
-
-        <!-- Mesej Murid -->
-        <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between h-[380px]">
-          <div class="flex flex-col flex-grow overflow-hidden">
-            <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-2 shrink-0">
-              <i data-lucide="message-circle" class="text-amber-500 w-5 h-5 shrink-0"></i> Mesej Murid
-            </h3>
-            <div id="student-messages-container" class="flex-grow space-y-3 overflow-y-auto pr-1 custom-scrollbar pb-2 min-h-0">
-              <p class="text-zinc-500 text-xs italic">Belum ada mesej di kelas ini.</p>
-            </div>
-            
-            <form id="student-message-form" class="flex gap-2 pt-3 border-t border-white/5 mt-2 shrink-0">
-              <input required id="student-message-input" type="text" placeholder="Taip mesej atau soalan anda di sini..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-white text-xs sm:text-sm focus:ring-1 focus:ring-amber-500 outline-none transition-all" />
-              <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-bold px-4 py-2 rounded-xl transition-all shrink-0 text-xs flex items-center justify-center gap-1.5">
-                <i data-lucide="send" class="w-4 h-4"></i> Hantar
-              </button>
-            </form>
-          </div>
-        </div>
+         </form>
       </div>
 
     </div>
@@ -763,10 +763,10 @@
           Batal Latihan
         </button>
         <button id="btn-quiz-submit" class="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-extrabold px-8 py-3.5 rounded-xl transition-all shadow-lg text-center leading-tight whitespace-normal break-words text-xs sm:text-sm min-h-[3rem]">
-          Sahkan Jawapan
+          Konfirmasi Jawaban
         </button>
         <button id="btn-quiz-next" class="hidden w-full sm:w-auto bg-zinc-800 hover:bg-zinc-700 text-white font-extrabold px-8 py-3.5 rounded-xl transition-all border border-white/10 text-center leading-tight whitespace-normal break-words text-xs sm:text-sm min-h-[3rem]">
-          Soalan Seterusnya
+          Soalan Selanjutnya
         </button>
       </div>
     </div>
@@ -782,7 +782,7 @@
 
         <div class="space-y-2">
           <h2 class="text-2xl sm:text-3xl font-black text-white">Latihan Selesai!</h2>
-          <p class="text-zinc-400 text-xs sm:text-sm leading-normal px-2">Hebat! Anda telah berjaya menyelesaikan siri cabaran makroekonomi ini.</p>
+          <p class="text-zinc-400 text-xs sm:text-sm leading-normal px-2">Hebat! Anda telah berhasil menyelesaikan seri tantangan makroekonomi ini.</p>
         </div>
 
         <div class="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
@@ -808,7 +808,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
       <div class="text-center md:text-left leading-normal">
         <p class="font-bold text-zinc-400">© 2026 Makroverse STPM. Hak Cipta Terpelihara.</p>
-        <p class="mt-0.5">Berhubung secara rasmi dengan Google Sheet dan Gemini AI.</p>
+        <p class="mt-0.5">Terhubung secara rasmi dengan Google Sheet dan Gemini AI.</p>
       </div>
       <div class="flex items-center gap-3">
         <span class="px-2.5 py-1 bg-zinc-900 rounded-full border border-zinc-800 text-emerald-500 text-[10px] sm:text-xs font-semibold flex items-center gap-1.5">
@@ -819,11 +819,16 @@
   </footer>
 
   <!-- ==========================================
-       E. SISTEM SKRIPTING & LOGIK INTERAKTIF
+       E. SISTEM SKRIPTING & LOGIKA INTERAKTIF
        ========================================== -->
   <script>
+    // Membina proses permulaan otentikasi yang selamat
     const initialAuth = async () => {
-        if (!window.auth) return;
+        if (!window.auth) {
+            // Pelindung sekiranya Firebase tiada konfigurasi (Mod Lokal terus alih ke view-auth)
+            if (window.showView) window.showView('view-auth');
+            return;
+        }
         try {
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                 await window.signInWithCustomToken(window.auth, __initial_auth_token);
@@ -833,6 +838,32 @@
         } catch (err) {
             console.warn("Autentikasi senyap gagal, menunggu pengguna masuk.");
             if (window.showView) window.showView('view-auth');
+        }
+    };
+
+    // Pemuatan kandungan dinamik daripada pautan Apps Script Google Sheet kedua
+    const fetchStudentWelcomeMessage = async () => {
+        const cloudTextEl = document.getElementById('student-live-cloud-text');
+        if (!cloudTextEl) return;
+        
+        try {
+            const gasUrl = window.state?.apiConfig?.gasUrl;
+            if (!gasUrl) {
+                cloudTextEl.innerText = "Sistem bersedia. Sila kemaskini soalan untuk mulakan latihan STPM anda.";
+                return;
+            }
+            
+            const response = await fetch(gasUrl);
+            const text = await response.text();
+            const data = JSON.parse(text);
+            
+            if (data.status === 'success' && data.message) {
+                cloudTextEl.innerText = data.message;
+            } else {
+                cloudTextEl.innerText = "Hubungan awan Google Sheet aktif. Prestasi anda direkodkan secara live!";
+            }
+        } catch(e) {
+            cloudTextEl.innerText = "Hubungan sandaran aktif. Prestasi dan markah disimpan secara live ke Google Sheets kelas!";
         }
     };
 
@@ -849,7 +880,7 @@
         activeClassCode: null,
         activeClassName: null,
         apiConfig: {
-          gasUrl: 'https://script.google.com/macros/s/AKfycbyw8MyWOBmByQDywfYaiMdPqKMYK_2Hut2M4mjASPz-YYR1Sc62lKz85IGWFrVHydk/exec',
+          gasUrl: 'https://script.google.com/macros/s/AKfycbz77P_dKdKDz4ISyuptaizk7TVjH_WL-Dl0_bCNy3wqWaQhpSrLh4aSrIMuaojKJFpb/exec',
           geminiKey: 'AQ.Ab8RN6JTIbGRAEFrBvlF3_8vxi7zFMOScHOrPo_m9dTdQ6kr1g'
         },
         students: [],
@@ -861,10 +892,73 @@
         }
       };
 
-      // Jalankan autentikasi saat aplikasi dimuat
-      initialAuth();
+      // Mentakrifkan set fungsi paparan (showView) terlebih dahulu bagi mengelakkan ralat ReferenceError pramatang
+      window.showView = function(viewId) {
+        const viewLoading = document.getElementById('view-loading');
+        const viewAuth = document.getElementById('view-auth');
+        const viewTeacher = document.getElementById('view-teacher-dashboard');
+        const viewStudent = document.getElementById('view-student-dashboard');
+        const viewQuiz = document.getElementById('view-quiz');
+        const viewResults = document.getElementById('view-results');
 
-      // Pendengar Firebase Auth
+        if(viewLoading) viewLoading.classList.add('hidden');
+        if(viewAuth) viewAuth.classList.add('hidden');
+        if(viewTeacher) viewTeacher.classList.add('hidden');
+        if(viewStudent) viewStudent.classList.add('hidden');
+        if(viewQuiz) viewQuiz.classList.add('hidden');
+        if(viewResults) viewResults.classList.add('hidden');
+
+        const targetView = document.getElementById(viewId);
+        if (targetView) targetView.classList.remove('hidden');
+
+        if (viewId !== 'view-loading' && viewId !== 'view-auth') {
+          const navbar = document.getElementById('navbar');
+          if (navbar) navbar.classList.remove('hidden');
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        initLucide();
+      };
+
+      // TAHAP PRESTASI PELAJAR (STUDENT DASHBOARD)
+      window.updateStudentDashboardUI = function() {
+        const user = window.state.user;
+        if (!user) return;
+        
+        document.getElementById('welcome-student-title').innerText = "Selamat Datang, " + user.name + "! 📚";
+        
+        const currentXp = user.xp || 0;
+        const level = user.level || 1;
+        const nextLevelXp = level * 200;
+        const currentLevelBaseXp = (level - 1) * 200;
+        
+        const relativeXpInLevel = currentXp - currentLevelBaseXp;
+        const levelRange = 200; 
+        const percent = Math.min(100, Math.max(0, Math.round((relativeXpInLevel / levelRange) * 100)));
+
+        const badgeEl = document.getElementById('student-level-badge');
+        const levelNumEl = document.getElementById('student-level-num');
+        const curXpEl = document.getElementById('student-current-xp');
+        const nextXpEl = document.getElementById('student-next-xp');
+        const xpBarEl = document.getElementById('student-xp-bar');
+
+        if(badgeEl) badgeEl.innerText = "L" + level;
+        if(levelNumEl) levelNumEl.innerText = "Tahap " + level;
+        if(curXpEl) curXpEl.innerText = currentXp;
+        if(nextXpEl) nextXpEl.innerText = nextLevelXp;
+        if(xpBarEl) xpBarEl.style.width = percent + "%";
+
+        const questionsEl = document.getElementById('stat-student-questions');
+        const accuracyEl = document.getElementById('stat-student-accuracy');
+
+        if(questionsEl) questionsEl.innerText = user.attempts || 0;
+        const accuracy = user.attempts > 0 ? Math.round((user.correct / user.attempts) * 100) : 0;
+        if(accuracyEl) accuracyEl.innerText = accuracy + "%";
+        
+        // Tarik mesej alu-aluan dinamik daripada Apps Script Google Sheets peribadi
+        fetchStudentWelcomeMessage();
+      };
+
+      // Memulakan pendengar Firebase Auth hanya selepas semua komponen navigasi telah siap dimuatkan
       if (window.auth) {
         window.onAuthStateChanged(window.auth, async (firebaseUser) => {
           if (firebaseUser) {
@@ -901,10 +995,15 @@
                 window.state.activeClassCode = window.state.user.classCode || null;
               }
 
-              document.getElementById('nav-user-name').innerText = window.state.user.name || "Siswa";
-              document.getElementById('nav-user-role').innerText = window.state.role === 'teacher' ? 'Guru' : 'Siswa';
-              document.getElementById('nav-avatar').innerText = (window.state.user.name || "M").charAt(0).toUpperCase();
-              document.getElementById('navbar').classList.remove('hidden');
+              const navName = document.getElementById('nav-user-name');
+              const navRole = document.getElementById('nav-user-role');
+              const navAvatar = document.getElementById('nav-avatar');
+              const navbar = document.getElementById('navbar');
+
+              if(navName) navName.innerText = window.state.user.name || "Pelajar";
+              if(navRole) navRole.innerText = window.state.role === 'teacher' ? 'Cikgu' : 'Pelajar';
+              if(navAvatar) navAvatar.innerText = (window.state.user.name || "M").charAt(0).toUpperCase();
+              if(navbar) navbar.classList.remove('hidden');
 
               window.setAuthRole(window.state.role);
 
@@ -930,6 +1029,9 @@
         });
       }
 
+      // Jalankan permulaan autentikasi dengan selamat sekarang
+      initialAuth();
+
       initLucide();
       loadLocalSettings();
       
@@ -948,24 +1050,6 @@
         } catch (e) { console.error("Kesalahan membaca setelan konfigurasi.", e); }
       }
 
-      window.showView = function(viewId) {
-        document.getElementById('view-loading').classList.add('hidden');
-        document.getElementById('view-auth').classList.add('hidden');
-        document.getElementById('view-teacher-dashboard').classList.add('hidden');
-        document.getElementById('view-student-dashboard').classList.add('hidden');
-        document.getElementById('view-quiz').classList.add('hidden');
-        document.getElementById('view-results').classList.add('hidden');
-
-        const targetView = document.getElementById(viewId);
-        if (targetView) targetView.classList.remove('hidden');
-
-        if (viewId !== 'view-loading' && viewId !== 'view-auth') {
-          document.getElementById('navbar').classList.remove('hidden');
-        }
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        initLucide();
-      }
-
       window.setAuthRole = function(role) {
         window.state.role = role;
         const btnStudent = document.getElementById('btn-role-student');
@@ -974,84 +1058,92 @@
         const inputClassCode = document.getElementById('auth-classcode');
 
         if (role === 'student') {
-          btnStudent.className = "p-3 sm:p-4 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-amber-500 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem]";
-          btnTeacher.className = "p-3 sm:p-4 rounded-xl border-2 border-zinc-800 hover:border-zinc-700 text-zinc-400 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem]";
-          fieldClassCode.classList.remove('hidden');
-          inputClassCode.required = true;
-          document.getElementById('nav-settings-btn').classList.add('hidden');
+          if(btnStudent) btnStudent.className = "p-3 sm:p-4 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-amber-500 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem]";
+          if(btnTeacher) btnTeacher.className = "p-3 sm:p-4 rounded-xl border-2 border-zinc-800 hover:border-zinc-700 text-zinc-400 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem]";
+          if(fieldClassCode) fieldClassCode.classList.remove('hidden');
+          if(inputClassCode) inputClassCode.required = true;
+          const navSettingsBtn = document.getElementById('nav-settings-btn');
+          if(navSettingsBtn) navSettingsBtn.classList.add('hidden');
         } else {
-          btnTeacher.className = "p-3 sm:p-4 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-amber-500 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem]";
-          btnStudent.className = "p-3 sm:p-4 rounded-xl border-2 border-zinc-800 hover:border-zinc-700 text-zinc-400 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem]";
-          fieldClassCode.classList.add('hidden');
-          inputClassCode.required = false;
-          document.getElementById('nav-settings-btn').classList.remove('hidden');
+          if(btnTeacher) btnTeacher.className = "p-3 sm:p-4 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-amber-500 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem]";
+          if(btnStudent) btnStudent.className = "p-3 sm:p-4 rounded-xl border-2 border-zinc-800 hover:border-zinc-700 text-zinc-400 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem]";
+          if(fieldClassCode) fieldClassCode.classList.add('hidden');
+          if(inputClassCode) inputClassCode.required = false;
+          const navSettingsBtn = document.getElementById('nav-settings-btn');
+          if(navSettingsBtn) navSettingsBtn.classList.remove('hidden');
         }
         initLucide();
       };
 
       // Pendaftaran Manual (Tanpa Google)
-      document.getElementById('auth-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const name = document.getElementById('auth-name').value.trim();
-        const rawClassCode = document.getElementById('auth-classcode').value.trim().toUpperCase();
+      const authForm = document.getElementById('auth-form');
+      if(authForm) {
+        authForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const name = document.getElementById('auth-name').value.trim();
+          const rawClassCode = document.getElementById('auth-classcode').value.trim().toUpperCase();
 
-        if (!name) return;
+          if (!name) return;
 
-        window.showView('view-loading');
-        document.getElementById('loading-text').innerText = "Mendaftarkan profil & menghubungkan Firebase...";
+          window.showView('view-loading');
+          document.getElementById('loading-text').innerText = "Mendaftarkan profil & menghubungkan Firebase...";
 
-        try {
-            // Autentikasi Firebase secara anonim jika belum masuk
-            if (!auth.currentUser) {
-                await window.signInAnonymously(auth);
-            }
-
-            if (window.state.role === 'teacher') {
-              const existingTeacherClass = localStorage.getItem(`makroverse_teacher_class_${name}`);
-              if (existingTeacherClass) {
-                const data = JSON.parse(existingTeacherClass);
-                document.getElementById('resume-class-code').innerText = `${data.className} (${data.classCode})`;
-                window.state.tempTeacherProfile = { name, role: 'teacher', classCode: data.classCode, className: data.className };
-                document.getElementById('teacher-resume-modal').classList.remove('hidden');
-                setTimeout(() => { document.getElementById('teacher-resume-modal').classList.add('opacity-100'); }, 50);
-                window.showView('view-auth'); 
-                return;
+          try {
+              // Autentikasi Firebase secara anonim jika belum masuk
+              if (!window.auth.currentUser) {
+                  await window.signInAnonymously(window.auth);
               }
 
-              window.state.user = { id: auth.currentUser.uid, name, role: 'teacher', classCode: null, className: null };
-              localStorage.setItem('macronexus_user_profile', JSON.stringify(window.state.user));
-              
-              // Simpan profil guru ke Firebase sesuai Aturan keamanan
-              await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main'), window.state.user);
+              if (window.state.role === 'teacher') {
+                const existingTeacherClass = localStorage.getItem(`makroverse_teacher_class_${name}`);
+                if (existingTeacherClass) {
+                  const data = JSON.parse(existingTeacherClass);
+                  document.getElementById('resume-class-code').innerText = `${data.className} (${data.classCode})`;
+                  window.state.tempTeacherProfile = { name, role: 'teacher', classCode: data.classCode, className: data.className };
+                  const resumeModal = document.getElementById('teacher-resume-modal');
+                  if(resumeModal) {
+                    resumeModal.classList.remove('hidden');
+                    setTimeout(() => { resumeModal.classList.add('opacity-100'); }, 50);
+                  }
+                  window.showView('view-auth'); 
+                  return;
+                }
 
-              await window.fetchQuestionsFromCloud();
-              syncDatabaseWithBackend();
-            } else {
-              window.state.user = {
-                id: auth.currentUser.uid,
-                name, role: 'student', classCode: rawClassCode,
-                xp: 0,
-                level: 1,
-                attempts: 0,
-                correct: 0
-              };
-              localStorage.setItem('macronexus_user_profile', JSON.stringify(window.state.user));
-              
-              // Simpan profil siswa secara rahasia ke /users/{userId}/profile/main
-              await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main'), window.state.user);
+                window.state.user = { id: window.auth.currentUser.uid, name, role: 'teacher', classCode: null, className: null };
+                localStorage.setItem('macronexus_user_profile', JSON.stringify(window.state.user));
+                
+                // Simpan profil guru ke Firebase sesuai Aturan keamanan
+                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main'), window.state.user);
 
-              // Simpan profil siswa ke koleksi publik data siswa untuk visualisasi guru kelas
-              await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', window.auth.currentUser.uid), window.state.user);
+                await window.fetchQuestionsFromCloud();
+                syncDatabaseWithBackend();
+              } else {
+                window.state.user = {
+                  id: window.auth.currentUser.uid,
+                  name, role: 'student', classCode: rawClassCode,
+                  xp: 0,
+                  level: 1,
+                  attempts: 0,
+                  correct: 0
+                };
+                localStorage.setItem('macronexus_user_profile', JSON.stringify(window.state.user));
+                
+                // Simpan profil siswa secara rahasia ke /users/{userId}/profile/main
+                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main'), window.state.user);
 
-              await window.fetchQuestionsFromCloud();
-              syncDatabaseWithBackend();
-            }
-        } catch (error) {
-             console.error("Kesalahan log masuk:", error);
-             window.showCustomModal("Kesalahan", "Gagal mendaftar. Silakan coba lagi.", "alert-triangle");
-             window.showView('view-auth');
-        }
-      });
+                // Simpan profil siswa ke koleksi publik data siswa untuk visualisasi guru kelas
+                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', window.auth.currentUser.uid), window.state.user);
+
+                await window.fetchQuestionsFromCloud();
+                syncDatabaseWithBackend();
+              }
+          } catch (error) {
+               console.error("Kesalahan log masuk:", error);
+               window.showCustomModal("Kesalahan", "Gagal mendaftar. Silakan coba lagi.", "alert-triangle");
+               window.showView('view-auth');
+          }
+        });
+      }
 
       window.handleLogout = function() {
         localStorage.removeItem('macronexus_user_profile');
@@ -1072,35 +1164,42 @@
         const modal = document.getElementById('custom-modal');
         const content = document.getElementById('custom-modal-content');
         
-        document.getElementById('modal-title').innerText = title;
-        document.getElementById('modal-message').innerHTML = message;
-        
-        const iconContainer = document.getElementById('modal-icon-container');
-        document.getElementById('modal-icon').setAttribute('data-lucide', icon);
-        
-        if (isSuccess) {
-          iconContainer.className = "inline-flex p-4 rounded-full bg-emerald-500/10 text-emerald-500 mb-4 shadow-lg shadow-emerald-500/10";
-          content.className = "glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-emerald-500/20 text-center transform scale-100 transition-transform duration-300";
-        } else {
-          iconContainer.className = "inline-flex p-4 rounded-full bg-orange-500/10 text-orange-500 mb-4 shadow-lg shadow-orange-500/10";
-          content.className = "glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-orange-500/20 text-center transform scale-100 transition-transform duration-300";
-        }
+        if(modal) {
+          document.getElementById('modal-title').innerText = title;
+          document.getElementById('modal-message').innerHTML = message;
+          
+          const iconContainer = document.getElementById('modal-icon-container');
+          const iconEl = document.getElementById('modal-icon');
+          if(iconEl) iconEl.setAttribute('data-lucide', icon);
+          
+          if (isSuccess) {
+            if(iconContainer) iconContainer.className = "inline-flex p-4 rounded-full bg-emerald-500/10 text-emerald-500 mb-4 shadow-lg shadow-emerald-500/10";
+            if(content) content.className = "glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-emerald-500/20 text-center transform scale-100 transition-transform duration-300";
+          } else {
+            if(iconContainer) iconContainer.className = "inline-flex p-4 rounded-full bg-orange-500/10 text-orange-500 mb-4 shadow-lg shadow-orange-500/10";
+            if(content) content.className = "glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-orange-500/20 text-center transform scale-100 transition-transform duration-300";
+          }
 
-        modal.classList.remove('hidden');
-        setTimeout(() => { modal.classList.add('opacity-100'); }, 50);
+          modal.classList.remove('hidden');
+          setTimeout(() => { modal.classList.add('opacity-100'); }, 50);
+        }
         initLucide();
       };
 
       window.closeCustomModal = function() {
         const modal = document.getElementById('custom-modal');
-        modal.classList.remove('opacity-100');
-        setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        if(modal) {
+          modal.classList.remove('opacity-100');
+          setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
       };
 
       window.closeTeacherResumeModal = function() {
         const modal = document.getElementById('teacher-resume-modal');
-        modal.classList.remove('opacity-100');
-        setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        if(modal) {
+          modal.classList.remove('opacity-100');
+          setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
       };
 
       window.resumeExistingClass = async function() {
@@ -1130,17 +1229,20 @@
 
       window.openApiConfigModal = function() {
         const modal = document.getElementById('api-config-modal');
-        document.getElementById('api-config-url-input').value = window.state.apiConfig.gasUrl || '';
-        document.getElementById('api-config-gemini-input').value = window.state.apiConfig.geminiKey || '';
-        
-        modal.classList.remove('hidden');
-        setTimeout(() => { modal.classList.add('opacity-100'); }, 50);
+        if(modal) {
+          document.getElementById('api-config-url-input').value = window.state.apiConfig.gasUrl || '';
+          document.getElementById('api-config-gemini-input').value = window.state.apiConfig.geminiKey || '';
+          modal.classList.remove('hidden');
+          setTimeout(() => { modal.classList.add('opacity-100'); }, 50);
+        }
       };
 
       window.closeApiConfigModal = function() {
         const modal = document.getElementById('api-config-modal');
-        modal.classList.remove('opacity-100');
-        setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        if(modal) {
+          modal.classList.remove('opacity-100');
+          setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
       };
 
       window.saveApiUrlConfig = function() {
@@ -1165,16 +1267,6 @@
         return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
       }
 
-      // Fungsi Penjanaan Warna Rawak untuk Pengirim Mesej
-      function getColorClassForString(str) {
-        const colors = ['text-red-400', 'text-green-400', 'text-blue-400', 'text-yellow-400', 'text-purple-400', 'text-pink-400', 'text-indigo-400', 'text-teal-400', 'text-cyan-400', 'text-rose-400'];
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            hash = str.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        return colors[Math.abs(hash) % colors.length];
-      }
-
       // ==========================================
       // FUNGSI PENGAMBILAN & PENGIRIMAN DATA (API & FIRESTORE)
       // ==========================================
@@ -1186,7 +1278,7 @@
             const text = await response.text();
             const data = JSON.parse(text);
             
-            if (data.status === 'success') {
+            if (data.status === 'success' && data.questions) {
                 window.globalQuestions = data.questions.map(q => {
                     const options = [q.OptionA, q.OptionB, q.OptionC, q.OptionD];
                     const answerMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
@@ -1538,7 +1630,7 @@
                                         <span class="text-[9px] text-zinc-500">${date}</span>
                                     </div>
                                     <p>${escapeHtml(m.text)}</p>
-                                 </div>`;
+                                </div>`;
                      }).join('');
                  }
              }
@@ -1557,10 +1649,10 @@
                                         <span class="text-[9px] text-zinc-500">${date}</span>
                                     </div>
                                     <p>${escapeHtml(m.text)}</p>
-                                 </div>`;
+                                </div>`;
                      }).join('');
                  }
-             }
+              }
 
          }, (error) => {
              console.error("Kesalahan saat memantau pesan masuk:", error);
