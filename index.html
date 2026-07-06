@@ -95,7 +95,7 @@
         // Membina profil pengguna baru
         const profile = {
           id: firebaseUser.uid,
-          name: firebaseUser.displayName || "Pengguna Google",
+          name: firebaseUser.displayName || "Pengguna MacroNexus",
           email: firebaseUser.email || "",
           role: (window.state && window.state.role) ? window.state.role : 'student',
           classCode: (window.state && window.state.activeClassCode) ? window.state.activeClassCode : '',
@@ -108,11 +108,14 @@
         // Jika peranan adalah pelajar, simpan profil ke Firestore
         if (profile.role === 'student' && db) {
           try {
+            // [RULE 1] Jalur profil peribadi pelajar
             const privateDocRef = doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'profile', 'main');
+            // [RULE 3] Jalur profil awam pelajar untuk dilihat oleh guru kelas
             const studentDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'students', firebaseUser.uid);
             
             const privateDoc = await getDoc(privateDocRef);
             if (privateDoc.exists()) {
+              // Jika pelajar sudah ada profil di Firestore, gunakan data sedia ada
               Object.assign(profile, privateDoc.data());
             } else {
               await setDoc(privateDocRef, profile);
@@ -123,6 +126,7 @@
           }
         } else if (profile.role === 'teacher' && db) {
           try {
+            // [RULE 1] Jalur profil peribadi guru
             const privateDocRef = doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'profile', 'main');
             const privateDoc = await getDoc(privateDocRef);
             if (privateDoc.exists()) {
@@ -306,18 +310,18 @@
         </div>
         
         <div class="flex items-center gap-2 sm:gap-4">
-          <!-- Butang tetapan ini dikawal secara dinamik (Hanya Guru sahaja yang boleh melihatnya) -->
+          <!-- Tombol pengaturan dikawal secara dinamis (Hanya Guru yang boleh melihatnya) -->
           <button id="nav-settings-btn" onclick="window.openApiConfigModal()" class="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition-all hidden" title="Konfigurasi Sistem">
             <i data-lucide="settings" class="w-5 h-5"></i>
           </button>
           <div class="text-right hidden md:block">
-            <div id="nav-user-name" class="text-sm font-semibold text-white">Memuat turun...</div>
+            <div id="nav-user-name" class="text-sm font-semibold text-white">Memuat...</div>
             <div id="nav-user-role" class="text-xs text-amber-500 capitalize">Pengguna</div>
           </div>
           <div id="nav-avatar" class="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-extrabold shadow-lg shadow-orange-500/20 border border-white/10 uppercase shrink-0 text-xs sm:text-sm">
             M
           </div>
-          <button onclick="window.handleLogout()" class="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition-all" title="Log Keluar">
+          <button onclick="window.handleLogout()" class="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition-all" title="Keluar">
             <i data-lucide="log-out" class="w-5 h-5"></i>
           </button>
         </div>
@@ -367,7 +371,7 @@
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
               </svg>
               Masuk dengan Google / DELIMa
             </button>
@@ -449,7 +453,7 @@
             <i data-lucide="users" class="w-5 h-5"></i>
           </div>
           <div id="stat-teacher-students" class="text-2xl sm:text-3xl font-black text-white mb-1">0</div>
-          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Pelajar Aktif</div>
+          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Siswa Aktif</div>
         </div>
         <div class="glass-panel p-4 sm:p-6 rounded-3xl relative overflow-hidden">
           <div class="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-br from-amber-500 to-yellow-500 opacity-5 rounded-bl-full"></div>
@@ -465,7 +469,7 @@
             <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
           </div>
           <div id="stat-teacher-accuracy" class="text-2xl sm:text-3xl font-black text-white mb-1">0%</div>
-          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Ketepatan Kelas</div>
+          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Akurasi Kelas</div>
         </div>
       </div>
 
@@ -478,7 +482,7 @@
           <div>
             <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Liputan Bab</label>
             <select id="ai-gen-chapter" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
-              <option value="0" selected>Semua Soalan (100 Soalan - 20/Bab)</option>
+              <option value="0" selected>Semua Bab Pilihan (100 Soalan - 20/Bab)</option>
               <option value="1">Bab 1: Pengenalan Makroekonomi (20 Soalan)</option>
               <option value="2">Bab 2: Perakaunan Pendapatan Negara (20 Soalan)</option>
               <option value="3">Bab 3: Keseimbangan Pendapatan Negara (20 Soalan)</option>
@@ -489,8 +493,8 @@
           <div>
             <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Target Penyimpanan AI</label>
             <select id="ai-gen-destination" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
-              <option value="sheet" selected>Simpan Terus ke Google Sheet Baru</option>
-              <option value="csv">Jana & Muat Turun Fail CSV</option>
+              <option value="sheet" selected>Simpan Otomatis ke Google Sheet Baru</option>
+              <option value="csv">Buat & Unduh File CSV</option>
             </select>
           </div>
           <div class="flex flex-col justify-end md:col-span-1 sm:col-span-2">
@@ -503,7 +507,7 @@
         <div id="ai-batch-loader" class="hidden flex-col items-center py-6 bg-zinc-950 rounded-2xl border border-orange-500/10 mt-4 px-4 text-center">
           <div class="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-3"></div>
           <p id="loader-status-text" class="text-sm font-bold text-amber-500 leading-tight">Berkomunikasi dengan Google Apps Script...</p>
-          <p id="loader-progress-text" class="text-[10px] sm:text-xs text-zinc-400 mt-1 max-w-sm">Sila tunggu sementara pelayan menyusun soalan untuk anda.</p>
+          <p id="loader-progress-text" class="text-[10px] sm:text-xs text-zinc-400 mt-1 max-w-sm">Mohon tunggu sementara sistem menyusun pertanyaan untuk Anda.</p>
         </div>
       </div>
 
@@ -511,23 +515,23 @@
       <div class="bg-zinc-950 border border-white/5 rounded-3xl overflow-hidden shadow-xl mt-8">
         <div class="p-4 sm:p-6 border-b border-white/5">
           <h2 class="text-base sm:text-xl font-bold text-white flex items-center gap-2 leading-tight">
-            <i data-lucide="users" class="text-orange-400 w-5 h-5 shrink-0"></i> Senarai Pelajar
+            <i data-lucide="users" class="text-orange-400 w-5 h-5 shrink-0"></i> Daftar Siswa
           </h2>
         </div>
         <div class="overflow-x-auto custom-scrollbar">
           <table class="w-full text-left border-collapse min-w-[500px]">
             <thead>
               <tr class="bg-zinc-900 text-zinc-400 text-[10px] sm:text-xs">
-                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Nama Pelajar</th>
-                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Kod Kelas</th>
-                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Tahap</th>
+                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Nama Siswa</th>
+                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Kode Kelas</th>
+                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Tingkat</th>
                 <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">XP</th>
                 <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Ketepatan</th>
                 <th class="p-3 sm:p-4 font-bold uppercase tracking-wider text-center">Tindakan</th>
               </tr>
             </thead>
             <tbody id="students-table-body" class="divide-y divide-white/5 text-xs sm:text-sm">
-              <tr><td colspan="6" class="p-6 text-center text-zinc-500">Tiada pelajar ditemui.</td></tr>
+              <tr><td colspan="6" class="p-6 text-center text-zinc-500">Tidak ada siswa yang ditemukan.</td></tr>
             </tbody>
           </table>
         </div>
@@ -542,16 +546,16 @@
               <i data-lucide="megaphone" class="text-orange-500 w-4 h-4"></i> Siarkan Pengumuman Kelas
             </h3>
             <form id="teacher-announcement-form" class="space-y-3">
-              <textarea required id="teacher-announcement-input" placeholder="Tuliskan pengumuman penting untuk semua pelajar di kelas ini..." class="w-full h-24 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500 resize-none"></textarea>
+              <textarea required id="teacher-announcement-input" placeholder="Tuliskan pengumuman penting untuk semua siswa di kelas ini..." class="w-full h-24 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500 resize-none"></textarea>
               <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold rounded-xl transition-all shadow-lg text-xs sm:text-sm">
                 Siarkan Pengumuman
               </button>
             </form>
           </div>
           <div class="border-t border-white/5 pt-3 mt-3">
-            <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-2">Pengumuman Terkini:</h4>
+            <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-2">Pengumuman Terbaru:</h4>
             <div id="teacher-announcements-list" class="overflow-y-auto max-h-[80px] custom-scrollbar space-y-1 text-xs text-zinc-400">
-              <!-- Dinamik -->
+              <!-- Dinamis -->
               <p class="text-zinc-600 italic">Belum ada pengumuman.</p>
             </div>
           </div>
@@ -561,11 +565,11 @@
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between h-[380px]">
           <div class="flex flex-col flex-grow overflow-hidden">
             <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-2 shrink-0">
-              <i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Log Sembang Mesej Pelajar
+              <i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Log Pesan Obrolan Siswa
             </h3>
             <div id="teacher-messages-container" class="flex-grow space-y-3 overflow-y-auto pr-1 custom-scrollbar pb-2 min-h-0">
-              <!-- Dinamik -->
-              <p class="text-zinc-500 text-xs italic">Belum ada mesej di kelas ini.</p>
+              <!-- Dinamis -->
+              <p class="text-zinc-500 text-xs italic">Belum ada pesan masuk di kelas ini.</p>
             </div>
           </div>
         </div>
@@ -584,7 +588,7 @@
         </div>
       </div>
 
-      <!-- Baris 1: Tahap Masteri & Statistik Sebaris -->
+      <!-- Baris 1: Tahap Masteri, Soalan Terjawab & Ketepatan Sebaris -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         
         <!-- Tahap Penguasaan -->
@@ -711,7 +715,7 @@
     <div id="view-quiz" class="hidden max-w-3xl mx-auto space-y-6 animate-slide-in">
       <div class="glass-panel p-4 sm:p-5 rounded-2xl flex items-center justify-between border border-white/5">
         <div class="flex items-center gap-3">
-          <button onclick="window.exitQuiz()" class="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition-all" title="Kembali / Batal Latihan">
+          <button onclick="window.exitQuiz()" class="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition-all" title="Batalkan Latihan">
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
           </button>
           <div>
@@ -745,7 +749,7 @@
               <i data-lucide="info" class="w-4 h-4"></i>
               <span>Penjelasan Konseptual</span>
             </div>
-            <p id="quiz-explanation-text" class="text-zinc-300 text-xs sm:text-sm leading-relaxed break-words"></p>
+            <div id="quiz-explanation-text" class="text-zinc-300 text-xs sm:text-sm leading-relaxed break-words"></div>
           </div>
         </div>
 
@@ -875,7 +879,7 @@
               if (!userProfile || userProfile.id !== firebaseUser.uid) {
                 userProfile = {
                   id: firebaseUser.uid,
-                  name: firebaseUser.displayName || "Pengguna Google",
+                  name: firebaseUser.displayName || "Pengguna MacroNexus",
                   email: firebaseUser.email || "",
                   role: 'student',
                   classCode: '',
@@ -898,7 +902,7 @@
               }
 
               document.getElementById('nav-user-name').innerText = window.state.user.name || "Siswa";
-              document.getElementById('nav-user-role').innerText = window.state.role === 'teacher' ? 'Guru' : 'Pelajar';
+              document.getElementById('nav-user-role').innerText = window.state.role === 'teacher' ? 'Guru' : 'Siswa';
               document.getElementById('nav-avatar').innerText = (window.state.user.name || "M").charAt(0).toUpperCase();
               document.getElementById('navbar').classList.remove('hidden');
 
@@ -998,8 +1002,8 @@
 
         try {
             // Autentikasi Firebase secara anonim jika belum masuk
-            if (!window.auth.currentUser) {
-                await window.signInAnonymously(window.auth);
+            if (!auth.currentUser) {
+                await window.signInAnonymously(auth);
             }
 
             if (window.state.role === 'teacher') {
@@ -1014,7 +1018,7 @@
                 return;
               }
 
-              window.state.user = { id: window.auth.currentUser.uid, name, role: 'teacher', classCode: null, className: null };
+              window.state.user = { id: auth.currentUser.uid, name, role: 'teacher', classCode: null, className: null };
               localStorage.setItem('macronexus_user_profile', JSON.stringify(window.state.user));
               
               // Simpan profil guru ke Firebase sesuai Aturan keamanan
@@ -1024,7 +1028,7 @@
               syncDatabaseWithBackend();
             } else {
               window.state.user = {
-                id: window.auth.currentUser.uid,
+                id: auth.currentUser.uid,
                 name, role: 'student', classCode: rawClassCode,
                 xp: 0,
                 level: 1,
@@ -1044,7 +1048,7 @@
             }
         } catch (error) {
              console.error("Kesalahan log masuk:", error);
-             window.showCustomModal("Ralat", "Gagal mendaftar. Sila cuba lagi.", "alert-triangle");
+             window.showCustomModal("Kesalahan", "Gagal mendaftar. Silakan coba lagi.", "alert-triangle");
              window.showView('view-auth');
         }
       });
@@ -1147,7 +1151,7 @@
         localStorage.setItem('makroverse_api_config', JSON.stringify(window.state.apiConfig));
         
         window.closeApiConfigModal();
-        window.showCustomModal("Simpan Berjaya", "Konfigurasi pautan sistem luaran anda telah dikemas kini dengan selamat.", "check-circle", true);
+        window.showCustomModal("Simpan Berhasil", "Konfigurasi tautan sistem eksternal Anda telah diperbarui dengan aman.", "check-circle", true);
         window.fetchQuestionsFromCloud().then(() => syncDatabaseWithBackend());
       };
 
@@ -1231,7 +1235,7 @@
 
       function syncDatabaseWithBackend() {
         document.getElementById('nav-user-name').innerText = window.state.user.name;
-        document.getElementById('nav-user-role').innerText = window.state.role === 'teacher' ? 'Guru' : 'Pelajar';
+        document.getElementById('nav-user-role').innerText = window.state.role === 'teacher' ? 'Guru' : 'Siswa';
         document.getElementById('nav-avatar').innerText = window.state.user.name.charAt(0).toUpperCase();
 
         if (window.state.role === 'teacher') {
@@ -1279,7 +1283,7 @@
             });
             renderStudentsTable();
         }, (error) => {
-            console.error("Ralat memantau data pelajar dari Firestore:", error);
+            console.error("Kesalahan memantau data siswa dari Firestore:", error);
         });
       }
 
@@ -1288,7 +1292,7 @@
         tbody.innerHTML = '';
 
         if (window.state.students.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-zinc-500">Tiada pelajar berdaftar dalam kelas ini.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-zinc-500">Tidak ada siswa yang terdaftar di kelas ini.</td></tr>`;
           updateTeacherStats(0, 0, 0);
           return;
         }
@@ -1305,14 +1309,14 @@
           tr.className = "hover:bg-white/5 transition-colors border-b border-white/5";
           tr.innerHTML = `
             <td class="p-3 sm:p-4 font-bold text-white whitespace-nowrap">${escapeHtml(student.name)}</td>
-            <td class="p-3 sm:p-4 text-zinc-400 font-mono text-[11px] sm:text-xs tracking-wider uppercase">${escapeHtml(student.classCode || 'TIADA')}</td>
+            <td class="p-3 sm:p-4 text-zinc-400 font-mono text-[11px] sm:text-xs tracking-wider uppercase">${escapeHtml(student.classCode || 'TIDAK ADA')}</td>
             <td class="p-3 sm:p-4 whitespace-nowrap">
               <span class="px-2 py-1 rounded bg-orange-500/10 text-orange-400 font-bold text-[10px] sm:text-xs">Lvl ${student.level || 1}</span>
             </td>
             <td class="p-3 sm:p-4 font-bold text-amber-400 font-mono whitespace-nowrap">${student.xp || 0} XP</td>
             <td class="p-3 sm:p-4 font-bold font-mono text-emerald-400 whitespace-nowrap">${accuracy}%</td>
             <td class="p-3 sm:p-4 text-center whitespace-nowrap">
-              <button onclick="window.confirmDeleteStudent('${student.id}', '${escapeJs(student.name)}')" class="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all" title="Keluarkan Pelajar">
+              <button onclick="window.confirmDeleteStudent('${student.id}', '${escapeJs(student.name)}')" class="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all" title="Keluarkan Siswa">
                 <i data-lucide="user-x" class="w-4 h-4"></i>
               </button>
             </td>
@@ -1365,18 +1369,18 @@
 
       window.syncStudentQuestions = async function() {
         window.showView('view-loading');
-        document.getElementById('loading-text').innerText = "Memuat turun bank soalan dari Google Sheets...";
+        document.getElementById('loading-text').innerText = "Mengunduh bank soal dari Google Sheets...";
         
         const success = await window.fetchQuestionsFromCloud();
         
         if (success) {
             window.updateStudentDashboardUI();
             window.showView('view-student-dashboard');
-            window.showCustomModal("Kemaskini Berjaya", "Berjaya memuat turun " + window.globalQuestions.length + " soalan terbaru.", "check-circle", true);
+            window.showCustomModal("Pembaruan Berhasil", "Berhasil mengunduh " + window.globalQuestions.length + " pertanyaan terbaru.", "check-circle", true);
         } else {
             window.updateStudentDashboardUI();
             window.showView('view-student-dashboard');
-            window.showCustomModal("Ralat Semasa Kemaskini", "Gagal memuat turun soalan. Pastikan pautan App Script anda tepat.", "alert-triangle", false);
+            window.showCustomModal("Kesalahan Pembaruan", "Gagal mengunduh soal. Pastikan tautan App Script Anda tepat.", "alert-triangle", false);
         }
       };
 
@@ -1407,7 +1411,7 @@
                  input.value = '';
              } catch(err) {
                  console.error("Gagal menyiarkan pengumuman:", err);
-                 window.showCustomModal("Ralat", "Gagal menyiarkan pengumuman.", "alert-triangle");
+                 window.showCustomModal("Kesalahan", "Gagal mempublikasikan pengumuman.", "alert-triangle");
              }
           });
       }
@@ -1438,7 +1442,7 @@
              renderAnnouncements(announcements);
 
          }, (error) => {
-             console.error("Ralat saat memantau pengumuman:", error);
+             console.error("Kesalahan saat memantau pengumuman:", error);
          });
       }
 
@@ -1459,7 +1463,7 @@
           const studentList = document.getElementById('student-announcements-list');
           if (studentList) {
               if (announcements.length === 0) {
-                  studentList.innerHTML = '<p class="text-zinc-500 text-xs italic">Tiada pengumuman dari guru anda setakat ini.</p>';
+                  studentList.innerHTML = '<p class="text-zinc-500 text-xs italic">Belum ada pengumuman dari guru Anda saat ini.</p>';
               } else {
                   studentList.innerHTML = announcements.map(a => 
                       `<div class="bg-orange-500/10 p-3 rounded-lg border border-orange-500/20 text-xs text-zinc-300">
@@ -1471,7 +1475,7 @@
           }
       }
 
-      // 2. Pesan Siswa (Dihantar oleh Pelajar, Dilihat oleh Guru dan Pelajar lain)
+      // 2. Pesan Siswa (Dilihat oleh Guru)
       const formMesej = document.getElementById('student-message-form');
       if (formMesej) {
           formMesej.addEventListener('submit', async (e) => {
@@ -1492,8 +1496,8 @@
                  });
                  input.value = '';
              } catch(err) {
-                 console.error("Gagal menghantar mesej:", err);
-                 window.showCustomModal("Ralat", "Gagal menghantar mesej.", "alert-triangle");
+                 console.error("Gagal mengirim pesan:", err);
+                 window.showCustomModal("Kesalahan", "Gagal mengirimkan pesan.", "alert-triangle");
              }
           });
       }
@@ -1520,14 +1524,13 @@
                  return timeA - timeB; // Ascending supaya mesej baharu di bawah
              });
 
-             // Paparkan ke Kontena Guru
-             const teacherContainer = document.getElementById('teacher-messages-container');
-             if (teacherContainer) {
+             const container = document.getElementById('teacher-messages-container');
+             if (container) {
                  if (msgs.length === 0) {
-                     teacherContainer.innerHTML = '<p class="text-zinc-500 text-xs italic">Belum ada mesej masuk di kelas ini.</p>';
+                     container.innerHTML = '<p class="text-zinc-500 text-xs italic">Belum ada pesan masuk di kelas ini.</p>';
                  } else {
-                     teacherContainer.innerHTML = msgs.map(m => {
-                         const date = m.timestamp ? new Date(m.timestamp.toMillis()).toLocaleString('ms-MY', {hour: '2-digit', minute:'2-digit', day:'numeric', month:'short'}) : 'Baru sahaja';
+                     container.innerHTML = msgs.map(m => {
+                         const date = m.timestamp ? new Date(m.timestamp.toMillis()).toLocaleString('ms-MY', {hour: '2-digit', minute:'2-digit', day:'numeric', month:'short'}) : 'Baru saja';
                          const colorClass = getColorClassForString(m.senderId || m.senderName);
                          return `<div class="bg-zinc-900/50 p-3 rounded-xl border border-white/5 text-xs text-zinc-300">
                                     <div class="flex justify-between items-center mb-1">
@@ -1537,18 +1540,16 @@
                                     <p>${escapeHtml(m.text)}</p>
                                  </div>`;
                      }).join('');
-                     teacherContainer.scrollTop = teacherContainer.scrollHeight;
                  }
              }
-             
-             // Paparkan ke Kontena Pelajar
+
              const studentContainer = document.getElementById('student-messages-container');
              if (studentContainer) {
                  if (msgs.length === 0) {
                      studentContainer.innerHTML = '<p class="text-zinc-500 text-xs italic">Belum ada mesej di kelas ini.</p>';
                  } else {
                      studentContainer.innerHTML = msgs.map(m => {
-                         const date = m.timestamp ? new Date(m.timestamp.toMillis()).toLocaleString('ms-MY', {hour: '2-digit', minute:'2-digit', day:'numeric', month:'short'}) : 'Baru sahaja';
+                         const date = m.timestamp ? new Date(m.timestamp.toMillis()).toLocaleString('ms-MY', {hour: '2-digit', minute:'2-digit', day:'numeric', month:'short'}) : 'Baru saja';
                          const colorClass = getColorClassForString(m.senderId || m.senderName);
                          return `<div class="bg-zinc-900/50 p-3 rounded-xl border border-white/5 text-xs text-zinc-300">
                                     <div class="flex justify-between items-center mb-1">
@@ -1558,12 +1559,11 @@
                                     <p>${escapeHtml(m.text)}</p>
                                  </div>`;
                      }).join('');
-                     studentContainer.scrollTop = studentContainer.scrollHeight;
                  }
              }
 
          }, (error) => {
-             console.error("Ralat saat memantau mesej:", error);
+             console.error("Kesalahan saat memantau pesan masuk:", error);
          });
       }
 
@@ -1683,7 +1683,7 @@
         const btn = document.getElementById('btn-generate-batch');
 
         if (!window.state.apiConfig.gasUrl) {
-            window.showCustomModal("Tiada Pautan", "Sila tetapkan URL App Script di menu Tetapan terlebih dahulu.", "alert-circle", false);
+            window.showCustomModal("Tidak Ada Tautan", "Harap atur URL App Script di menu Pengaturan terlebih dahulu.", "alert-circle", false);
             return;
         }
 
@@ -1701,7 +1701,7 @@
         if (!geminiKey) {
             loader.classList.add('hidden');
             btn.disabled = false;
-            window.showCustomModal("Tiada Kunci API", "Sistem memerlukan Kunci API Gemini untuk menjana soalan secara terus. Sila masukkannya dalam ikon Tetapan di penjuru atas.", "alert-triangle", false);
+            window.showCustomModal("Tidak Ada Kunci API", "Sistem memerlukan Kunci API Gemini untuk menjana soal secara otomatis. Silakan masukkan di ikon Pengaturan di sudut atas.", "alert-triangle", false);
             return;
         }
 
@@ -1717,7 +1717,7 @@
 
         for (let m = 0; m < modelsToTry.length; m++) {
           const currentModel = modelsToTry[m];
-          updateStatus("Mendapatkan respons AI (" + currentModel + ")...", "Menghantar arahan...");
+          updateStatus("Mendapatkan respons AI (" + currentModel + ")...", "Mengirimkan instruksi...");
           
           const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/" + currentModel + ":generateContent?key=" + geminiKey;
           
@@ -1779,7 +1779,7 @@
               throw new Error(apiErrorLog || "Semua model gagal dihubungi.");
           }
 
-          updateStatus("Memformat hasil...", "Menyiapkan penyegerakan ke Google Sheets...");
+          updateStatus("Memformat hasil...", "Menyiapkan integrasi ke Google Sheets...");
           const cleanedJsonText = cleanJsonString(resultJsonRaw);
           const cleanJson = JSON.parse(cleanedJsonText);
           
@@ -1831,19 +1831,19 @@
           const destinationMode = document.getElementById('ai-gen-destination').value;
           
           if (destinationMode === 'sheet') {
-            updateStatus("Menyimpan ke Awan...", "Mencipta tab Set baharu...");
+            updateStatus("Menyimpan ke Awan...", "Membuat tab Set baru...");
             const res = await makeCloudCall('saveQuestions', { questionsJson: JSON.stringify(gasPayload) });
             
             if (res.success) {
                 await window.fetchQuestionsFromCloud(); 
                 loader.classList.add('hidden');
                 btn.disabled = false;
-                window.showCustomModal("Proses Selesai!", "Soalan-soalan telah berjaya dijana dan disimpan ke Set " + nextSetNum + " di pangkalan data Google Sheet anda.", "sparkles", true);
+                window.showCustomModal("Proses Selesai!", "Soal-soal telah berhasil dibuat dan disimpan ke Set " + nextSetNum + " di pangkalan data Google Sheet Anda.", "sparkles", true);
             } else {
                 throw new Error("Gagal menyinkronisasikan ke dalam Sheet.");
             }
           } else {
-            updateStatus("Menyiapkan dokumen CSV...", "Merangkai isi fail...");
+            updateStatus("Menyiapkan dokumen CSV...", "Merangkai isi file...");
             const headers = ["QuestionID", "Chapter", "Topic", "Difficulty", "Question", "OptionA", "OptionB", "OptionC", "OptionD", "CorrectAnswer", "Explanation", "ImageURL", "Formula", "Type", "Tags", "Status"];
             
             let csvContent = headers.join(",") + "\n";
@@ -1868,20 +1868,20 @@
 
             loader.classList.add('hidden');
             btn.disabled = false;
-            window.showCustomModal("CSV Sedia!", "Fail Makroverse_Set_" + nextSetNum + "_Questions.csv berjaya dimuat turun. Sila tampal isi fail ini ke Google Sheet secara manual.", "check-circle", true);
+            window.showCustomModal("CSV Siap!", "File Makroverse_Set_" + nextSetNum + "_Questions.csv berhasil diunduh. Silakan salin isi file ini ke Google Sheet secara manual.", "check-circle", true);
           }
 
         } catch (err) {
           console.error(err);
           loader.classList.add('hidden');
           btn.disabled = false;
-          window.showCustomModal("Ralat Pemprosesan", "Gagal menghubungi pelayan AI atau terdapat kerosakan struktur balasan. Butiran Ralat:<br><pre class='text-xs mt-2 text-red-400 text-left bg-zinc-950 p-2 rounded max-h-32 overflow-y-auto whitespace-pre-wrap'>" + err.message + "</pre><br><span class='text-[10px] text-zinc-500'>Sila semak kembali kunci API Gemini anda.</span>", "alert-triangle", false);
+          window.showCustomModal("Kendala Pemrosesan", "Gagal menghubungi pelayan AI atau terdapat kerusakan struktur balasan. Rincian Kesalahan:<br><pre class='text-xs mt-2 text-red-400 text-left bg-zinc-950 p-2 rounded max-h-32 overflow-y-auto whitespace-pre-wrap'>" + err.message + "</pre><br><span class='text-[10px] text-zinc-500'>Periksa kembali sisa kuota dan ketepatan API Key Gemini Anda.</span>", "alert-triangle", false);
         }
       };
 
 
       // ==========================================
-      // ALUR LATIHAN KUIZ (QUIZ NAVIGATION)
+      // ALUR LATIHAN KUIS (QUIZ NAVIGATION)
       // ==========================================
       window.startQuizFlow = function() {
         const selectedChap = document.getElementById('student-chapter-selector').value;
@@ -1891,7 +1891,7 @@
         let pool = window.globalQuestions;
 
         if (pool.length === 0) {
-          window.showCustomModal("Bank Soalan Kosong", "Belum ada soalan yang sedia ada. Minta bimbingan guru anda untuk menerbitkan materi Google Sheet yang baharu.", "info");
+          window.showCustomModal("Bank Soal Kosong", "Belum ada materi pertanyaan yang tesedia. Minta bimbingan guru Anda untuk menerbitkan materi Google Sheet yang baru.", "info");
           return;
         }
 
@@ -1905,7 +1905,7 @@
         }
 
         if (tabFilteredPool.length === 0) {
-          window.showCustomModal("Soalan Tidak Ditemui", "Tiada padanan soalan untuk pilihan Set/Bab anda cari. Sila mencuba tetapan yang lain.", "info");
+          window.showCustomModal("Soal Tidak Ditemukan", "Tidak ada kecocokan materi untuk pilihan Kategori Set yang Anda cari. Silakan mencoba opsi lainnya.", "info");
           return;
         }
 
@@ -1922,7 +1922,7 @@
         window.state.quizState.questions = [...setFilteredPool];
         
         if (window.state.quizState.questions.length === 0) {
-          window.showCustomModal("Kosong", "Sistem tidak dapat mengumpulkan soalan yang memadai untuk pilihan anda ini.", "info");
+          window.showCustomModal("Kosong", "Sistem tidak dapat mengumpulkan soal yang memadai untuk pilihan Anda ini.", "info");
           window.exitQuiz();
           return;
         }
@@ -2030,7 +2030,7 @@
       document.getElementById('btn-quiz-submit').addEventListener('click', () => {
         const selected = window.state.quizState.answers[window.state.quizState.currentIndex];
         if (selected === undefined) {
-          window.showCustomModal("Jawapan Kosong", "Anda perlu memilih sekurang-kurangnya satu jawapan sebelum memverifikasi.", "alert-circle");
+          window.showCustomModal("Jawaban Kosong", "Anda harus memilih salah satu jawaban sebelum memverifikasi.", "alert-circle");
           return;
         }
 
@@ -2053,7 +2053,15 @@
 
         const expBox = document.getElementById('quiz-explanation-box');
         const expText = document.getElementById('quiz-explanation-text');
-        expText.innerHTML = q.explanation || "Tiada butiran tambahan disertakan bagi soalan ini.";
+        
+        let explanationContent = q.explanation ? q.explanation : "Tidak ada detail konseptual yang dilampirkan oleh guru untuk pertanyaan ini.";
+        let correctAnswerLabel = String.fromCharCode(65 + q.answer);
+        
+        expText.innerHTML = `
+          <span class="block text-emerald-400 font-bold mb-2">Jawapan Tepat: ${correctAnswerLabel} - ${escapeHtml(q.options[q.answer])}</span>
+          <span class="block text-zinc-300">${explanationContent}</span>
+        `;
+        
         expBox.classList.remove('hidden');
 
         document.getElementById('btn-quiz-submit').classList.add('hidden');
@@ -2075,7 +2083,7 @@
         const container = document.getElementById('quiz-multi-view');
         container.innerHTML = '';
 
-        document.getElementById('quiz-chapter-indicator').innerText = "Bab " + window.state.quizState.chapter + " — " + window.state.quizState.set + " (Mod Peperiksaan Terbuka)";
+        document.getElementById('quiz-chapter-indicator').innerText = "Bab " + window.state.quizState.chapter + " — " + window.state.quizState.set + " (Mode Ujian Terbuka)";
 
         window.state.quizState.questions.forEach((q, qIndex) => {
           const qWrapper = document.createElement('div');
@@ -2111,10 +2119,10 @@
         submitBtnWrapper.className = "pt-4 flex flex-col sm:flex-row justify-end gap-3";
         submitBtnWrapper.innerHTML = `
           <button onclick="window.exitQuiz()" class="w-full sm:w-auto bg-zinc-800 hover:bg-zinc-700 text-white font-extrabold px-8 py-3.5 rounded-xl transition-all border border-white/10 text-center leading-tight whitespace-normal break-words text-xs sm:text-sm min-h-[3rem]">
-            Batalkan Ujian
+            Batalkan Pengujian
           </button>
           <button onclick="window.submitExamSheet()" class="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold px-8 py-3.5 rounded-xl transition-all shadow-lg text-center leading-tight whitespace-normal break-words text-xs sm:text-sm min-h-[3rem]">
-            Hantar Semua Jawapan
+            Serahkan Lembar Jawaban
           </button>
         `;
         container.appendChild(submitBtnWrapper);
@@ -2131,7 +2139,7 @@
 
         window.state.quizState.answers[qIndex] = optIndex;
         const btn = document.getElementById("multi-q-" + qIndex + "-opt-" + optIndex);
-        btn.className = "w-full text-left p-3 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-white transition-all font-bold flex items-center gap-2 break-words whitespace-normal leading-relaxed";
+        btn.className = "w-full text-left p-3 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-white transition-all font-bold flex items-center gap-3 break-words whitespace-normal leading-relaxed";
       };
 
       window.submitExamSheet = function() {
@@ -2139,7 +2147,7 @@
         const answeredCount = Object.keys(window.state.quizState.answers).length;
 
         if (answeredCount < totalQ) {
-          if (!confirm(`Sistem mendapati anda hanya menjawab ${answeredCount}/${totalQ} soalan. Yakin untuk menghantarnya sekarang?`)) {
+          if (!confirm(`Sistem mendeteksi Anda hanya menjawab ${answeredCount}/${totalQ} soal. Yakin untuk menyimpannya sekarang?`)) {
             return;
           }
         }
@@ -2170,7 +2178,7 @@
         const calculatedLevel = Math.floor(user.xp / 200) + 1;
         if (calculatedLevel > (user.level || 1)) {
           setTimeout(() => {
-            window.showCustomModal("Syabas! Peningkatan Tahap 🎉", `Anda baru sahaja melangkah naik ke Tahap ${calculatedLevel}! Lanjutkan momentum belajar anda.`, "award", true);
+            window.showCustomModal("Syabas! Peningkatan Tahap 🎉", `Anda baru saja melangkah naik ke Tahap ${calculatedLevel}! Lanjutkan momentum belajar Anda.`, "award", true);
           }, 800);
         }
         user.level = calculatedLevel;
@@ -2205,11 +2213,11 @@
                     chapter: window.state.quizState.chapter,
                     set: window.state.quizState.set,
                     mode: window.state.quizState.mode,
-                    timeTakenSeconds: window.state.quizState.secondsTaken
+                    timeTakenSeconds: window.state.secondsTaken
                 });
 
              } catch(e) {
-                 console.error("Penyegerakan skor Firestore tertunda", e);
+                 console.error("Sinkronisasi skor Firestore tertunda", e);
              }
         }
 
@@ -2228,7 +2236,7 @@
       }
 
       window.exitQuiz = function() {
-        if (confirm("Adakah anda benar-benar pasti ingin membatalkan sesi ujian yang sedang berjalan ini? Semua pencapaian dan XP tidak akan direkodkan.")) {
+        if (confirm("Apakah Anda benar-benar yakin ingin membatalkan sesi ujian berjalan ini? Pencapaian dan XP tidak akan direkam.")) {
           if (window.state.quizState.timerInterval) clearInterval(window.state.quizState.timerInterval);
           window.backToDashboard();
         }
