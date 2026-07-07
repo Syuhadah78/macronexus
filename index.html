@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ms" class="h-full">
+<html lang="id" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -42,7 +42,7 @@
     import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getFirestore, doc, setDoc, getDoc, collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, serverTimestamp, orderBy } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-    // Konfigurasi Firebase web app MacroNexus rasmi (macronexus-7805)
+    // Konfigurasi Firebase resmi proyek MacroNexus (macronexus-7805)
     const firebaseConfig = {
       apiKey: "AIzaSyCDAGpmffFqw0ImEjmQmpmcRsoZ-v3UMqw",
       authDomain: "macronexus-7805.firebaseapp.com",
@@ -59,13 +59,13 @@
       auth = getAuth(app);
       db = getFirestore(app);
     } catch(e) {
-      console.warn("Firebase tidak ditemui di persekitaran ini. Berjalan dalam mod lokal.");
+      console.warn("Firebase tidak ditemukan di lingkungan ini. Berjalan dalam mode lokal.");
     }
     
-    // Menetapkan ID Aplikasi secara mutlak untuk pangkalan data Firestore
+    // ID Aplikasi mutlak untuk koleksi Firestore
     const appId = 'macronexus-7805';
 
-    // Mengeksport ke objek global Window untuk digunakan oleh skrip logik aplikasi
+    // Mengekspor objek penting ke lingkup global window
     window.db = db;
     window.auth = auth;
     window.appId = appId;
@@ -86,10 +86,10 @@
     window.GoogleAuthProvider = GoogleAuthProvider;
     window.signInWithPopup = signInWithPopup;
 
-    // Mendefinisikan fungsi log masuk Google secara global
+    // Fungsi login menggunakan akun Google/DELIMa secara global
     window.loginWithGoogle = async function() {
       if (!auth) {
-        if(window.showCustomModal) window.showCustomModal("Ralat", "Sistem autentikasi Firebase belum sedia.", "alert-triangle");
+        if(window.showCustomModal) window.showCustomModal("Kesalahan", "Sistem autentikasi Firebase belum siap.", "alert-triangle");
         return;
       }
       const provider = new GoogleAuthProvider();
@@ -102,7 +102,7 @@
         const firebaseUser = result.user;
         const email = firebaseUser.email || "";
         
-        // Deteksi peran otomatis berdasarkan prefiks email DELIMa
+        // Deteksi peran otomatis berdasarkan format email DELIMa
         let detectedRole = 'student';
         const emailLower = email.toLowerCase();
         if (emailLower.startsWith('g-')) {
@@ -113,7 +113,7 @@
           detectedRole = window.state.role;
         }
         
-        // Membina profil pengguna baru
+        // Membuat data profil pengguna baru
         const profile = {
           id: firebaseUser.uid,
           name: firebaseUser.displayName || "Pengguna MacroNexus",
@@ -126,12 +126,12 @@
           correct: 0
         };
 
-        // Jika peranan adalah pelajar, simpan profil ke Firestore
+        // Menyimpan profil ke database Firestore
         if (profile.role === 'student' && db) {
           try {
-            // [RULE 1] Jalur profil peribadi pelajar
+            // [RULE 1] Jalur dokumen pribadi siswa
             const privateDocRef = doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'profile', 'main');
-            // [RULE 3] Jalur profil awam pelajar untuk dilihat oleh guru kelas
+            // [RULE 3] Jalur dokumen publik siswa untuk dipantau oleh guru kelas
             const studentDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'students', firebaseUser.uid);
             
             const privateDoc = await getDoc(privateDocRef);
@@ -142,11 +142,11 @@
               await setDoc(studentDocRef, profile);
             }
           } catch (e) {
-            console.warn("Gagal menyimpan profil pelajar di Firestore:", e);
+            console.warn("Gagal menyimpan profil siswa di Firestore:", e);
           }
         } else if (profile.role === 'teacher' && db) {
           try {
-            // [RULE 1] Jalur profil peribadi guru
+            // [RULE 1] Jalur dokumen pribadi guru
             const privateDocRef = doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'profile', 'main');
             const privateDoc = await getDoc(privateDocRef);
             if (privateDoc.exists()) {
@@ -159,16 +159,16 @@
           }
         }
 
-        // Simpan secara tempatan
+        // Menyimpan data secara lokal pada perangkat
         localStorage.setItem('macronexus_user_profile', JSON.stringify(profile));
         
-        // Kemaskini state global aplikasi
+        // Memperbarui state global aplikasi
         if (window.state) {
           window.state.user = profile;
           window.state.role = profile.role;
         }
 
-        // Jalankan penarikan soalan jika sedia
+        // Mengunduh bank soal dari cloud jika tersedia
         if (window.fetchQuestionsFromCloud) {
           await window.fetchQuestionsFromCloud();
         }
@@ -176,7 +176,17 @@
       } catch (error) {
         console.error("Kesalahan log masuk Google:", error);
         if (window.showCustomModal) {
-          window.showCustomModal("Ralat Log Masuk", "Gagal log masuk menggunakan Google/DELIMa. Sila cuba lagi.", "alert-triangle");
+          // Menangani kesalahan domain pratinjau yang tidak diizinkan di Firebase Console
+          if (error.code === 'auth/unauthorized-domain' || (error.message && error.message.includes('auth/unauthorized-domain'))) {
+            const currentDomain = window.location.hostname;
+            window.showCustomModal(
+              "Domain Tidak Diizinkan", 
+              `Domain pratinjau saat ini (<b>${currentDomain}</b>) belum ditambahkan ke daftar Authorized Domains pada Firebase Console proyek Anda.<br><br><b>Solusi Penanganan:</b><br>1. Buka Firebase Console proyek <b>macronexus-7805</b>.<br>2. Masuk ke menu <b>Authentication</b> -> <b>Settings</b> -> <b>Authorized Domains</b>.<br>3. Daftarkan domain: <b>${currentDomain}</b>.<br><br><i>Sebagai alternatif instan, Anda dapat menggunakan pendaftaran/masuk secara <b>Manual</b> di bawah yang bekerja normal tanpa batasan domain ini.</i>`, 
+              "shield-alert"
+            );
+          } else {
+            window.showCustomModal("Kesalahan Log Masuk", "Gagal masuk menggunakan Google/DELIMa. Silakan coba lagi.", "alert-triangle");
+          }
         }
         if (window.showView) window.showView('view-auth');
       }
@@ -224,10 +234,10 @@
       <div id="modal-icon-container" class="inline-flex p-4 rounded-full bg-orange-500/10 text-orange-500 mb-4 shadow-lg shadow-orange-500/10">
         <i id="modal-icon" data-lucide="alert-triangle" class="w-8 h-8 sm:w-10 sm:h-10"></i>
       </div>
-      <h3 id="modal-title" class="text-xl sm:text-2xl font-bold text-white mb-2 break-words">Makluman</h3>
+      <h3 id="modal-title" class="text-xl sm:text-2xl font-bold text-white mb-2 break-words">Pemberitahuan</h3>
       <div id="modal-message" class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-6 break-words text-left overflow-y-auto max-h-60 custom-scrollbar pr-1 text-center"></div>
       <button onclick="window.closeCustomModal()" class="w-full py-3 px-4 min-h-[3rem] flex items-center justify-center text-center bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-extrabold rounded-xl transition-all transform scale-[1.02] shadow-lg shadow-orange-500/20 whitespace-normal break-words leading-tight text-xs sm:text-sm">
-        Faham & Teruskan
+        Paham & Lanjutkan
       </button>
     </div>
   </div>
@@ -238,16 +248,16 @@
       <div class="inline-flex p-4 rounded-full bg-amber-500/10 text-amber-500 mb-4 shadow-lg shadow-amber-500/10">
         <i data-lucide="history" class="w-8 h-8 sm:w-10 sm:h-10"></i>
       </div>
-      <h3 class="text-xl sm:text-2xl font-bold text-white mb-2">Akaun Kelas Ditemui!</h3>
+      <h3 class="text-xl sm:text-2xl font-bold text-white mb-2">Akun Kelas Ditemukan!</h3>
       <p class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-6 break-words">
-        Sistem mengesan nama anda sudah mempunyai pautan kod kelas sedia ada iaitu <strong id="resume-class-code" class="text-amber-400 break-all"></strong>. Adakah cikgu ingin meneruskan ke kelas tersebut atau membina kelas yang baharu?
+        Sistem mendeteksi nama Anda sudah memiliki pautan kode kelas sedia ada yaitu <strong id="resume-class-code" class="text-amber-400 break-all"></strong>. Apakah guru ingin melanjutkan ke kelas tersebut atau membuat kelas baru?
       </p>
       <div class="flex flex-col gap-3">
         <button onclick="window.resumeExistingClass()" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center leading-tight bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold rounded-xl transition-all shadow-lg hover:scale-[1.02] whitespace-normal break-words text-xs sm:text-sm">
-          Teruskan ke Kelas Sedia Ada
+          Lanjutkan ke Kelas Sedia Ada
         </button>
         <button onclick="window.startNewClassFlow()" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center leading-tight bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl transition-all border border-white/5 whitespace-normal break-words text-xs sm:text-sm">
-          Bina Kelas Baharu
+          Buat Kelas Baru
         </button>
         <button onclick="window.closeTeacherResumeModal()" class="w-full py-2.5 px-4 flex items-center justify-center text-zinc-500 hover:text-zinc-300 text-xs sm:text-sm font-bold transition-all min-h-[2.5rem]">
           Batal
@@ -262,9 +272,9 @@
       <div class="inline-flex p-4 rounded-full bg-red-500/10 text-red-500 mb-4 shadow-lg shadow-red-500/10">
         <i data-lucide="user-x" class="w-8 h-8 sm:w-10 sm:h-10"></i>
       </div>
-      <h3 class="text-xl sm:text-2xl font-bold text-white mb-2">Keluarkan Pelajar?</h3>
+      <h3 class="text-xl sm:text-2xl font-bold text-white mb-2">Keluarkan Siswa?</h3>
       <p class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-6 break-words">
-        Adakah anda pasti ingin mengeluarkan <strong id="delete-student-name" class="text-red-400"></strong> daripada kelas anda? Tindakan ini akan mengosongkan rekod kod kelas mereka.
+        Apakah Anda yakin ingin mengeluarkan <strong id="delete-student-name" class="text-red-400"></strong> dari kelas Anda? Tindakan ini akan mengosongkan rekod kode kelas mereka.
       </p>
       <div class="flex flex-col gap-3">
         <button id="btn-confirm-delete-execute" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center leading-tight bg-gradient-to-r from-red-600 to-orange-600 text-white font-extrabold rounded-xl transition-all shadow-lg hover:scale-[1.02] text-xs sm:text-sm">
@@ -376,7 +386,7 @@
           <div class="grid grid-cols-2 gap-3" id="role-selection">
             <button type="button" onclick="window.setAuthRole('student')" id="btn-role-student" class="p-3 sm:p-4 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-amber-500 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem]">
               <i data-lucide="users" class="w-5 h-5 sm:w-6 sm:h-6 shrink-0"></i>
-              <span class="font-bold text-xs sm:text-sm text-center break-words whitespace-normal leading-tight">Pelajar</span>
+              <span class="font-bold text-xs sm:text-sm text-center break-words whitespace-normal leading-tight">Siswa</span>
             </button>
             <button type="button" onclick="window.setAuthRole('teacher')" id="btn-role-teacher" class="p-3 sm:p-4 rounded-xl border-2 border-zinc-800 hover:border-zinc-700 text-zinc-400 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem]">
               <i data-lucide="graduation-cap" class="w-5 h-5 sm:w-6 sm:h-6 shrink-0"></i>
@@ -410,9 +420,9 @@
             </div>
 
             <div id="field-class-code">
-              <label id="label-classcode" class="block text-[11px] sm:text-xs font-bold text-zinc-400 tracking-wide mb-1 whitespace-normal break-words">Kode Kelas (Wajib Untuk Pelajar)</label>
+              <label id="label-classcode" class="block text-[11px] sm:text-xs font-bold text-zinc-400 tracking-wide mb-1 whitespace-normal break-words">Kode Kelas (Wajib Untuk Siswa)</label>
               <input id="auth-classcode" type="text" placeholder="Contoh: MKR8291" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all uppercase" />
-              <p id="desc-classcode" class="text-[10px] text-zinc-500 mt-1.5 leading-tight break-words">Dapatkan kode kelas dari guru anda.</p>
+              <p id="desc-classcode" class="text-[10px] text-zinc-500 mt-1.5 leading-tight break-words">Dapatkan kode kelas dari guru Anda.</p>
             </div>
           </div>
 
@@ -434,9 +444,9 @@
         <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
           <!-- Form Bina Kelas Baharu -->
           <form id="create-class-form" class="flex flex-col sm:flex-row gap-2 w-full">
-            <input required id="new-class-name" type="text" placeholder="Nama Kelas Baharu" class="bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 outline-none w-full sm:w-44 text-xs sm:text-sm text-center sm:text-left" />
+            <input required id="new-class-name" type="text" placeholder="Nama Kelas Baru" class="bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 outline-none w-full sm:w-44 text-xs sm:text-sm text-center sm:text-left" />
             <button type="submit" class="bg-gradient-to-tr from-orange-500 to-amber-500 text-black px-4 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all shrink-0 text-xs sm:text-sm shadow-lg hover:scale-105 min-h-[3rem] whitespace-normal text-center break-words">
-              <i data-lucide="plus" class="w-4 h-4 shrink-0"></i> <span>Bina Kelas</span>
+              <i data-lucide="plus" class="w-4 h-4 shrink-0"></i> <span>Buat Kelas</span>
             </button>
           </form>
 
@@ -444,9 +454,9 @@
           
           <!-- Form Masuk Semula Kelas -->
           <form id="resume-class-form" class="flex flex-col sm:flex-row gap-2 w-full mt-2 sm:mt-0 border-t sm:border-t-0 border-white/5 pt-3 sm:pt-0">
-            <input required id="resume-class-input" type="text" placeholder="Kod Kelas Lama" class="bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-zinc-500 outline-none w-full sm:w-48 text-xs sm:text-sm uppercase text-center sm:text-left" />
+            <input required id="resume-class-input" type="text" placeholder="Kode Kelas Lama" class="bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-zinc-500 outline-none w-full sm:w-48 text-xs sm:text-sm uppercase text-center sm:text-left" />
             <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all shrink-0 text-xs sm:text-sm border border-white/5 shadow-lg hover:scale-105 min-h-[3rem] whitespace-normal text-center break-words">
-              <i data-lucide="log-in" class="w-4 h-4 shrink-0"></i> <span>Masuk Semula</span>
+              <i data-lucide="log-in" class="w-4 h-4 shrink-0"></i> <span>Masuk Kembali</span>
             </button>
           </form>
         </div>
@@ -455,11 +465,11 @@
       <div id="active-class-banner" class="hidden bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div class="w-full sm:w-auto">
           <h3 class="text-orange-400 font-bold text-lg leading-tight break-words" id="display-class-name">Nama Kelas</h3>
-          <p class="text-xs text-zinc-400 mt-1 leading-relaxed break-words">Berikan kod ini kepada pelajar anda untuk mendaftar masuk.</p>
+          <p class="text-xs text-zinc-400 mt-1 leading-relaxed break-words">Berikan kode ini kepada siswa Anda untuk mendaftar masuk kelas.</p>
         </div>
         <div class="bg-zinc-950 px-4 py-2.5 rounded-xl border border-zinc-800 flex items-center justify-between gap-4 w-full sm:w-auto">
           <span class="text-lg sm:text-2xl font-black text-white tracking-widest uppercase truncate" id="display-class-code">MKR000</span>
-          <button onclick="window.copyClassCode()" class="text-zinc-400 hover:text-white transition-colors shrink-0 p-2 bg-zinc-900 rounded-lg min-w-[2.25rem] min-h-[2.25rem] flex items-center justify-center" title="Salin Kod">
+          <button onclick="window.copyClassCode()" class="text-zinc-400 hover:text-white transition-colors shrink-0 p-2 bg-zinc-900 rounded-lg min-w-[2.25rem] min-h-[2.25rem] flex items-center justify-center" title="Salin Kode">
             <i data-lucide="copy" class="w-4 h-4"></i>
           </button>
         </div>
@@ -473,7 +483,7 @@
             <i data-lucide="users" class="w-5 h-5"></i>
           </div>
           <div id="stat-teacher-students" class="text-2xl sm:text-3xl font-black text-white mb-1">0</div>
-          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Pelajar Aktif</div>
+          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Siswa Aktif</div>
         </div>
         <div class="glass-panel p-4 sm:p-6 rounded-3xl relative overflow-hidden">
           <div class="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-br from-amber-500 to-yellow-500 opacity-5 rounded-bl-full"></div>
@@ -489,7 +499,7 @@
             <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
           </div>
           <div id="stat-teacher-accuracy" class="text-2xl sm:text-3xl font-black text-white mb-1">0%</div>
-          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Ketepatan Kelas</div>
+          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Akurasi Kelas</div>
         </div>
       </div>
 
@@ -514,7 +524,7 @@
             <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Target Penyimpanan AI</label>
             <select id="ai-gen-destination" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
               <option value="sheet" selected>Simpan Terus ke Google Sheet Baru</option>
-              <option value="csv">Jana & Muat Terun Fail CSV</option>
+              <option value="csv">Jana & Muat Turun Fail CSV</option>
             </select>
           </div>
           <div class="flex flex-col justify-end md:col-span-1 sm:col-span-2">
@@ -535,23 +545,23 @@
       <div class="bg-zinc-950 border border-white/5 rounded-3xl overflow-hidden shadow-xl mt-8">
         <div class="p-4 sm:p-6 border-b border-white/5">
           <h2 class="text-base sm:text-xl font-bold text-white flex items-center gap-2 leading-tight">
-            <i data-lucide="users" class="text-orange-400 w-5 h-5 shrink-0"></i> Senarai Pelajar
+            <i data-lucide="users" class="text-orange-400 w-5 h-5 shrink-0"></i> Daftar Siswa
           </h2>
         </div>
         <div class="overflow-x-auto custom-scrollbar">
           <table class="w-full text-left border-collapse min-w-[500px]">
             <thead>
               <tr class="bg-zinc-900 text-zinc-400 text-[10px] sm:text-xs">
-                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Nama Pelajar</th>
-                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Kod Kelas</th>
-                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Tahap</th>
+                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Nama Siswa</th>
+                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Kode Kelas</th>
+                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Tingkat</th>
                 <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">XP</th>
-                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Ketepatan</th>
+                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Akurasi</th>
                 <th class="p-3 sm:p-4 font-bold uppercase tracking-wider text-center">Tindakan</th>
               </tr>
             </thead>
             <tbody id="students-table-body" class="divide-y divide-white/5 text-xs sm:text-sm">
-              <tr><td colspan="6" class="p-6 text-center text-zinc-500">Tiada pelajar ditemui.</td></tr>
+              <tr><td colspan="6" class="p-6 text-center text-zinc-500">Tidak ada siswa yang terdaftar di kelas ini.</td></tr>
             </tbody>
           </table>
         </div>
@@ -566,16 +576,16 @@
               <i data-lucide="megaphone" class="text-orange-500 w-4 h-4"></i> Siarkan Pengumuman Kelas
             </h3>
             <form id="teacher-announcement-form" class="space-y-3">
-              <textarea required id="teacher-announcement-input" placeholder="Tuliskan pengumuman penting untuk semua pelajar di kelas ini..." class="w-full h-24 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500 resize-none"></textarea>
+              <textarea required id="teacher-announcement-input" placeholder="Tuliskan pengumuman penting untuk semua siswa di kelas ini..." class="w-full h-24 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500 resize-none"></textarea>
               <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold rounded-xl transition-all shadow-lg text-xs sm:text-sm">
                 Siarkan Pengumuman
               </button>
             </form>
           </div>
           <div class="border-t border-white/5 pt-3 mt-3">
-            <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-2">Pengumuman Terkini:</h4>
+            <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-2">Pengumuman Terbaru:</h4>
             <div id="teacher-announcements-list" class="overflow-y-auto max-h-[80px] custom-scrollbar space-y-1 text-xs text-zinc-400">
-              <!-- Dinamik -->
+              <!-- Dinamis -->
               <p class="text-zinc-600 italic">Belum ada pengumuman.</p>
             </div>
           </div>
@@ -588,7 +598,7 @@
               <i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Log Sembang Mesej Pelajar
             </h3>
             <div id="teacher-messages-container" class="flex-grow space-y-3 overflow-y-auto pr-1 custom-scrollbar pb-2 min-h-0">
-              <p class="text-zinc-500 text-xs italic">Belum ada mesej di kelas ini.</p>
+              <p class="text-zinc-500 text-xs italic">Belum ada pesan di kelas ini.</p>
             </div>
           </div>
         </div>
@@ -991,7 +1001,7 @@
         activeClassCode: null,
         activeClassName: null,
         apiConfig: {
-          gasUrl: 'https://script.google.com/macros/s/AKfycbyw8MyWOBmByQDywfYaiMdPqKMYK_2Hut2M4mjASPz-YYR1Sc62lKz85IGWFrVHydk/exec',
+          gasUrl: 'https://script.google.com/macros/s/AKfycbz77P_dKdKDz4ISyuptaizk7TVjH_WL-Dl0_bCNy3wqWaQhpSrLh4aSrIMuaojKJFpb/exec',
           geminiKey: 'AQ.Ab8RN6JTIbGRAEFrBvlF3_8vxi7zFMOScHOrPo_m9dTdQ6kr1g'
         },
         students: [],
@@ -1003,7 +1013,7 @@
         }
       };
 
-      // Mentakrifkan set fungsi paparan (showView) terlebih dahulu bagi mengelakkan ralat ReferenceError pramatang
+      // Deklarasi fungsi di bawah objek window terlebih dahulu agar terbaca secara global
       window.showView = function(viewId) {
         const viewLoading = document.getElementById('view-loading');
         const viewAuth = document.getElementById('view-auth');
