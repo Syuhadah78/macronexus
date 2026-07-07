@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id" class="h-full">
+<html lang="ms" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -64,26 +64,6 @@
     
     // Tetapkan terus ID Aplikasi secara mutlak untuk pangkalan data Firestore
     const appId = 'macronexus-7805';
-
-    // Inisialisasi state global seawal mungkin untuk menghindari ralat 'undefined' pada apiConfig
-    window.state = {
-      role: 'student',
-      selectedRole: 'student',
-      user: null,
-      activeClassCode: null,
-      activeClassName: null,
-      apiConfig: {
-        gasUrl: 'https://script.google.com/macros/s/AKfycbzkhklS7Uw0x4CdnkE0QKlddYmPjjCIFGJ-F6mTlpOGXrpzzenc2Jpnr-Lq9f75Yeg/exec',
-        geminiKey: 'AQ.Ab8RN6JTIbGRAEFrBvlF3_8vxi7zFMOScHOrPo_m9dTdQ6kr1g'
-      },
-      students: [],
-      quizState: {
-        chapter: "1", set: "1", mode: "onebyone",
-        questions: [], currentIndex: 0, answers: {},
-        score: 0, xpEarned: 0, hasSubmitted: false,
-        secondsTaken: 0, timerInterval: null
-      }
-    };
 
     // Mengeksport ke objek global Window untuk digunakan oleh skrip logik aplikasi
     window.db = db;
@@ -543,7 +523,7 @@
             <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Target Penyimpanan AI</label>
             <select id="ai-gen-destination" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
               <option value="sheet" selected>Simpan Terus ke Google Sheet Baru</option>
-              <option value="csv">Jana & Muat Terun Fail CSV</option>
+              <option value="csv">Jana & Muat Turun Fail CSV</option>
             </select>
           </div>
           <div class="flex flex-col justify-end md:col-span-1 sm:col-span-2">
@@ -1363,7 +1343,7 @@
                  if (msgs.length === 0) {
                      const p = document.createElement('p');
                      p.className = "text-zinc-500 text-xs italic";
-                     p.textContent = "Belum ada pesan di kelas ini.";
+                     p.textContent = "Belum ada mesej di kelas ini.";
                      container.appendChild(p);
                  } else {
                      msgs.forEach(m => {
@@ -1773,7 +1753,7 @@
         localStorage.setItem('makroverse_api_config', JSON.stringify(window.state.apiConfig));
         
         window.closeApiConfigModal();
-        window.showCustomModal("Simpan Berhasil", "Konfigurasi pautan sistem luaran anda telah dikemas kini dengan selamat.", "check-circle", true);
+        window.showCustomModal("Simpan Berhasil", "Konfigurasi tautan sistem eksternal Anda telah diperbarui dengan aman.", "check-circle", true);
         window.fetchQuestionsFromCloud().then(() => window.syncDatabaseWithBackend());
       };
 
