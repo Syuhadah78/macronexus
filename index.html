@@ -62,7 +62,7 @@
       console.warn("Firebase tidak ditemui di persekitaran ini. Berjalan dalam mod lokal.");
     }
     
-    // Tetapkan terus ID Aplikasi secara mutlak untuk pangkalan data Firestore
+    // Menetapkan ID Aplikasi secara mutlak untuk pangkalan data Firestore
     const appId = 'macronexus-7805';
 
     // Mengeksport ke objek global Window untuk digunakan oleh skrip logik aplikasi
@@ -502,7 +502,7 @@
           <div>
             <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Liputan Bab</label>
             <select id="ai-gen-chapter" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
-              <option value="0" selected>Semua Bab Pilihan (100 Soalan - 20/Bab)</option>
+              <option value="0" selected>Semua Soalan (100 Soalan - 20/Bab)</option>
               <option value="1">Bab 1: Pengenalan Makroekonomi (20 Soalan)</option>
               <option value="2">Bab 2: Perakaunan Pendapatan Negara (20 Soalan)</option>
               <option value="3">Bab 3: Keseimbangan Pendapatan Negara (20 Soalan)</option>
@@ -527,7 +527,7 @@
         <div id="ai-batch-loader" class="hidden flex-col items-center py-6 bg-zinc-950 rounded-2xl border border-orange-500/10 mt-4 px-4 text-center">
           <div class="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-3"></div>
           <p id="loader-status-text" class="text-sm font-bold text-amber-500 leading-tight">Berkomunikasi dengan Google Apps Script...</p>
-          <p id="loader-progress-text" class="text-[10px] sm:text-xs text-zinc-400 mt-1 max-w-sm">Mohon tunggu sementara sistem menyusun pertanyaan untuk Anda.</p>
+          <p id="loader-progress-text" class="text-[10px] sm:text-xs text-zinc-400 mt-1 max-w-sm">Sila tunggu sementara pelayan menyusun soalan untuk anda.</p>
         </div>
       </div>
 
@@ -535,15 +535,15 @@
       <div class="bg-zinc-950 border border-white/5 rounded-3xl overflow-hidden shadow-xl mt-8">
         <div class="p-4 sm:p-6 border-b border-white/5">
           <h2 class="text-base sm:text-xl font-bold text-white flex items-center gap-2 leading-tight">
-            <i data-lucide="users" class="text-orange-400 w-5 h-5 shrink-0"></i> Daftar Siswa
+            <i data-lucide="users" class="text-orange-400 w-5 h-5 shrink-0"></i> Senarai Pelajar
           </h2>
         </div>
         <div class="overflow-x-auto custom-scrollbar">
           <table class="w-full text-left border-collapse min-w-[500px]">
             <thead>
               <tr class="bg-zinc-900 text-zinc-400 text-[10px] sm:text-xs">
-                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Nama Siswa</th>
-                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Kode Kelas</th>
+                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Nama Pelajar</th>
+                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Kod Kelas</th>
                 <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Tahap</th>
                 <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">XP</th>
                 <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Ketepatan</th>
@@ -551,7 +551,7 @@
               </tr>
             </thead>
             <tbody id="students-table-body" class="divide-y divide-white/5 text-xs sm:text-sm">
-              <tr><td colspan="6" class="p-6 text-center text-zinc-500">Tidak ada siswa yang ditemukan.</td></tr>
+              <tr><td colspan="6" class="p-6 text-center text-zinc-500">Tiada pelajar ditemui.</td></tr>
             </tbody>
           </table>
         </div>
@@ -566,16 +566,16 @@
               <i data-lucide="megaphone" class="text-orange-500 w-4 h-4"></i> Siarkan Pengumuman Kelas
             </h3>
             <form id="teacher-announcement-form" class="space-y-3">
-              <textarea required id="teacher-announcement-input" placeholder="Tuliskan pengumuman penting untuk semua siswa di kelas ini..." class="w-full h-24 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500 resize-none"></textarea>
+              <textarea required id="teacher-announcement-input" placeholder="Tuliskan pengumuman penting untuk semua pelajar di kelas ini..." class="w-full h-24 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500 resize-none"></textarea>
               <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold rounded-xl transition-all shadow-lg text-xs sm:text-sm">
                 Siarkan Pengumuman
               </button>
             </form>
           </div>
           <div class="border-t border-white/5 pt-3 mt-3">
-            <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-2">Pengumuman Terbaru:</h4>
+            <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-2">Pengumuman Terkini:</h4>
             <div id="teacher-announcements-list" class="overflow-y-auto max-h-[80px] custom-scrollbar space-y-1 text-xs text-zinc-400">
-              <!-- Dinamis -->
+              <!-- Dinamik -->
               <p class="text-zinc-600 italic">Belum ada pengumuman.</p>
             </div>
           </div>
@@ -585,11 +585,10 @@
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between h-[380px]">
           <div class="flex flex-col flex-grow overflow-hidden">
             <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-2 shrink-0">
-              <i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Log Pesan Obrolan Siswa
+              <i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Log Sembang Mesej Pelajar
             </h3>
             <div id="teacher-messages-container" class="flex-grow space-y-3 overflow-y-auto pr-1 custom-scrollbar pb-2 min-h-0">
-              <!-- Dinamis -->
-              <p class="text-zinc-500 text-xs italic">Belum ada pesan masuk di kelas ini.</p>
+              <p class="text-zinc-500 text-xs italic">Belum ada mesej di kelas ini.</p>
             </div>
           </div>
         </div>
@@ -606,6 +605,20 @@
             <p id="student-live-cloud-text" class="text-zinc-400 max-w-lg text-xs sm:text-sm leading-relaxed break-words">Prestasi dan skor kuiz anda kini disimpan secara live ke Google Sheets!</p>
           </div>
         </div>
+      </div>
+
+      <!-- Ruangan Sertai Kelas (Jika belum ada Kod Kelas) -->
+      <div id="student-join-class-panel" class="hidden glass-panel p-5 sm:p-6 rounded-3xl border border-amber-500/30">
+        <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 mb-3">
+          <i data-lucide="key-round" class="text-amber-500 w-5 h-5 shrink-0"></i> Sertai Kelas Guru
+        </h3>
+        <p class="text-xs text-zinc-400 mb-4 leading-relaxed">Anda belum menyertai mana-mana kelas. Sila masukkan Kod Kelas yang diberikan oleh Guru anda untuk menyegerakkan prestasi dan menghantar mesej.</p>
+        <form id="student-join-class-form" class="flex flex-col sm:flex-row gap-3">
+          <input required id="student-join-class-input" type="text" placeholder="Contoh: MKR1234" class="bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-1 focus:ring-amber-500 outline-none transition-all uppercase" />
+          <button type="submit" class="bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold px-6 py-3 rounded-xl transition-all shrink-0 text-xs flex items-center justify-center gap-1.5 hover:scale-[1.02]">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> Sertai Kelas
+          </button>
+        </form>
       </div>
 
       <!-- Baris 1: Soalan Terjawab, Ketepatan & Tahap Masteri Sebaris Melintang -->
@@ -822,7 +835,7 @@
         </div>
       </div>
 
-      <button onclick="window.backToDashboard()" class="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-black rounded-xl transition-all transform hover:scale-[1.02] text-xs sm:text-sm min-h-[3.25rem]">
+      <button onclick="window.backToDashboard()" class="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-black rounded-xl transition-all shadow-lg transform hover:scale-[1.02] text-xs sm:text-sm min-h-[3.25rem]">
         Kembali ke Papan Pemuka
       </button>
     </div>
@@ -978,7 +991,7 @@
         activeClassCode: null,
         activeClassName: null,
         apiConfig: {
-          gasUrl: 'https://script.google.com/macros/s/AKfycbz77P_dKdKDz4ISyuptaizk7TVjH_WL-Dl0_bCNy3wqWaQhpSrLh4aSrIMuaojKJFpb/exec',
+          gasUrl: 'https://script.google.com/macros/s/AKfycbyw8MyWOBmByQDywfYaiMdPqKMYK_2Hut2M4mjASPz-YYR1Sc62lKz85IGWFrVHydk/exec',
           geminiKey: 'AQ.Ab8RN6JTIbGRAEFrBvlF3_8vxi7zFMOScHOrPo_m9dTdQ6kr1g'
         },
         students: [],
@@ -990,7 +1003,7 @@
         }
       };
 
-      // Deklarasi fungsi di bawah objek window terlebih dahulu agar terbaca secara global
+      // Mentakrifkan set fungsi paparan (showView) terlebih dahulu bagi mengelakkan ralat ReferenceError pramatang
       window.showView = function(viewId) {
         const viewLoading = document.getElementById('view-loading');
         const viewAuth = document.getElementById('view-auth');
@@ -1052,12 +1065,24 @@
         const accuracy = user.attempts > 0 ? Math.round((user.correct / user.attempts) * 100) : 0;
         if(accuracyEl) accuracyEl.innerText = accuracy + "%";
         
+        // Sembunyikan atau tunjukkan panel Sertai Kelas
+        const joinClassPanel = document.getElementById('student-join-class-panel');
+        if (joinClassPanel) {
+          if (!user.classCode) {
+            joinClassPanel.classList.remove('hidden');
+          } else {
+            joinClassPanel.classList.add('hidden');
+          }
+        }
+        
         // Tarik mesej alu-aluan dinamik daripada Apps Script Google Sheets peribadi
         fetchStudentWelcomeMessage();
       };
 
-      // Deklarasi fungsi penyelarasan pangkalan data lokal dan dasbor
+      // Deklarasi fungsi penyelarasan pangkalan data lokal dan dasbor secara aman
       window.syncDatabaseWithBackend = function() {
+        if (!window.state || !window.state.user) return;
+        
         document.getElementById('nav-user-name').innerText = window.state.user.name;
         document.getElementById('nav-user-role').innerText = window.state.role === 'teacher' ? 'Guru' : 'Siswa';
         document.getElementById('nav-avatar').innerText = window.state.user.name.charAt(0).toUpperCase();
@@ -1070,15 +1095,7 @@
         }
       };
 
-      // Deklarasi fungsi exitQuiz lokal secara aman
-      window.exitQuiz = function() {
-        if (confirm("Adakah anda benar-benar pasti ingin membatalkan sesi ujian yang sedang berjalan ini? Semua pencapaian dan XP tidak akan direkodkan.")) {
-          if (window.state.quizState.timerInterval) clearInterval(window.state.quizState.timerInterval);
-          window.backToDashboard();
-        }
-      };
-
-      // Deklarasi fungsi loadTeacherDashboardData secara global pada window
+      // Deklarasi fungsi loadTeacherDashboardData secara global agar dapat diakses
       window.loadTeacherDashboardData = function() {
         window.showView('view-teacher-dashboard');
 
@@ -1087,14 +1104,14 @@
           document.getElementById('display-class-name').innerText = window.state.activeClassName || "Kelas Makroekonomi";
           document.getElementById('display-class-code').innerText = window.state.activeClassCode;
           window.listenStudents();
-          window.listenAnnouncements();
-          window.listenMessages();
+          listenAnnouncements();
+          listenMessages();
         } else {
           document.getElementById('active-class-banner').classList.add('hidden');
         }
       };
 
-      // Inisialisasi pendengar data murid khusus guru secara global
+      // Deklarasi pendengar data murid khusus guru secara global
       window.listenStudents = function() {
         if (!window.auth || !window.auth.currentUser || !window.state.activeClassCode) return;
         
@@ -1111,216 +1128,64 @@
                     window.state.students.push({ id: doc.id, ...data });
                 }
             });
-            window.renderStudentsTable();
+            renderStudentsTable();
         }, (error) => {
             console.error("Kesalahan memantau data siswa dari Firestore:", error);
         });
       };
 
-      // Deklarasi fungsi listenAnnouncements secara global
-      window.listenAnnouncements = function() {
-         if (!window.auth || !window.auth.currentUser || !window.state.user.classCode) return;
-         
-         if (unsubscribeAnnouncements) unsubscribeAnnouncements();
-
-         const q = window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'announcements');
-         
-         unsubscribeAnnouncements = window.onSnapshot(q, (snapshot) => {
-             let announcements = [];
-             snapshot.forEach(doc => {
-                 const data = doc.data();
-                 if (data.classCode === window.state.user.classCode) {
-                     announcements.push({id: doc.id, ...data});
-                 }
-             });
-
-             // Urutkan secara lokal agar tidak perlu indeks gabungan
-             announcements.sort((a, b) => {
-                 const timeA = a.timestamp ? a.timestamp.toMillis() : Date.now();
-                 const timeB = b.timestamp ? b.timestamp.toMillis() : Date.now();
-                 return timeB - timeA;
-             });
-
-             window.renderAnnouncements(announcements);
-
-         }, (error) => {
-             console.error("Kesalahan saat memantau pengumuman:", error);
-         });
-      };
-
-      // Deklarasi fungsi listenMessages secara global
-      window.listenMessages = function() {
-         if (!window.auth || !window.auth.currentUser || !window.state.user.classCode) return;
-
-         if (unsubscribeMessages) unsubscribeMessages();
-
-         const q = window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'messages');
-         
-         unsubscribeMessages = window.onSnapshot(q, (snapshot) => {
-             let msgs = [];
-             snapshot.forEach(doc => {
-                 const data = doc.data();
-                 if (data.classCode === window.state.user.classCode) {
-                     msgs.push({id: doc.id, ...data});
-                 }
-             });
-
-             msgs.sort((a, b) => {
-                 const timeA = a.timestamp ? a.timestamp.toMillis() : Date.now();
-                 const timeB = b.timestamp ? b.timestamp.toMillis() : Date.now();
-                 return timeA - timeB; // Ascending supaya mesej baharu di bawah
-             });
-
-             const renderMsgToContainer = (containerId) => {
-                 const container = document.getElementById(containerId);
-                 if (!container) return;
-                 
-                 container.innerHTML = '';
-                 
-                 if (msgs.length === 0) {
-                     const p = document.createElement('p');
-                     p.className = "text-zinc-500 text-xs italic";
-                     p.textContent = "Belum ada mesej di kelas ini.";
-                     container.appendChild(p);
-                 } else {
-                     msgs.forEach(m => {
-                         const date = m.timestamp ? new Date(m.timestamp.toMillis()).toLocaleString('ms-MY', {hour: '2-digit', minute:'2-digit', day:'numeric', month:'short'}) : 'Baru saja';
-                         const colorClass = getColorClassForString(m.senderId || m.senderName);
-                         
-                         const wrap = document.createElement('div');
-                         wrap.className = "bg-zinc-900/50 p-3 rounded-xl border border-white/5 text-xs text-zinc-300";
-                         
-                         const headerDiv = document.createElement('div');
-                         headerDiv.className = "flex justify-between items-center mb-1";
-                         
-                         const strong = document.createElement('strong');
-                         strong.className = colorClass;
-                         strong.textContent = m.senderName;
-                         
-                         const spanDate = document.createElement('span');
-                         spanDate.className = "text-[9px] text-zinc-500";
-                         spanDate.textContent = date;
-                         
-                         headerDiv.appendChild(strong);
-                         headerDiv.appendChild(spanDate);
-                         wrap.appendChild(headerDiv);
-                         
-                         const msgP = document.createElement('p');
-                         msgP.textContent = m.text;
-                         wrap.appendChild(msgP);
-                         
-                         container.appendChild(wrap);
-                     });
-                     container.scrollTop = container.scrollHeight;
-                 }
-             };
-
-             renderMsgToContainer('teacher-messages-container');
-             renderMsgToContainer('student-messages-container');
-
-         }, (error) => {
-             console.error("Kesalahan saat memantau pesan masuk:", error);
-         });
-      };
-
-      // Deklarasi fungsi renderAnnouncements secara global
-      window.renderAnnouncements = function(announcements) {
-          const teacherList = document.getElementById('teacher-announcements-list');
-          if (teacherList) {
-              teacherList.innerHTML = '';
-              if (announcements.length === 0) {
-                  teacherList.innerHTML = '<p class="text-zinc-600 italic">Belum ada pengumuman.</p>';
-              } else {
-                  announcements.forEach(a => {
-                      const div = document.createElement('div');
-                      div.className = "bg-zinc-900 p-2 rounded border border-zinc-800 mb-1";
-                      const span = document.createElement('span');
-                      span.className = "text-orange-400 font-bold";
-                      span.textContent = a.senderName + ": ";
-                      div.appendChild(span);
-                      const tNode = document.createTextNode(a.text);
-                      div.appendChild(tNode);
-                      teacherList.appendChild(div);
-                  });
-              }
-          }
-
-          const studentList = document.getElementById('student-announcements-list');
-          if (studentList) {
-              studentList.innerHTML = '';
-              if (announcements.length === 0) {
-                  studentList.innerHTML = '<p class="text-zinc-500 text-xs italic">Belum ada pengumuman dari guru Anda saat ini.</p>';
-              } else {
-                  announcements.forEach(a => {
-                      const div = document.createElement('div');
-                      div.className = "bg-orange-500/10 p-3 rounded-lg border border-orange-500/20 text-xs text-zinc-300";
-                      const strong = document.createElement('strong');
-                      strong.className = "text-orange-400 block mb-1";
-                      strong.textContent = "Cikgu " + a.senderName;
-                      div.appendChild(strong);
-                      const tNode = document.createTextNode(a.text);
-                      div.appendChild(tNode);
-                      studentList.appendChild(div);
-                  });
-              }
-          }
-      };
-
-      // Deklarasi fungsi renderStudentsTable secara global
-      window.renderStudentsTable = function() {
-        const tbody = document.getElementById('students-table-body');
-        if (!tbody) return;
-        tbody.innerHTML = '';
-
-        if (window.state.students.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-zinc-500">Tidak ada siswa yang terdaftar di kelas ini.</td></tr>`;
-          window.updateTeacherStats(0, 0, 0);
-          return;
+      // Deklarasi fungsi menyalin kode kelas
+      window.copyClassCode = function() {
+        const classCodeText = document.getElementById('display-class-code')?.innerText;
+        if (classCodeText) {
+          const el = document.createElement('textarea');
+          el.value = classCodeText;
+          document.body.appendChild(el);
+          el.select();
+          document.execCommand('copy');
+          document.body.removeChild(el);
+          window.showCustomModal("Disalin", "Kod kelas " + classCodeText + " telah berjaya disalin ke papan klip!", "check-circle", true);
         }
-
-        let totalAttempts = 0;
-        let totalCorrect = 0;
-
-        window.state.students.forEach(student => {
-          totalAttempts += student.attempts || 0;
-          totalCorrect += student.correct || 0;
-          const accuracy = student.attempts > 0 ? Math.round((student.correct / student.attempts) * 100) : 0;
-
-          const tr = document.createElement('tr');
-          tr.className = "hover:bg-white/5 transition-colors border-b border-white/5";
-          
-          // Menggunakan rentetan yang diurus dengan selamat
-          const td1 = document.createElement('td'); td1.className = "p-3 sm:p-4 font-bold text-white whitespace-nowrap"; td1.textContent = student.name;
-          const td2 = document.createElement('td'); td2.className = "p-3 sm:p-4 text-zinc-400 font-mono text-[11px] sm:text-xs tracking-wider uppercase"; td2.textContent = student.classCode || 'TIDAK ADA';
-          const td3 = document.createElement('td'); td3.className = "p-3 sm:p-4 whitespace-nowrap"; td3.innerHTML = `<span class="px-2 py-1 rounded bg-orange-500/10 text-orange-400 font-bold text-[10px] sm:text-xs">Lvl ${student.level || 1}</span>`;
-          const td4 = document.createElement('td'); td4.className = "p-3 sm:p-4 font-bold text-amber-400 font-mono whitespace-nowrap"; td4.textContent = `${student.xp || 0} XP`;
-          const td5 = document.createElement('td'); td5.className = "p-3 sm:p-4 font-bold font-mono text-emerald-400 whitespace-nowrap"; td5.textContent = `${accuracy}%`;
-          const td6 = document.createElement('td'); td6.className = "p-3 sm:p-4 text-center whitespace-nowrap";
-          
-          const delBtn = document.createElement('button');
-          delBtn.className = "p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all";
-          delBtn.title = "Keluarkan Pelajar";
-          delBtn.innerHTML = `<i data-lucide="user-x" class="w-4 h-4"></i>`;
-          delBtn.onclick = function() {
-              const safeName = student.name ? student.name.split("'").join("\\'") : "";
-              window.confirmDeleteStudent(student.id, safeName);
-          };
-          td6.appendChild(delBtn);
-
-          tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4); tr.appendChild(td5); tr.appendChild(td6);
-          tbody.appendChild(tr);
-        });
-
-        const classAccuracy = totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0;
-        window.updateTeacherStats(window.state.students.length, totalAttempts, classAccuracy);
-        initLucide();
       };
 
-      // Deklarasi fungsi updateTeacherStats secara global
-      window.updateTeacherStats = function(studentsCount, attemptsCount, accuracyVal) {
-        document.getElementById('stat-teacher-students').innerText = studentsCount;
-        document.getElementById('stat-teacher-attempts').innerText = attemptsCount;
-        document.getElementById('stat-teacher-accuracy').innerText = `${accuracyVal}%`;
+      // Deklarasi fungsi mengeluarkan pelajar dari kelas guru secara manual
+      window.confirmDeleteStudent = function(studentId, studentName) {
+        const deleteModal = document.getElementById('confirm-delete-modal');
+        const deleteNameEl = document.getElementById('delete-student-name');
+        const confirmBtn = document.getElementById('btn-confirm-delete-execute');
+
+        if (deleteModal && deleteNameEl && confirmBtn) {
+          deleteNameEl.textContent = studentName;
+          deleteModal.classList.remove('hidden');
+          setTimeout(() => { deleteModal.classList.add('opacity-100'); }, 50);
+
+          confirmBtn.onclick = async function() {
+            try {
+              // Profil siswa untuk mengosongkan kode kelas mereka
+              const privateDocRef = window.doc(window.db, 'artifacts', window.appId, 'users', studentId, 'profile', 'main');
+              const studentDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', studentId);
+
+              // Update di Firestore
+              await window.updateDoc(privateDocRef, { classCode: '' });
+              await window.updateDoc(studentDocRef, { classCode: '' });
+
+              window.closeConfirmDeleteModal();
+              window.showCustomModal("Berjaya", "Pelajar " + studentName + " telah berjaya dikeluarkan dari kelas.", "check-circle", true);
+            } catch (e) {
+              console.error("Gagal mengeluarkan pelajar:", e);
+              window.showCustomModal("Ralat", "Gagal mengeluarkan pelajar dari kelas.", "alert-triangle");
+            }
+          };
+        }
+      };
+
+      // Deklarasi fungsi menutup modal konfirmasi hapus siswa
+      window.closeConfirmDeleteModal = function() {
+        const modal = document.getElementById('confirm-delete-modal');
+        if (modal) {
+          modal.classList.remove('opacity-100');
+          setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
       };
 
       // Deklarasi pendengar status perubahan autentikasi Firebase
@@ -1392,13 +1257,12 @@
               window.setAuthRole(window.state.role);
 
               if (window.state.user.classCode) {
-                window.listenAnnouncements();
-                window.listenMessages();
+                listenAnnouncements();
+                listenMessages();
               }
 
               if (window.state.role === 'teacher') {
-                window.showView('view-teacher-dashboard');
-                window.listenStudents();
+                window.loadTeacherDashboardData();
               } else {
                 window.updateStudentDashboardUI();
                 window.showView('view-student-dashboard');
@@ -1418,6 +1282,14 @@
           }
         });
       }
+
+      // Deklarasi fungsi exitQuiz lokal secara aman
+      window.exitQuiz = function() {
+        if (confirm("Adakah anda benar-benar pasti ingin membatalkan sesi ujian yang sedang berjalan ini? Semua pencapaian dan XP tidak akan direkodkan.")) {
+          if (window.state.quizState.timerInterval) clearInterval(window.state.quizState.timerInterval);
+          window.backToDashboard();
+        }
+      };
 
       // Jalankan permulaan autentikasi dengan selamat sekarang
       initialAuth();
@@ -1647,79 +1519,214 @@
         window.fetchQuestionsFromCloud().then(() => window.syncDatabaseWithBackend());
       };
 
-      // Fungsi Penjanaan Warna Rawak untuk Pengirim Mesej
-      function getColorClassForString(str) {
-        const colors = ['text-red-400', 'text-green-400', 'text-blue-400', 'text-yellow-400', 'text-purple-400', 'text-pink-400', 'text-indigo-400', 'text-teal-400', 'text-cyan-400', 'text-rose-400'];
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            hash = str.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        return colors[Math.abs(hash) % colors.length];
+      // Penangan Form Sertai Kelas Pelajar secara dinamis
+      const joinClassForm = document.getElementById('student-join-class-form');
+      if (joinClassForm) {
+        joinClassForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const classCodeInput = document.getElementById('student-join-class-input').value.trim().toUpperCase();
+          if (!classCodeInput || !window.auth.currentUser) return;
+
+          window.showView('view-loading');
+          const loadingText = document.getElementById('loading-text');
+          if (loadingText) loadingText.innerText = "Menyemak kod kelas di awan...";
+
+          try {
+            // Dapatkan metadata kelas di Firestore publik
+            const classDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', classCodeInput);
+            const classDoc = await window.getDoc(classDocRef);
+
+            if (!classDoc.exists()) {
+              window.showCustomModal("Kelas Tidak Ditemui", "Maaf, kod kelas " + classCodeInput + " tidak wujud dalam pangkalan data.", "alert-triangle");
+              window.syncDatabaseWithBackend();
+              return;
+            }
+
+            const classData = classDoc.data();
+            
+            const user = window.state.user;
+            user.classCode = classCodeInput;
+
+            // Simpan profil siswa ke Firestore
+            const privateDocRef = window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main');
+            const studentDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', window.auth.currentUser.uid);
+            
+            await window.setDoc(privateDocRef, user);
+            await window.setDoc(studentDocRef, user);
+
+            // Perbarui status lokal pelajar
+            window.state.user = user;
+            localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
+
+            window.showCustomModal("Kelas Berjaya Disertai!", "Tahniah! Anda telah berjaya menyertai kelas <b>" + classData.className + "</b>.", "check-circle", true);
+            
+            window.syncDatabaseWithBackend();
+          } catch (err) {
+            console.error("Gagal menyertai kelas:", err);
+            window.showCustomModal("Ralat", "Gagal menyertai kelas. Sila cuba lagi.", "alert-triangle");
+            window.syncDatabaseWithBackend();
+          }
+        });
       }
 
-      // ==========================================
-      // FUNGSI PENGAMBILAN & PENGIRIMAN DATA (API & FIRESTORE)
-      // ==========================================
-      
-      window.fetchQuestionsFromCloud = async function() {
-        if (!window.state.apiConfig.gasUrl) {
-            // Gunakan kumpulan soalan fallback tempatan jika tiada URL konfig
-            window.globalQuestions = localFallbackQuestions;
-            return true;
-        }
-        try {
-            // Menggunakan POST request dengan tindakan 'fetch_all' sesuai regulasi Apps Script baharu
-            const response = await fetch(window.state.apiConfig.gasUrl, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'fetch_all' })
-            });
-            const text = await response.text();
-            
-            // Verifikasi format JSON secara aman untuk menghindari ralat crash tak tertangkap
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                console.warn("Gagal menukar respons Google Apps Script kepada JSON. Menggunakan kumpulan soalan alternatif (local fallback)!");
-                window.globalQuestions = localFallbackQuestions;
-                
-                // Paparkan makluman mesra pengguna tentang status muat turun
-                if (window.showCustomModal) {
-                    window.showCustomModal(
-                        "Perhatian: Sistem Sedia Ada", 
-                        "Google Apps Script anda mengembalikan sapaan makluman harian atau respons tidak sah. Aplikasi kini menggunakan Bank Soalan Alternatif STPM sedia ada secara automatik untuk memastikan anda boleh memulakan latihan dengan lancar.", 
-                        "info",
-                        true
-                    );
-                }
-                return true;
-            }
-            
-            if (data && data.questions) {
-                window.globalQuestions = data.questions.map((q, idx) => {
-                    return {
-                        id: `Q_${idx}_${Date.now()}`,
-                        chapter: q.chapter ? q.chapter.toString() : "1",
-                        sheetName: q.set || "Set 1",
-                        text: q.q,
-                        options: q.opts && q.opts.length > 0 ? q.opts : ["Pilihan A", "Pilihan B", "Pilihan C", "Pilihan D"],
-                        answer: q.ans !== undefined ? q.ans : 0,
-                        explanation: q.explanation || "Rujuk analisis konsep makroekonomi untuk perbincangan lanjut."
-                    };
-                });
-                return true;
-            }
-            // Fallback sekiranya tiada soalan di dalam objek JSON
-            window.globalQuestions = localFallbackQuestions;
-            return true;
-        } catch(e) {
-            console.error("Gagal menarik soalan awan, beralih ke local fallback:", e);
-            window.globalQuestions = localFallbackQuestions;
-            return true;
-        }
-      };
+      // Tambahan penangan form submit untuk Guru membuat kelas baru
+      const createClassForm = document.getElementById('create-class-form');
+      if (createClassForm) {
+        createClassForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const className = document.getElementById('new-class-name').value.trim();
+          if (!className || !window.auth.currentUser) return;
 
+          window.showView('view-loading');
+          const loadingText = document.getElementById('loading-text');
+          if (loadingText) loadingText.innerText = "Membina kelas baharu di awan...";
+
+          try {
+            // Menghasilkan kode kelas unik secara acak
+            const classCode = "MKR" + Math.floor(1000 + Math.random() * 9000);
+            
+            const user = window.state.user;
+            user.classCode = classCode;
+            user.className = className;
+
+            // Simpan profil guru ke Firestore
+            const teacherDocRef = window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main');
+            await window.setDoc(teacherDocRef, user);
+
+            // Simpan rujukan metadata kelas di Firestore publik agar dapat dimasuki oleh siswa
+            const classDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', classCode);
+            await window.setDoc(classDocRef, {
+              classCode: classCode,
+              className: className,
+              teacherId: window.auth.currentUser.uid,
+              teacherName: user.name,
+              timestamp: window.serverTimestamp ? window.serverTimestamp() : new Date()
+            });
+
+            // Perbarui status lokal pengajar
+            window.state.activeClassCode = classCode;
+            window.state.activeClassName = className;
+            window.state.user = user;
+            localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
+
+            window.showCustomModal("Kelas Berjaya Dibina!", "Tahniah! Kelas <b>" + className + "</b> telah berjaya dibina dengan kod kelas: <strong class='text-orange-500 font-mono tracking-wider'>" + classCode + "</strong>. Kongsikan kod ini kepada murid anda.", "check-circle", true);
+            
+            window.syncDatabaseWithBackend();
+          } catch (err) {
+            console.error("Gagal membina kelas:", err);
+            window.showCustomModal("Ralat", "Gagal membina kelas baharu. Sila cuba lagi.", "alert-triangle");
+            window.syncDatabaseWithBackend();
+          }
+        });
+      }
+
+      // Tambahan penangan form submit untuk Guru mengambil semula pautan kelas lama
+      const resumeClassForm = document.getElementById('resume-class-form');
+      if (resumeClassForm) {
+        resumeClassForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const classCodeInput = document.getElementById('resume-class-input').value.trim().toUpperCase();
+          if (!classCodeInput || !window.auth.currentUser) return;
+
+          window.showView('view-loading');
+          const loadingText = document.getElementById('loading-text');
+          if (loadingText) loadingText.innerText = "Menyemak kod kelas di awan...";
+
+          try {
+            // Dapatkan metadata kelas di Firestore publik
+            const classDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', classCodeInput);
+            const classDoc = await window.getDoc(classDocRef);
+
+            if (!classDoc.exists()) {
+              window.showCustomModal("Kelas Tidak Ditemui", "Maaf, kod kelas <b>" + classCodeInput + "</b> tidak wujud dalam pangkalan data.", "alert-triangle");
+              window.syncDatabaseWithBackend();
+              return;
+            }
+
+            const classData = classDoc.data();
+            
+            const user = window.state.user;
+            user.classCode = classCodeInput;
+            user.className = classData.className;
+
+            // Simpan profil guru ke Firestore
+            const teacherDocRef = window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main');
+            await window.setDoc(teacherDocRef, user);
+
+            // Simpan tautan kelas lama dalam penyimpanan lokal nama guru
+            localStorage.setItem(`makroverse_teacher_class_${user.name}`, JSON.stringify({
+              classCode: classCodeInput,
+              className: classData.className
+            }));
+
+            // Perbarui status lokal pengajar
+            window.state.activeClassCode = classCodeInput;
+            window.state.activeClassName = classData.className;
+            window.state.user = user;
+            localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
+
+            window.showCustomModal("Kembali Berjaya!", "Anda telah berjaya masuk semula ke kelas <b>" + classData.className + "</b>.", "check-circle", true);
+            
+            window.syncDatabaseWithBackend();
+          } catch (err) {
+            console.error("Gagal masuk semula kelas:", err);
+            window.showCustomModal("Ralat", "Gagal menyambung ke kelas sedia ada. Sila cuba lagi.", "alert-triangle");
+            window.syncDatabaseWithBackend();
+          }
+        });
+      }
+
+      // Tambahan penangan form submit untuk Pelajar menghantar mesej sembang
+      const studentMsgForm = document.getElementById('student-message-form');
+      if (studentFormSubmitHandler) {
+         // Prevent duplication
+      }
+      
     };
+
+    // Fungsi penangan form submit siswa mengirimkan pesan
+    function setupStudentMessageForm() {
+       const form = document.getElementById('student-message-form');
+       if (form) {
+          // Menghapus event listener lama jika ada dengan mereplace elemen klon
+          const newForm = form.cloneNode(true);
+          form.parentNode.replaceChild(newForm, form);
+
+          newForm.addEventListener('submit', async (e) => {
+             e.preventDefault();
+             if (!window.auth || !window.auth.currentUser || !window.state || !window.state.user || !window.state.user.classCode) {
+                 window.showCustomModal("Ralat Penghantaran", "Anda mesti menyertai sebuah kelas aktif terlebih dahulu sebelum menghantar mesej.", "alert-triangle");
+                 return;
+             }
+             
+             const input = document.getElementById('student-message-input');
+             const text = input.value.trim();
+             if (!text) return;
+
+             try {
+                 await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'messages'), {
+                     classCode: window.state.user.classCode,
+                     text: text,
+                     timestamp: window.serverTimestamp(),
+                     senderName: window.state.user.name,
+                     senderId: window.auth.currentUser.uid
+                 });
+                 input.value = '';
+             } catch(err) {
+                 console.error("Gagal menghantar mesej:", err);
+                 window.showCustomModal("Ralat", "Gagal menghantar mesej ke kelas.", "alert-triangle");
+             }
+          });
+       }
+    }
+
+    // Pemicu inisialisasi form pengiriman pesan setelah DOM selesai dimuat sepenuhnya
+    window.addEventListener('DOMContentLoaded', () => {
+       setTimeout(() => {
+         setupStudentMessageForm();
+       }, 1000);
+    });
+
   </script>
 
 </body>
