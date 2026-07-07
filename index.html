@@ -102,7 +102,7 @@
         const firebaseUser = result.user;
         const email = firebaseUser.email || "";
         
-        // Deteksi peran otomatis berdasarkan prefiks email DELIMa
+        // Deteksi peran otomatis berdasarkan prefiks email DELIMa secara mutlak
         let detectedRole = 'student';
         const emailLower = email.toLowerCase();
         if (emailLower.startsWith('g-')) {
@@ -126,12 +126,10 @@
           correct: 0
         };
 
-        // Jika peranan adalah pelajar, simpan profil ke Firestore
+        // Simpan ke Firestore
         if (profile.role === 'student' && db) {
           try {
-            // [RULE 1] Jalur profil peribadi pelajar
             const privateDocRef = doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'profile', 'main');
-            // [RULE 3] Jalur profil awam pelajar untuk dilihat oleh guru kelas
             const studentDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'students', firebaseUser.uid);
             
             const privateDoc = await getDoc(privateDocRef);
@@ -146,7 +144,6 @@
           }
         } else if (profile.role === 'teacher' && db) {
           try {
-            // [RULE 1] Jalur profil peribadi guru
             const privateDocRef = doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'profile', 'main');
             const privateDoc = await getDoc(privateDocRef);
             if (privateDoc.exists()) {
@@ -162,7 +159,7 @@
         // Simpan secara tempatan
         localStorage.setItem('macronexus_user_profile', JSON.stringify(profile));
         
-        // Kemaskini state global aplikasi
+        // Kemaskini state global aplikasi sebelum beralih skrin
         if (window.state) {
           window.state.user = profile;
           window.state.role = profile.role;
@@ -176,7 +173,6 @@
       } catch (error) {
         console.error("Kesalahan log masuk Google:", error);
         if (window.showCustomModal) {
-          // Menangani kesalahan domain pratinjau yang tidak diizinkan di Firebase Console
           if (error.code === 'auth/unauthorized-domain' || (error.message && error.message.includes('auth/unauthorized-domain'))) {
             const currentDomain = window.location.hostname;
             window.showCustomModal(
@@ -235,7 +231,7 @@
         <i id="modal-icon" data-lucide="alert-triangle" class="w-8 h-8 sm:w-10 sm:h-10"></i>
       </div>
       <h3 id="modal-title" class="text-xl sm:text-2xl font-bold text-white mb-2 break-words">Pemberitahuan</h3>
-      <div id="modal-message" class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-6 break-words text-left overflow-y-auto max-h-60 custom-scrollbar pr-1 text-center"></div>
+      <div id="modal-message" class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-6 break-words text-left overflow-y-auto max-h-60 custom-scrollbar pr-1 text-center font-medium"></div>
       <button onclick="window.closeCustomModal()" class="w-full py-3 px-4 min-h-[3rem] flex items-center justify-center text-center bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-extrabold rounded-xl transition-all transform scale-[1.02] shadow-lg shadow-orange-500/20 whitespace-normal break-words leading-tight text-xs sm:text-sm">
         Faham & Teruskan
       </button>
@@ -346,7 +342,7 @@
           </button>
           <div class="text-right hidden md:block">
             <div id="nav-user-name" class="text-sm font-semibold text-white">Memuat...</div>
-            <div id="nav-user-role" class="text-xs text-amber-500 capitalize">Pengguna</div>
+            <div id="nav-user-role" class="text-xs text-amber-500 capitalize font-bold">Pelajar</div>
           </div>
           <div id="nav-avatar" class="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-extrabold shadow-lg shadow-orange-500/20 border border-white/10 uppercase shrink-0 text-xs sm:text-sm">
             M
@@ -438,7 +434,7 @@
       <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 sm:gap-6 border-b border-white/5 pb-5 sm:pb-6">
         <div class="w-full lg:w-auto">
           <h1 class="text-2xl sm:text-3xl font-black text-white leading-tight">Panel Pengajar</h1>
-          <p class="text-zinc-400 text-xs sm:text-sm mt-1 leading-relaxed break-words">Kelola kelas, buat soal AI, dan pantau prestasi.</p>
+          <p class="text-zinc-400 text-xs sm:text-sm mt-1 leading-relaxed break-words">Kelola kelas, buat soalan AI, dan pantau prestasi pelajar.</p>
         </div>
         
         <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
@@ -561,7 +557,7 @@
               </tr>
             </thead>
             <tbody id="students-table-body" class="divide-y divide-white/5 text-xs sm:text-sm">
-              <tr><td colspan="6" class="p-6 text-center text-zinc-500">Tiada pelajar berdaftar dalam kelas ini.</td></tr>
+              <tr><td colspan="6" class="p-6 text-center text-zinc-500">Tiada pelajar ditemui.</td></tr>
             </tbody>
           </table>
         </div>
@@ -872,11 +868,7 @@
   <script>
     // Membina proses permulaan otentikasi yang selamat
     const initialAuth = async () => {
-        if (!window.auth) {
-            // Pelindung sekiranya Firebase tiada konfigurasi (Mod Lokal terus alih ke view-auth)
-            if (window.showView) window.showView('view-auth');
-            return;
-        }
+        if (!window.auth) return;
         try {
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                 await window.signInWithCustomToken(window.auth, __initial_auth_token);
@@ -912,7 +904,9 @@
                 console.warn("Mesej selamat datang Apps Script mengembalikan teks kosong atau bukan JSON. Menggunakan teks respons asli.");
                 // Jika isinya teks motivasi mentah dari Apps Script, tampilkan teks tersebut
                 if (text && text.indexOf("API Makluman") !== -1) {
-                    cloudTextEl.innerHTML = text.split("\n").join("<br>");
+                    // Menghapus teks "Ayat Semangat Rawak Hari Ini:" secara dinamis sesuai permintaan pengguna
+                    const cleanedText = text.replace("Ayat Semangat Rawak Hari Ini:", "").replace(/\n\s*\n/g, '\n').trim();
+                    cloudTextEl.innerHTML = cleanedText.split("\n").join("<br>");
                 } else {
                     cloudTextEl.innerText = "Hubungan sandaran aktif. Prestasi dan markah disimpan secara live ke Google Sheets kelas!";
                 }
@@ -958,7 +952,7 @@
           OptionC: "Kadar pertukaran wang asing",
           OptionD: "Pemberian pinjaman mikro",
           CorrectAnswer: "B",
-          Explanation: "Dasar fiskal dikawal oleh kerajaan menggunakan instrumen cukai ($T$) dan perbelanjaan kerajaan ($G$)."
+          Explanation: "Dasar fiskal dikawal oleh kerajaan menggunakan instrumen cukai ($T$) and perbelanjaan kerajaan ($G$)."
         },
         {
           QuestionID: "LOCAL_B2_Q01",
@@ -997,11 +991,12 @@
 
       window.state = {
         role: 'student',
+        selectedRole: 'student', // Menyimpan pilihan manual role dengan aman agar tidak ditimpa sesi lama
         user: null,
         activeClassCode: null,
         activeClassName: null,
         apiConfig: {
-          gasUrl: 'https://script.google.com/macros/s/AKfycbz77P_dKdKDz4ISyuptaizk7TVjH_WL-Dl0_bCNy3wqWaQhpSrLh4aSrIMuaojKJFpb/exec',
+          gasUrl: 'https://script.google.com/macros/s/AKfycbyw8MyWOBmByQDywfYaiMdPqKMYK_2Hut2M4mjASPz-YYR1Sc62lKz85IGWFrVHydk/exec',
           geminiKey: 'AQ.Ab8RN6JTIbGRAEFrBvlF3_8vxi7zFMOScHOrPo_m9dTdQ6kr1g'
         },
         students: [],
@@ -1111,16 +1106,6 @@
             } catch (e) {
                 console.warn("Gagal menukar respons Google Apps Script kepada JSON. Menggunakan kumpulan soalan alternatif (local fallback)!");
                 window.globalQuestions = localFallbackQuestions;
-                
-                // Paparkan makluman mesra pengguna tentang status muat turun
-                if (window.showCustomModal) {
-                    window.showCustomModal(
-                        "Perhatian: Sistem Sedia Ada", 
-                        "Google Apps Script anda mengembalikan sapaan makluman harian atau respons tidak sah. Aplikasi kini menggunakan Bank Soalan Alternatif STPM sedia ada secara automatik untuk memastikan anda boleh memulakan latihan dengan lancar.", 
-                        "info",
-                        true
-                    );
-                }
                 return true;
             }
             
@@ -1175,7 +1160,7 @@
         if (!window.state || !window.state.user) return;
         
         document.getElementById('nav-user-name').innerText = window.state.user.name;
-        document.getElementById('nav-user-role').innerText = window.state.role === 'teacher' ? 'Guru' : 'Siswa';
+        document.getElementById('nav-user-role').innerText = window.state.role === 'teacher' ? 'Guru' : 'Pelajar';
         document.getElementById('nav-avatar').innerText = window.state.user.name.charAt(0).toUpperCase();
 
         if (window.state.role === 'teacher') {
@@ -1492,7 +1477,7 @@
                 resolvedRole = 'student';
               }
 
-              // Jika profil lokal kosong atau miliki akun pengguna berbeda, buat profil pelajar default
+              // Jika profil lokal kosong atau miliki akun pengguna berbeda, buat profil default
               if (!userProfile || userProfile.id !== firebaseUser.uid) {
                 userProfile = {
                   id: firebaseUser.uid,
