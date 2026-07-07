@@ -608,7 +608,7 @@
       </div>
 
       <!-- Ruangan Sertai Kelas (Jika belum ada Kod Kelas) -->
-      <div id="student-join-class-panel" class="hidden glass-panel p-5 sm:p-6 rounded-3xl border border-amber-500/30">
+      <div id="student-join-class-panel" class="hidden glass-panel p-5 sm:p-6 rounded-3xl border border-amber-500/30 animate-slide-in">
         <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 mb-3">
           <i data-lucide="key-round" class="text-amber-500 w-5 h-5 shrink-0"></i> Sertai Kelas Guru
         </h3>
@@ -1079,7 +1079,29 @@
         fetchStudentWelcomeMessage();
       };
 
-      // Deklarasi fungsi penyelarasan pangkalan data lokal dan dasbor secara aman
+      // Deklarasi fungsi muat data dasbor Guru
+      window.loadTeacherDashboardData = function() {
+        window.showView('view-teacher-dashboard');
+
+        if (window.state.activeClassCode) {
+          const displayClassName = document.getElementById('display-class-name');
+          const displayClassCode = document.getElementById('display-class-code');
+          const activeClassBanner = document.getElementById('active-class-banner');
+
+          if (activeClassBanner) activeClassBanner.classList.remove('hidden');
+          if (displayClassName) displayClassName.innerText = window.state.activeClassName || "Kelas Makroekonomi";
+          if (displayClassCode) displayClassCode.innerText = window.state.activeClassCode;
+
+          if (typeof window.listenStudents === 'function') window.listenStudents();
+          listenAnnouncements();
+          listenMessages();
+        } else {
+          const activeClassBanner = document.getElementById('active-class-banner');
+          if (activeClassBanner) activeClassBanner.classList.add('hidden');
+        }
+      };
+
+      // Deklarasi fungsi penyelarasan pangkalan data lokal dan dasbor
       window.syncDatabaseWithBackend = function() {
         if (!window.state || !window.state.user) return;
         
@@ -1092,22 +1114,6 @@
         } else {
           window.updateStudentDashboardUI();
           window.showView('view-student-dashboard');
-        }
-      };
-
-      // Deklarasi fungsi loadTeacherDashboardData secara global agar dapat diakses
-      window.loadTeacherDashboardData = function() {
-        window.showView('view-teacher-dashboard');
-
-        if (window.state.activeClassCode) {
-          document.getElementById('active-class-banner').classList.remove('hidden');
-          document.getElementById('display-class-name').innerText = window.state.activeClassName || "Kelas Makroekonomi";
-          document.getElementById('display-class-code').innerText = window.state.activeClassCode;
-          window.listenStudents();
-          listenAnnouncements();
-          listenMessages();
-        } else {
-          document.getElementById('active-class-banner').classList.add('hidden');
         }
       };
 
@@ -1676,12 +1682,6 @@
         });
       }
 
-      // Tambahan penangan form submit untuk Pelajar menghantar mesej sembang
-      const studentMsgForm = document.getElementById('student-message-form');
-      if (studentFormSubmitHandler) {
-         // Prevent duplication
-      }
-      
     };
 
     // Fungsi penangan form submit siswa mengirimkan pesan
