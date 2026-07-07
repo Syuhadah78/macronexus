@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ms" class="h-full">
+<html lang="id" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -65,7 +65,7 @@
     // Tetapkan terus ID Aplikasi secara mutlak untuk pangkalan data Firestore
     const appId = 'macronexus-7805';
 
-    // Inisialisasi state global seawal mungkin untuk mengelakkan ralat 'undefined' pada apiConfig
+    // Inisialisasi state global seawal mungkin untuk menghindari ralat 'undefined' pada apiConfig
     window.state = {
       role: 'student',
       selectedRole: 'student',
@@ -191,16 +191,19 @@
         }
 
       } catch (error) {
-        console.error("Kesalahan log masuk Google:", error);
-        if (window.showCustomModal) {
-          if (error.code === 'auth/unauthorized-domain' || (error.message && error.message.includes('auth/unauthorized-domain'))) {
-            const currentDomain = window.location.hostname;
+        // Deteksi ralat domain yang tidak diizinkan tanpa membanjiri log konsol dengan ralat merah
+        if (error.code === 'auth/unauthorized-domain' || (error.message && error.message.includes('auth/unauthorized-domain'))) {
+          const currentDomain = window.location.hostname;
+          if (window.showCustomModal) {
             window.showCustomModal(
-              "Domain Tidak Diizinkan", 
-              `Domain pratinjau saat ini (<b>${currentDomain}</b>) belum ditambahkan ke daftar Authorized Domains pada Firebase Console proyek Anda.<br><br><b>Solusi Penanganan:</b><br>1. Buka Firebase Console proyek <b>macronexus-7805</b>.<br>2. Masuk ke menu <b>Authentication</b> -> <b>Settings</b> -> <b>Authorized Domains</b>.<br>3. Daftarkan domain: <b>${currentDomain}</b>.<br><br><i>Sebagai alternatif instan, Anda dapat menggunakan pendaftaran/masuk secara <b>Manual</b> di bawah yang bekerja normal tanpa batasan domain ini.</i>`, 
+              "Domain Pratinjau Belum Diizinkan", 
+              `Domain pratinjau saat ini (<b>${currentDomain}</b>) belum terdaftar di Firebase Console proyek Anda.<br><br><b>Solusi Cepat & Mudah:</b><br>Silakan gunakan metode <b>Daftar & Masuk Manual</b> di bawah. Fitur ini berfungsi 100% dengan normal dan menyimpan semua data Anda ke database secara langsung tanpa konfigurasi domain tambahan!`, 
               "shield-alert"
             );
-          } else {
+          }
+        } else {
+          console.error("Kesalahan log masuk Google:", error);
+          if (window.showCustomModal) {
             window.showCustomModal("Kesalahan Log Masuk", "Gagal masuk menggunakan Google/DELIMa. Silakan coba lagi.", "alert-triangle");
           }
         }
@@ -253,7 +256,7 @@
       <h3 id="modal-title" class="text-xl sm:text-2xl font-bold text-white mb-2 break-words">Pemberitahuan</h3>
       <div id="modal-message" class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-6 break-words text-left overflow-y-auto max-h-60 custom-scrollbar pr-1 text-center font-medium font-sans"></div>
       <button onclick="window.closeCustomModal()" class="w-full py-3 px-4 min-h-[3rem] flex items-center justify-center text-center bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-extrabold rounded-xl transition-all transform scale-[1.02] shadow-lg shadow-orange-500/20 whitespace-normal break-words leading-tight text-xs sm:text-sm">
-        Paham & Teruskan
+        Faham & Teruskan
       </button>
     </div>
   </div>
@@ -540,7 +543,7 @@
             <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Target Penyimpanan AI</label>
             <select id="ai-gen-destination" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
               <option value="sheet" selected>Simpan Terus ke Google Sheet Baru</option>
-              <option value="csv">Jana & Muat Turun Fail CSV</option>
+              <option value="csv">Jana & Muat Terun Fail CSV</option>
             </select>
           </div>
           <div class="flex flex-col justify-end md:col-span-1 sm:col-span-2">
@@ -641,7 +644,7 @@
         <p class="text-xs text-zinc-400 mb-4 leading-relaxed">Anda belum menyertai mana-mana kelas. Sila masukkan Kod Kelas yang diberikan oleh Guru anda untuk menyegerakkan prestasi dan menghantar mesej.</p>
         <form id="student-join-class-form" class="flex flex-col sm:flex-row gap-3">
           <input required id="student-join-class-input" type="text" placeholder="Contoh: MKR1234" class="bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-1 focus:ring-amber-500 outline-none transition-all uppercase" />
-          <button type="submit" class="bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold px-6 py-3 rounded-xl transition-all shrink-0 text-xs flex items-center justify-center gap-1.5 hover:scale-[1.02]">
+          <button type="submit" class="bg-gradient-to-tr from-orange-500 to-amber-500 text-black font-extrabold px-6 py-3 rounded-xl transition-all shrink-0 text-xs flex items-center justify-center gap-1.5 hover:scale-[1.02]">
             <i data-lucide="plus-circle" class="w-4 h-4"></i> Sertai Kelas
           </button>
         </form>
@@ -1360,7 +1363,7 @@
                  if (msgs.length === 0) {
                      const p = document.createElement('p');
                      p.className = "text-zinc-500 text-xs italic";
-                     p.textContent = "Belum ada mesej di kelas ini.";
+                     p.textContent = "Belum ada pesan di kelas ini.";
                      container.appendChild(p);
                  } else {
                      msgs.forEach(m => {
