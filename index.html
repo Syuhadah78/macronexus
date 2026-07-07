@@ -256,7 +256,7 @@
       <h3 id="modal-title" class="text-xl sm:text-2xl font-bold text-white mb-2 break-words">Pemberitahuan</h3>
       <div id="modal-message" class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-6 break-words text-left overflow-y-auto max-h-60 custom-scrollbar pr-1 text-center font-medium font-sans"></div>
       <button onclick="window.closeCustomModal()" class="w-full py-3 px-4 min-h-[3rem] flex items-center justify-center text-center bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-extrabold rounded-xl transition-all transform scale-[1.02] shadow-lg shadow-orange-500/20 whitespace-normal break-words leading-tight text-xs sm:text-sm">
-        Faham & Teruskan
+        Paham & Teruskan
       </button>
     </div>
   </div>
@@ -420,7 +420,7 @@
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
               </svg>
               Masuk dengan Google / DELIMa
             </button>
@@ -543,7 +543,7 @@
             <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Target Penyimpanan AI</label>
             <select id="ai-gen-destination" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
               <option value="sheet" selected>Simpan Terus ke Google Sheet Baru</option>
-              <option value="csv">Jana & Muat Turun Fail CSV</option>
+              <option value="csv">Jana & Muat Terun Fail CSV</option>
             </select>
           </div>
           <div class="flex flex-col justify-end md:col-span-1 sm:col-span-2">
@@ -631,7 +631,13 @@
         <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6">
           <div class="w-full md:w-auto">
             <h1 id="welcome-student-title" class="text-2xl sm:text-3xl font-black text-white mb-2 leading-tight break-words">Selamat Belajar! 📚</h1>
-            <p id="student-live-cloud-text" class="text-zinc-400 max-w-lg text-xs sm:text-sm leading-relaxed break-words">Prestasi dan skor kuiz anda kini disimpan secara live ke Google Sheets!</p>
+            <p id="student-live-cloud-text" class="text-zinc-400 max-w-lg text-xs sm:text-sm leading-relaxed break-words mb-3">Prestasi dan skor kuiz anda kini disimpan secara live ke Google Sheets!</p>
+            
+            <!-- Elemen Spanduk Kelas Berlangsung Sesuai Permintaan -->
+            <div id="student-active-class-info" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs sm:text-sm font-bold hidden">
+              <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
+              <span id="student-active-class-text"></span>
+            </div>
           </div>
         </div>
       </div>
@@ -1098,6 +1104,33 @@
             joinClassPanel.classList.add('hidden');
           }
         }
+
+        // Paparkan maklumat kelas pelajar secara real-time
+        const classInfoEl = document.getElementById('student-active-class-info');
+        const classTextEl = document.getElementById('student-active-class-text');
+        if (classInfoEl && classTextEl) {
+          if (user.classCode) {
+            classInfoEl.classList.remove('hidden');
+            const teacherDisplay = user.teacherName ? user.teacherName : "Guru Kelas";
+            classTextEl.innerHTML = `Kelas Sedang Berlangsung : <strong class="text-white tracking-wider">${user.classCode}</strong> Oleh Cikgu <span class="text-white">${teacherDisplay}</span>`;
+
+            // Muat turun nama cikgu secara asinkron sekiranya tiada dalam storan lokal
+            if (!user.teacherName && window.db) {
+              const classDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', user.classCode);
+              window.getDoc(classDocRef).then((classDoc) => {
+                if (classDoc.exists()) {
+                  const classData = classDoc.data();
+                  user.teacherName = classData.teacherName || "";
+                  user.className = classData.className || "";
+                  localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
+                  classTextEl.innerHTML = `Kelas Sedang Berlangsung : <strong class="text-white tracking-wider">${user.classCode}</strong> Oleh Cikgu <span class="text-white">${user.teacherName || "Guru Kelas"}</span>`;
+                }
+              }).catch(err => console.warn("Gagal menyandarkan nama guru dari cloud:", err));
+            }
+          } else {
+            classInfoEl.classList.add('hidden');
+          }
+        }
         
         // Tarik mesej alu-aluan dinamik daripada Apps Script Google Sheets peribadi
         fetchStudentWelcomeMessage();
@@ -1150,6 +1183,67 @@
             window.globalQuestions = localFallbackQuestions;
             return true;
         }
+      };
+
+      // Deklarasi fungsi muat data dasbor Guru secara global
+      window.loadTeacherDashboardData = function() {
+        window.showView('view-teacher-dashboard');
+
+        if (window.state.activeClassCode) {
+          const displayClassName = document.getElementById('display-class-name');
+          const displayClassCode = document.getElementById('display-class-code');
+          const activeClassBanner = document.getElementById('active-class-banner');
+
+          if (activeClassBanner) activeClassBanner.classList.remove('hidden');
+          if (displayClassName) displayClassName.innerText = window.state.activeClassName || "Kelas Makroekonomi";
+          if (displayClassCode) displayClassCode.innerText = window.state.activeClassCode;
+
+          if (typeof window.listenStudents === 'function') window.listenStudents();
+          window.listenAnnouncements();
+          window.listenMessages();
+        } else {
+          const activeClassBanner = document.getElementById('active-class-banner');
+          if (activeClassBanner) activeClassBanner.classList.add('hidden');
+        }
+      };
+
+      // Deklarasi fungsi penyelarasan pangkalan data lokal dan dasbor secara aman
+      window.syncDatabaseWithBackend = function() {
+        if (!window.state || !window.state.user) return;
+        
+        document.getElementById('nav-user-name').innerText = window.state.user.name;
+        document.getElementById('nav-user-role').innerText = window.state.role === 'teacher' ? 'Guru' : 'Pelajar';
+        document.getElementById('nav-avatar').innerText = window.state.user.name.charAt(0).toUpperCase();
+
+        if (window.state.role === 'teacher') {
+          window.loadTeacherDashboardData();
+        } else {
+          window.updateStudentDashboardUI();
+          window.showView('view-student-dashboard');
+        }
+      };
+
+      // Deklarasi pendengar data murid khusus guru secara global
+      window.listenStudents = function() {
+        if (!window.auth || !window.auth.currentUser || !window.state.activeClassCode) return;
+        
+        if (unsubscribeStudents) {
+            unsubscribeStudents();
+        }
+
+        const studentsRef = window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'students');
+        unsubscribeStudents = window.onSnapshot(studentsRef, (snapshot) => {
+            window.state.students = [];
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                if (data.classCode === window.state.activeClassCode) {
+                    window.state.students.push({ id: doc.id, ...data });
+                }
+            });
+            window.renderStudentsTable();
+        }, (error) => {
+            console.error("Kesalahan memantau data siswa dari Firestore:", error);
+        });
       };
 
       // Deklarasi fungsi render tabel siswa untuk Guru secara global
@@ -1317,7 +1411,7 @@
                  if (msgs.length === 0) {
                      const p = document.createElement('p');
                      p.className = "text-zinc-500 text-xs italic";
-                     p.textContent = "Belum ada mesej di kelas ini.";
+                     p.textContent = "Belum ada pesan di kelas ini.";
                      container.appendChild(p);
                  } else {
                      msgs.forEach(m => {
@@ -1358,67 +1452,6 @@
          }, (error) => {
              console.error("Ralat saat memantau mesej:", error);
          });
-      };
-
-      // Deklarasi fungsi muat data dasbor Guru secara global
-      window.loadTeacherDashboardData = function() {
-        window.showView('view-teacher-dashboard');
-
-        if (window.state.activeClassCode) {
-          const displayClassName = document.getElementById('display-class-name');
-          const displayClassCode = document.getElementById('display-class-code');
-          const activeClassBanner = document.getElementById('active-class-banner');
-
-          if (activeClassBanner) activeClassBanner.classList.remove('hidden');
-          if (displayClassName) displayClassName.innerText = window.state.activeClassName || "Kelas Makroekonomi";
-          if (displayClassCode) displayClassCode.innerText = window.state.activeClassCode;
-
-          if (typeof window.listenStudents === 'function') window.listenStudents();
-          window.listenAnnouncements();
-          window.listenMessages();
-        } else {
-          const activeClassBanner = document.getElementById('active-class-banner');
-          if (activeClassBanner) activeClassBanner.classList.add('hidden');
-        }
-      };
-
-      // Deklarasi fungsi penyelarasan pangkalan data lokal dan dasbor secara aman
-      window.syncDatabaseWithBackend = function() {
-        if (!window.state || !window.state.user) return;
-        
-        document.getElementById('nav-user-name').innerText = window.state.user.name;
-        document.getElementById('nav-user-role').innerText = window.state.role === 'teacher' ? 'Guru' : 'Pelajar';
-        document.getElementById('nav-avatar').innerText = window.state.user.name.charAt(0).toUpperCase();
-
-        if (window.state.role === 'teacher') {
-          window.loadTeacherDashboardData();
-        } else {
-          window.updateStudentDashboardUI();
-          window.showView('view-student-dashboard');
-        }
-      };
-
-      // Deklarasi pendengar data murid khusus guru secara global
-      window.listenStudents = function() {
-        if (!window.auth || !window.auth.currentUser || !window.state.activeClassCode) return;
-        
-        if (unsubscribeStudents) {
-            unsubscribeStudents();
-        }
-
-        const studentsRef = window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'students');
-        unsubscribeStudents = window.onSnapshot(studentsRef, (snapshot) => {
-            window.state.students = [];
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                if (data.classCode === window.state.activeClassCode) {
-                    window.state.students.push({ id: doc.id, ...data });
-                }
-            });
-            window.renderStudentsTable();
-        }, (error) => {
-            console.error("Kesalahan memantau data siswa dari Firestore:", error);
-        });
       };
 
       // Deklarasi fungsi menyalin kode kelas secara global
@@ -1794,7 +1827,7 @@
         const geminiKey = document.getElementById('api-config-gemini-input').value.trim();
         
         window.state.apiConfig = { gasUrl: url, geminiKey: geminiKey };
-        localStorage.setItem('makroverse_api_config', JSON.stringify(window.state.apiConfig));
+        localStorage.setItem('macronexus_api_config', JSON.stringify(window.state.apiConfig));
         
         window.closeApiConfigModal();
         window.showCustomModal("Simpan Berhasil", "Konfigurasi tautan sistem eksternal Anda telah diperbarui dengan aman.", "check-circle", true);
@@ -1828,6 +1861,8 @@
             
             const user = window.state.user;
             user.classCode = classCodeInput;
+            user.className = classData.className || "";
+            user.teacherName = classData.teacherName || "";
 
             // Simpan profil siswa ke Firestore
             const privateDocRef = window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main');
@@ -1920,7 +1955,7 @@
             const classDoc = await window.getDoc(classDocRef);
 
             if (!classDoc.exists()) {
-              window.showCustomModal("Kelas Tidak Ditemui", "Maaf, kod kelas <b>" + classCodeInput + "</b> tidak wujud dalam pangkalan data.", "alert-triangle");
+              window.showCustomModal("Kelas Tidak Ditemui", "Maaf, kod kelas " + classCodeInput + " tidak wujud dalam pangkalan data.", "alert-triangle");
               window.syncDatabaseWithBackend();
               return;
             }
