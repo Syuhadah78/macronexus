@@ -62,7 +62,8 @@
       console.warn("Firebase tidak ditemui di persekitaran ini. Berjalan dalam mod lokal.");
     }
     
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'macronexus-7805';
+    // Tetapkan terus ID Aplikasi secara mutlak untuk pangkalan data Firestore
+    const appId = 'macronexus-7805';
 
     // Mengeksport ke objek global Window untuk digunakan oleh skrip logik aplikasi
     window.db = db;
