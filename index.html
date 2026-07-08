@@ -314,11 +314,11 @@
       <div class="flex flex-col gap-3 text-left">
         <div>
           <label class="block text-[11px] sm:text-xs font-bold text-zinc-400 uppercase tracking-wide mb-1">URL Google Apps Script</label>
-          <input id="api-config-url-input" type="url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" />
+          <input id="api-config-url-input" type="url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
         </div>
         <div>
           <label class="block text-[11px] sm:text-xs font-bold text-zinc-400 uppercase tracking-wide mb-1">Kunci API Gemini (AI)</label>
-          <input id="api-config-gemini-input" type="password" placeholder="Tampal API Key Gemini peribadi anda" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" />
+          <input id="api-config-gemini-input" type="password" placeholder="Tampal API Key Gemini peribadi anda" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
         </div>
         <div class="flex flex-col gap-2 pt-3">
           <button onclick="window.saveApiUrlConfig()" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center bg-gradient-to-r from-blue-500 to-cyan-500 text-black font-extrabold rounded-xl transition-all shadow-lg hover:scale-[1.02] text-xs sm:text-sm">
@@ -475,7 +475,7 @@
           <form id="resume-class-form" class="flex flex-col sm:flex-row gap-2 w-full mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/5">
             <input required id="resume-class-input" type="text" placeholder="Kod Kelas Lama" class="bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-zinc-500 outline-none w-full sm:w-48 text-xs sm:text-sm uppercase" />
             <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all shrink-0 text-xs sm:text-sm border border-white/5 hover:scale-105">
-              <i data-lucide="log-in" class="w-4 h-4 shrink-0"></i> <span>Masuk Semula</span>
+              <i data-lucide="log-in" class="w-4 h-4 text-white"></i> <span>Masuk Semula</span>
             </button>
           </form>
         </div>
@@ -645,15 +645,16 @@
         </h3>
         <p class="text-xs text-zinc-400 mb-4 leading-relaxed">Sila masukkan Kod Kelas yang diberikan oleh Guru anda untuk menyegerakkan pencapaian dan menghantar mesej.</p>
         <form id="student-join-class-form" class="flex flex-col sm:flex-row gap-3">
-          <input required id="student-join-class-input" type="text" placeholder="Contoh: MKR1234" class="bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-1 focus:ring-amber-500 outline-none uppercase" />
-          <button type="submit" class="bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold px-6 py-3 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5">
+          <input required id="student-join-class-input" type="text" placeholder="Contoh: MKR1234" class="bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-1 focus:ring-amber-500 outline-none uppercase" Y />
+          <button type="submit" class="bg-gradient-to-tr from-orange-500 to-amber-500 text-black font-extrabold px-6 py-3 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5">
             <i data-lucide="plus-circle" class="w-4 h-4"></i> Sertai Kelas
           </button>
         </form>
       </div>
 
-      <!-- Kad Pencapaian Pelajar -->
+      <!-- Kad Pencapaian Pelajar (Sebaris) -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col items-center justify-center text-center min-h-[160px]">
           <div class="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500 mb-3">
             <i data-lucide="target" class="w-5 h-5"></i>
@@ -689,6 +690,7 @@
             <div id="student-xp-bar" class="bg-gradient-to-r from-orange-500 via-amber-500 to-gold h-1 rounded-full transition-all duration-1000 ease-out w-0"></div>
           </div>
         </div>
+
       </div>
 
       <!-- Tetapan Kuiz -->
@@ -798,7 +800,7 @@
       <!-- KAD UTAMA KUIZ -->
       <div class="glass-panel p-5 sm:p-8 rounded-3xl border border-white/5 space-y-6">
         <div id="quiz-single-view" class="space-y-6">
-          <div id="quiz-question-text" class="text-sm sm:text-lg text-white font-medium leading-relaxed break-words"></div>
+          <div id="quiz-question-text" class="text-sm sm:text-lg text-white font-medium leading-relaxed break-words animate-slide-in"></div>
           <div id="quiz-options-container" class="grid grid-cols-1 gap-3 sm:gap-4"></div>
           
           <div id="quiz-explanation-box" class="hidden bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 sm:p-5 space-y-3">
@@ -1138,6 +1140,12 @@
                   const setSpecificIndex = setQuestionCounters[currentSetTabName];
                   setQuestionCounters[currentSetTabName]++;
 
+                  // PEMETAAN BARIS KE BAB (20 soalan bagi setiap bab secara teratur)
+                  // Baris 2 - 21 (indeks 0 - 19) = Bab 1
+                  // Baris 22 - 41 (indeks 20 - 39) = Bab 2
+                  // Baris 42 - 61 (indeks 40 - 59) = Bab 3
+                  // Baris 62 - 81 (indeks 60 - 79) = Bab 4
+                  // Baris 82 - 101 (indeks 80 - 99) = Bab 5
                   let calculatedBab = "1";
                   if (setSpecificIndex >= 0 && setSpecificIndex <= 19) {
                       calculatedBab = "1";
@@ -1160,7 +1168,7 @@
                       text: q.q,
                       options: q.opts && q.opts.length > 0 ? q.opts : ["Pilihan A", "Pilihan B", "Pilihan C", "Pilihan D"],
                       answer: q.ans !== undefined ? q.ans : 0,
-                      explanation: q.explanation || "Rujuk analisis konsep makroekonomi untuk perbincangan lanjut."
+                      explanation: q.explanation || q.Explanation || q.exp || q.Exp || "Rujuk analisis konsep makroekonomi untuk perbincangan lanjut."
                   };
               });
 
@@ -1634,313 +1642,6 @@
       window.showView('view-auth');
     };
 
-    function cleanJsonString(raw) {
-        if (!raw) return "[]";
-        let cleaned = raw.trim();
-        const backticks = String.fromCharCode(96) + String.fromCharCode(96) + String.fromCharCode(96);
-        let match1 = cleaned.match(new RegExp("^" + backticks + "(?:json)?\\n?", "i"));
-        if (match1) {
-            cleaned = cleaned.substring(match1[0].length);
-        }
-        let match2 = cleaned.match(new RegExp("\\n?" + backticks + "$", "i"));
-        if (match2) {
-            cleaned = cleaned.substring(0, cleaned.length - 3);
-        }
-        cleaned = cleaned.trim();
-        
-        let result = "";
-        let insideString = false;
-        let escapeActive = false;
-        
-        for (let i = 0; i < cleaned.length; i++) {
-          let char = cleaned[i];
-          
-          if (escapeActive) {
-            result += char;
-            escapeActive = false;
-            continue;
-          }
-          
-          if (char === '"') {
-            let backslashCount = 0;
-            let idx = i - 1;
-            while (idx >= 0 && cleaned[idx] === '\\') {
-              backslashCount++;
-              idx--;
-            }
-            const isEscaped = (backslashCount % 2 !== 0);
-
-            if (!isEscaped) {
-              let isStructural = false;
-              let before = cleaned.substring(Math.max(0, i - 15), i).trim();
-              let after = cleaned.substring(i + 1, Math.min(cleaned.length, i + 15)).trim();
-
-              if (
-                before.endsWith('{') || 
-                before.endsWith('[') || 
-                before.endsWith(',') || 
-                before.endsWith(':') ||
-                after.startsWith(':') || 
-                after.startsWith(',') || 
-                after.startsWith('}') || 
-                after.startsWith(']')
-              ) {
-                isStructural = true;
-              }
-
-              if (!isStructural) {
-                result += '\\"';
-                continue;
-              } else {
-                insideString = !insideString;
-              }
-            }
-            result += char;
-            continue;
-          }
-          
-          if (insideString) {
-            const code = char.charCodeAt(0);
-            if (code < 32) {
-              if (char === '\n') {
-                result += '\\n';
-              } else if (char === '\r') {
-                result += '\\r';
-              } else if (char === '\t') {
-                result += '\\t';
-              } else {
-                result += '\\u' + code.toString(16).padStart(4, '0');
-              }
-              continue;
-            }
-          }
-          
-          if (insideString && char === '\\') {
-            let nextChar = cleaned[i + 1];
-            if (nextChar === undefined) {
-              result += '\\\\';
-            } else if (['"', '\\', '/', 'b', 'f', 'n', 'r', 't'].includes(nextChar)) {
-              result += char; 
-              escapeActive = true; 
-            } else if (nextChar === 'u') {
-              let hex = cleaned.substring(i + 2, i + 6);
-              if (new RegExp("^[0-9a-fA-F]{4}$").test(hex)) {
-                result += char;
-                escapeActive = true; 
-              } else {
-                result += '\\\\'; 
-              }
-            } else {
-              result += '\\\\';
-            }
-          } else {
-            result += char;
-          }
-        }
-        return result;
-    }
-
-    window.generateLiveQuestions = async function() {
-        const chapter = document.getElementById('ai-gen-chapter').value;
-        const loader = document.getElementById('ai-batch-loader');
-        const btn = document.getElementById('btn-generate-batch');
-
-        if (!window.state.apiConfig.gasUrl) {
-            window.showCustomModal("Tiada Pautan", "Sila tetapkan URL App Script di menu Tetapan terlebih dahulu.", "alert-circle", false);
-            return;
-        }
-
-        loader.classList.remove('hidden');
-        btn.disabled = true;
-
-        const updateStatus = (text, progress) => {
-          document.getElementById('loader-status-text').innerText = text;
-          document.getElementById('loader-progress-text').innerText = progress;
-        };
-
-        updateStatus("Menghubungkan ke Gemini AI...", "Mencari model optimum...");
-
-        const geminiKey = window.state.apiConfig.geminiKey;
-        if (!geminiKey) {
-            loader.classList.add('hidden');
-            btn.disabled = false;
-            window.showCustomModal("Kunci API Tiada", "Sistem memerlukan Kunci API Gemini untuk menjana soalan secara terus. Sila masukkannya dalam ikon Tetapan di penjuru atas.", "alert-triangle", false);
-            return;
-        }
-
-        const modelsToTry = [
-          "gemini-2.5-flash-preview-09-2025",
-          "gemini-2.5-flash",
-          "gemini-1.5-flash"
-        ];
-
-        let resultJsonRaw = null;
-        let responseSuccess = false;
-        let apiErrorLog = "";
-
-        for (let m = 0; m < modelsToTry.length; m++) {
-          const currentModel = modelsToTry[m];
-          updateStatus("Mendapatkan respons AI (" + currentModel + ")...", "Menghantar arahan...");
-          
-          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${geminiKey}`;
-          const numQuestions = 20; 
-          
-          const systemPrompt = `Anda adalah pakar penilai ekonomi STPM terulung di Malaysia. Bina ${numQuestions} soalan aneka pilihan aras tinggi (KBAT) bertemakan Sukatan Pelajaran Makroekonomi STPM. Gunakan kod LaTeX matematik (seperti $$) untuk sebarang formula. SANGAT PENTING: Jangan gunakan sebarang tanda petikan ganda (") di dalam nilai teks (soalan, pilihan, atau penjelasan), gunakan tanda petikan tunggal (') jika perlu. Kembalikan jawapan dalam format JSON yang bersih mengikut struktur array objek: [{"Chapter": 1, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}]. Pastikan ia adalah valid JSON sahaja, tanpa sebarang markdown.`;
-
-          const query = chapter === "0" 
-            ? `Bina 20 soalan berkualiti tinggi meliputi semua bab (campuran rawak Bab 1 hingga Bab 5, 4 soalan setiap bab). Tulis dalam Bahasa Melayu rasmi akademik.` 
-            : `Bina 20 soalan berkualiti tinggi khusus bagi Bab ${chapter}. Tulis dalam Bahasa Melayu rasmi akademik.`;
-
-          const payload = {
-            contents: [{ parts: [{ text: query }] }],
-            systemInstruction: { parts: [{ text: systemPrompt }] },
-            generationConfig: { responseMimeType: "application/json" }
-          };
-
-          try {
-            let response;
-            let retries = 3;
-            let delay = 1000;
-
-            for (let i = 0; i < retries; i++) {
-                response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                if (response.ok) {
-                    break;
-                } else {
-                    if (response.status >= 400 && response.status < 500) {
-                        break; 
-                    }
-                    await new Promise(r => setTimeout(r, delay));
-                    delay *= 2;
-                }
-            }
-
-            if (response && response.ok) {
-                const result = await response.json();
-                resultJsonRaw = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (resultJsonRaw) {
-                    responseSuccess = true;
-                    break;
-                }
-            } else {
-                const errJson = await response.json().catch(() => ({}));
-                apiErrorLog += `[${currentModel}]: ` + (errJson.error?.message || response.statusText) + "\n";
-            }
-          } catch (err) {
-            apiErrorLog += `[${currentModel}]: ` + err.message + "\n";
-          }
-        }
-
-        try {
-          if (!responseSuccess) {
-              throw new Error(apiErrorLog || "Semua model gagal dihubungi.");
-          }
-
-          updateStatus("Memformat hasil...", "Menyiapkan integrasi ke Google Sheets...");
-          const cleanedJsonText = cleanJsonString(resultJsonRaw);
-          const cleanJson = JSON.parse(cleanedJsonText);
-          
-          let maxSetNumber = 5; 
-          if (window.globalQuestions && window.globalQuestions.length > 0) {
-            window.globalQuestions.forEach(q => {
-              if (q.sheetName) {
-                let match = q.sheetName.match(/Set\s*(\d+)/i);
-                if (match) {
-                  const num = parseInt(match[1]);
-                  if (num > maxSetNumber) {
-                    maxSetNumber = num;
-                  }
-                }
-              }
-            });
-          }
-          const nextSetNum = maxSetNumber + 1;
-          
-          const babCounters = { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 };
-
-          const gasPayload = cleanJson.map((q) => {
-              const qChapter = q.Chapter ? q.Chapter.toString() : (chapter === "0" ? "1" : chapter);
-              babCounters[qChapter] = (babCounters[qChapter] || 0) + 1;
-              const formattedSeq = babCounters[qChapter].toString().padStart(2, '0');
-              
-              const generatedId = `SET${nextSetNum}_B${qChapter}_Q${formattedSeq}`;
-
-              return {
-                  QuestionID: generatedId,
-                  Chapter: parseInt(qChapter),
-                  Topic: "Janaan AI Moden",
-                  Difficulty: "STPM",
-                  Question: q.Question,
-                  OptionA: q.OptionA,
-                  OptionB: q.OptionB,
-                  OptionC: q.OptionC,
-                  OptionD: q.OptionD,
-                  CorrectAnswer: q.CorrectAnswer || "A",
-                  Explanation: q.Explanation || "",
-                  ImageURL: "",
-                  Formula: "",
-                  Type: "MCQ",
-                  Tags: "KBAT-AI",
-                  Status: "Aktif"
-              };
-          });
-
-          const destinationMode = document.getElementById('ai-gen-destination').value;
-          
-          if (destinationMode === 'sheet') {
-            updateStatus("Menyimpan ke Awan...", "Membina tab Set baharu...");
-            const res = await makeCloudCall('saveQuestions', { questionsJson: JSON.stringify(gasPayload) });
-            
-            if (res.success) {
-                await window.fetchQuestionsFromCloud(); 
-                loader.classList.add('hidden');
-                btn.disabled = false;
-                window.showCustomModal("Proses Selesai!", `Soalan-soalan telah berjaya dijana dan disimpan ke Set ${nextSetNum} di pangkalan data Google Sheet anda.`, "sparkles", true);
-            } else {
-                throw new Error("Gagal menyinkronisasikan ke dalam Sheet.");
-            }
-          } else {
-            updateStatus("Menyiapkan dokumen CSV...", "Merangkai isi fail...");
-            const headers = ["QuestionID", "Chapter", "Topic", "Difficulty", "Question", "OptionA", "OptionB", "OptionC", "OptionD", "CorrectAnswer", "Explanation", "ImageURL", "Formula", "Type", "Tags", "Status"];
-            
-            let csvContent = headers.join(",") + "\n";
-            gasPayload.forEach(q => {
-              const row = headers.map(h => {
-                let cell = q[h] !== undefined ? q[h].toString() : "";
-                cell = cell.split('"').join('""');
-                return `"${cell}"`;
-              });
-              csvContent += row.join(",") + "\n";
-            });
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", `Makroverse_Set_${nextSetNum}_Questions.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            loader.classList.add('hidden');
-            btn.disabled = false;
-            window.showCustomModal("CSV Sedia!", `Fail Makroverse_Set_${nextSetNum}_Questions.csv berjaya dimuat turun. Sila tampal isi fail ini ke Google Sheet secara manual di bawah tab <b>Set ${nextSetNum}</b>.`, "check-circle", true);
-          }
-
-        } catch (err) {
-          console.error(err);
-          loader.classList.add('hidden');
-          btn.disabled = false;
-          window.showCustomModal("Ralat Pemprosesan", "Sistem gagal menghubungi pelayan AI atau terdapat kerosakan struktur balasan. Ralat:<br><pre class='text-xs mt-2 text-red-400 text-left bg-zinc-950 p-2 rounded max-h-32 overflow-y-auto whitespace-pre-wrap'>" + err.message + "</pre><br><span class='text-[10px] text-zinc-500'>Sila pastikan Kunci API Gemini yang dimasukkan pada menu Tetapan adalah sah dan aktif di Google AI Studio anda.</span>", "alert-triangle", false);
-        }
-    };
-
     window.startQuizFlow = function() {
         const selectedChap = document.getElementById('student-chapter-selector').value;
         const selectedSet = document.getElementById('student-set-selector').value;
@@ -1957,13 +1658,13 @@
             pool = pool.filter(q => q.chapter === selectedChap);
         }
         
-        let tabFilteredPool = pool;
+        let setFilteredPool = pool;
         if (selectedSet !== "0") {
-            tabFilteredPool = pool.filter(q => q.sheetName && q.sheetName.toLowerCase().includes(`set ${selectedSet}`));
+            setFilteredPool = pool.filter(q => q.sheetName && q.sheetName.toLowerCase().includes(`set ${selectedSet}`));
         }
 
-        if (tabFilteredPool.length === 0) {
-          window.showCustomModal("Soalan Tidak Ditemui", "Tiada padanan soalan untuk pilihan Set/Bab anda cari. Sila mencuba tetapan yang lain.", "info");
+        if (setFilteredPool.length === 0) {
+          window.showCustomModal("Soalan Tidak Ditemui", "Tiada padanan soalan untuk pilihan anda.", "info");
           return;
         }
 
@@ -1971,16 +1672,15 @@
         const startIdx = (selectedSetNum - 1) * 20;
         const endIdx = startIdx + 20;
         
-        let setFilteredPool = tabFilteredPool.slice(startIdx, endIdx);
-        
-        if (setFilteredPool.length === 0) {
-          setFilteredPool = tabFilteredPool.slice(0, 20); 
+        let sliceFilteredPool = setFilteredPool.slice(startIdx, endIdx);
+        if (sliceFilteredPool.length === 0) {
+          sliceFilteredPool = setFilteredPool.slice(0, 20); 
         }
         
-        window.state.quizState.questions = [...setFilteredPool];
+        window.state.quizState.questions = [...sliceFilteredPool];
         
         if (window.state.quizState.questions.length === 0) {
-          window.showCustomModal("Kosong", "Sistem tidak dapat mengumpulkan soalan yang memadai untuk pilihan anda ini.", "info");
+          window.showCustomModal("Kosong", "Sistem tidak dapat mengumpulkan soalan.", "info");
           window.exitQuiz();
           return;
         }
@@ -2431,7 +2131,7 @@
 
       setTimeout(() => {
         if (!window.firebaseReady || !window.state.user) {
-          console.warn("Memintas ke mod tempatan...");
+          console.warn("Firebase mengambil masa terlalu lama. Memintas ke mod tempatan...");
           if (typeof window.initApp === 'function') {
             window.initApp();
           }
@@ -2749,7 +2449,7 @@
             window.state.user = user;
             localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
 
-            window.showCustomModal("Kelas Berjaya Disertai!", "Tahniah! Anda telah menyertai kelas <b>" + classData.className + "</b>.", "check-circle", true);
+            window.showCustomModal("Kelas Berjaya Disertai!", "Tahniah! Anda telah berjaya menyertai kelas <b>" + classData.className + "</b>.", "check-circle", true);
             
             window.syncDatabaseWithBackend();
           } catch (err) {
