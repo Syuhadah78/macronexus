@@ -5,7 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MacroNexus - Menghubung Ilmu, Membina Kecemerlangan</title>
   
-  <!-- Memuatkan Tailwind CSS melalui CDN -->
+  <!-- Pasang State Global seawal mungkin untuk keselamatan memori -->
+  <script>
+    window.state = {
+      user: null,
+      role: 'student',
+      selectedRole: 'student',
+      activeClassCode: null,
+      activeClassName: null,
+      students: [],
+      apiConfig: {
+        gasUrl: 'https://script.google.com/macros/s/AKfycbwxSgGU7BPgztXWyu82Te740FxUyfSSYt1WvQMWvhdX_AlAsayB4iGFAm0uDrtPedQ/exec',
+        geminiKey: 'AQ.Ab8RN6JTIbGRAEFrBvlF3_8vxi7zFMOScHOrPo_m9dTdQ6kr1g'
+      },
+      quizState: {
+        questions: [],
+        chapter: '0',
+        set: '0',
+        mode: 'onebyone',
+        currentIndex: 0,
+        answers: {},
+        score: 0,
+        xpEarned: 0,
+        hasSubmitted: false,
+        secondsTaken: 0,
+        timerInterval: null
+      }
+    };
+  </script>
+
+  <!-- Memuatkan Tailwind CSS secara bersih melalui CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -25,18 +54,18 @@
     }
   </script>
 
-  <!-- Memuatkan Lucide Icons -->
+  <!-- Memuatkan Lucide Icons secara bersih -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Google Fonts (Plus Jakarta Sans) -->
+  <!-- Google Fonts (Plus Jakarta Sans) secara bersih -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- MathJax untuk menyokong simbol dan formula ekonomi LaTeX -->
+  <!-- MathJax untuk menyokong simbol dan formula ekonomi LaTeX secara bersih -->
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase SDK secara bersih -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
     import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
@@ -196,6 +225,7 @@
     }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #09090b; }
+    ::-webkit-scrollbar-shadow { background: #09090b; }
     ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #f97316; }
     
@@ -222,7 +252,7 @@
         <i id="modal-icon" data-lucide="alert-triangle" class="w-8 h-8 sm:w-10 sm:h-10"></i>
       </div>
       <h3 id="modal-title" class="text-xl sm:text-2xl font-bold text-white mb-2 break-words">Pemberitahuan</h3>
-      <div id="modal-message" class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-6 break-words text-left overflow-y-auto max-h-60 custom-scrollbar pr-1 text-center font-medium"></div>
+      <div id="modal-message" class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-6 break-words text-left overflow-y-auto max-h-60 custom-scrollbar pr-1 text-center font-medium font-sans"></div>
       <button onclick="window.closeCustomModal()" class="w-full py-3 px-4 min-h-[3rem] flex items-center justify-center text-center bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-extrabold rounded-xl transition-all transform scale-[1.02] shadow-lg shadow-orange-500/20 text-xs sm:text-sm">
         Faham & Teruskan
       </button>
@@ -354,17 +384,17 @@
             <i data-lucide="globe-2" class="h-7 w-7 sm:h-8 sm:w-8 text-white"></i>
           </div>
           <h2 class="text-2xl sm:text-3xl font-black text-white mb-1 leading-tight">MacroNexus</h2>
-          <p class="text-amber-500 font-semibold text-[11px] sm:text-xs mb-3">Menghubung Ilmu, Membina Kecemerlangan</p>
+          <p class="text-brand-amber font-semibold text-[11px] sm:text-xs mb-3">Menghubung Ilmu, Membina Kecemerlangan</p>
           <p class="text-zinc-400 text-xs sm:text-sm px-2">Sistem Pembelajaran Pintar STPM Makroekonomi</p>
         </div>
 
         <form id="auth-form" class="space-y-5">
           <div class="grid grid-cols-2 gap-3" id="role-selection">
-            <button type="button" onclick="window.setAuthRole('student')" id="btn-role-student" class="p-3 sm:p-4 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-amber-500 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem]">
+            <button type="button" onclick="window.setAuthRole('student')" id="btn-role-student" class="p-3 sm:p-4 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-amber-500 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem] w-full">
               <i data-lucide="users" class="w-5 h-5 sm:w-6 sm:h-6 shrink-0"></i>
               <span class="font-bold text-xs sm:text-sm leading-tight">Pelajar</span>
             </button>
-            <button type="button" onclick="window.setAuthRole('teacher')" id="btn-role-teacher" class="p-3 sm:p-4 rounded-xl border-2 border-zinc-800 hover:border-zinc-700 text-zinc-400 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem]">
+            <button type="button" onclick="window.setAuthRole('teacher')" id="btn-role-teacher" class="p-3 sm:p-4 rounded-xl border-2 border-zinc-800 hover:border-zinc-700 text-zinc-400 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem] w-full">
               <i data-lucide="graduation-cap" class="w-5 h-5 sm:w-6 sm:h-6 shrink-0"></i>
               <span class="font-bold text-xs sm:text-sm leading-tight">Guru</span>
             </button>
@@ -405,7 +435,7 @@
           <div class="space-y-4">
             <div>
               <label class="block text-[11px] sm:text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Nama Penuh</label>
-              <input required id="auth-name" type="text" placeholder="Contoh: Muhammad Alif" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all" Y />
+              <input required id="auth-name" type="text" placeholder="Contoh: Muhammad Alif" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
             </div>
 
             <div id="field-class-code">
@@ -435,7 +465,7 @@
           <form id="create-class-form" class="flex flex-col sm:flex-row gap-2 w-full">
             <input required id="new-class-name" type="text" placeholder="Nama Kelas Baharu" class="bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 outline-none w-full sm:w-44 text-xs sm:text-sm" />
             <button type="submit" class="bg-gradient-to-tr from-orange-500 to-amber-500 text-black px-4 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all shrink-0 text-xs sm:text-sm hover:scale-105">
-              <i data-lucide="plus" class="w-4 h-4"></i> <span>Bina Kelas</span>
+              <i data-lucide="plus" class="w-4 h-4 shrink-0"></i> <span>Bina Kelas</span>
             </button>
           </form>
 
@@ -445,7 +475,7 @@
           <form id="resume-class-form" class="flex flex-col sm:flex-row gap-2 w-full mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/5">
             <input required id="resume-class-input" type="text" placeholder="Kod Kelas Lama" class="bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-zinc-500 outline-none w-full sm:w-48 text-xs sm:text-sm uppercase" />
             <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all shrink-0 text-xs sm:text-sm border border-white/5 hover:scale-105">
-              <i data-lucide="log-in" class="w-4 h-4"></i> <span>Masuk Semula</span>
+              <i data-lucide="log-in" class="w-4 h-4 shrink-0"></i> <span>Masuk Semula</span>
             </button>
           </form>
         </div>
@@ -501,7 +531,7 @@
           <div>
             <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Liputan Bab</label>
             <select id="ai-gen-chapter" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
-              <option value="0" selected>Semua Soalan (20 Soalan Campuran)</option>
+              <option value="0" selected>Semua Soalan (100 Soalan Campuran)</option>
               <option value="1">Bab 1: Pengenalan Makroekonomi (20 Soalan)</option>
               <option value="2">Bab 2: Perakaunan Pendapatan Negara (20 Soalan)</option>
               <option value="3">Bab 3: Keseimbangan Pendapatan Negara (20 Soalan)</option>
@@ -510,9 +540,9 @@
             </select>
           </div>
           <div>
-            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Sasaran Penyimpanan AI</label>
+            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Target Penyimpanan AI</label>
             <select id="ai-gen-destination" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
-              <option value="sheet" selected>Simpan Terus ke Google Sheet Baharu</option>
+              <option value="sheet" selected>Simpan Terus ke Google Sheet Baru</option>
               <option value="csv">Jana & Muat Turun Fail CSV</option>
             </select>
           </div>
@@ -556,7 +586,7 @@
         </div>
       </div>
 
-      <!-- PENGUMUMAN DAN SEMBANG KELAS (GURU) -->
+      <!-- Lajur Pengumuman Guru & Sembang Kelas -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mt-8">
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between h-[380px]">
           <div>
@@ -622,9 +652,8 @@
         </form>
       </div>
 
-      <!-- Kad Pencapaian Pelajar (Sebaris) -->
+      <!-- Kad Pencapaian Pelajar -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-        
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col items-center justify-center text-center min-h-[160px]">
           <div class="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500 mb-3">
             <i data-lucide="target" class="w-5 h-5"></i>
@@ -660,7 +689,6 @@
             <div id="student-xp-bar" class="bg-gradient-to-r from-orange-500 via-amber-500 to-gold h-1 rounded-full transition-all duration-1000 ease-out w-0"></div>
           </div>
         </div>
-
       </div>
 
       <!-- Tetapan Kuiz -->
@@ -671,10 +699,10 @@
           </h3>
           <div class="flex gap-2 w-full sm:w-auto shrink-0 font-sans">
             <button onclick="window.triggerManualSync()" class="flex-1 sm:flex-none bg-zinc-900 hover:bg-zinc-800 text-amber-500 font-extrabold text-[11px] sm:text-xs px-4 py-2 rounded-xl border border-white/5 flex items-center justify-center gap-1.5 min-h-[2.5rem] transition-all">
-              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Segarkan Soalan</span>
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Kemaskini Soalan</span>
             </button>
             <button onclick="window.startQuizFlow()" class="flex-1 sm:flex-none bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold text-[11px] sm:text-xs px-5 py-2 rounded-xl shadow-lg flex items-center justify-center gap-1.5 min-h-[2.5rem] transition-all">
-              <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> <span>Mula Kuiz</span>
+              <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> <span>Mula Latihan</span>
             </button>
           </div>
         </div>
@@ -712,7 +740,7 @@
         </div>
       </div>
 
-      <!-- PENGUMUMAN DAN SEMBANG KELAS (PELAJAR) -->
+      <!-- PENGUMUMAN DAN SEMBANG KELAS -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col h-[380px]">
           <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 mb-3 border-b border-white/5 pb-2 shrink-0">
@@ -732,9 +760,9 @@
               <p class="text-zinc-500 text-xs italic">Belum ada sembang dalam kelas ini.</p>
             </div>
             
-            <form id="student-message-form" class="flex gap-2 pt-3 border-t border-white/5 mt-2 shrink-0">
+            <form id="student-message-form" class="flex gap-2 pt-3 border-t border-white/5 mt-2 shrink-0 font-sans">
               <input required id="student-message-input" type="text" placeholder="Taip mesej anda di sini..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-white text-xs sm:text-sm focus:ring-1 focus:ring-amber-500 outline-none" />
-              <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-bold px-4 py-2 rounded-xl text-xs flex items-center justify-center gap-1.5">
+              <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-bold px-4 py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shrink-0">
                 <i data-lucide="send" class="w-4 h-4"></i> Hantar
               </button>
             </form>
@@ -769,7 +797,6 @@
 
       <!-- KAD UTAMA KUIZ -->
       <div class="glass-panel p-5 sm:p-8 rounded-3xl border border-white/5 space-y-6">
-        
         <div id="quiz-single-view" class="space-y-6">
           <div id="quiz-question-text" class="text-sm sm:text-lg text-white font-medium leading-relaxed break-words"></div>
           <div id="quiz-options-container" class="grid grid-cols-1 gap-3 sm:gap-4"></div>
@@ -779,12 +806,11 @@
               <i data-lucide="info" class="w-4 h-4"></i>
               <span>Perbincangan Konseptual</span>
             </div>
-            <div id="quiz-explanation-text" class="text-zinc-300 text-xs sm:text-sm leading-relaxed break-words"></div>
+            <div id="quiz-explanation-text" class="text-zinc-300 text-xs sm:text-sm leading-relaxed break-words font-sans"></div>
           </div>
         </div>
 
         <div id="quiz-multi-view" class="hidden space-y-8 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2"></div>
-
       </div>
 
       <div class="flex justify-end gap-3 w-full" id="quiz-control-buttons">
@@ -800,7 +826,7 @@
       </div>
     </div>
 
-    <!-- VIEW 6: KEPUTUSAN KUIZ (RESULTS SCREEN) -->
+    <!-- VIEW 6: KEPUTUSAN KUIZ -->
     <div id="view-results" class="hidden max-w-md mx-auto text-center space-y-6 sm:space-y-8 animate-slide-in py-6">
       <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/5 space-y-6 relative overflow-hidden">
         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -811,7 +837,7 @@
 
         <div class="space-y-2">
           <h2 class="text-2xl sm:text-3xl font-black text-white">Latihan Selesai!</h2>
-          <p class="text-zinc-400 text-xs sm:text-sm px-2">Hebat! Anda telah berjaya menyelesaikan cabaran kuiz ini.</p>
+          <p class="text-zinc-400 text-xs sm:text-sm px-2">Hebat! Anda telah berjaya menyelesaikan siri cabaran makroekonomi ini.</p>
         </div>
 
         <div class="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
@@ -826,7 +852,7 @@
         </div>
       </div>
 
-      <button onclick="window.backToDashboard()" class="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-black rounded-xl shadow-lg text-xs sm:text-sm">
+      <button onclick="window.backToDashboard()" class="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-black rounded-xl transition-all shadow-lg transform scale-105 text-xs sm:text-sm">
         Kembali ke Papan Pemuka
       </button>
     </div>
@@ -847,112 +873,21 @@
     </div>
   </footer>
 
-  <!-- ==========================================
-       E. SISTEM SKRIPTING & LOGIK INTERAKTIF
-       ========================================== -->
+  <!-- SISTEM UTAMA SKRIPTING -->
   <script>
-    window.state = {
-      user: null,
-      role: 'student',
-      activeClassCode: null,
-      activeClassName: null,
-      students: [],
-      apiConfig: {
-        gasUrl: '',
-        geminiKey: ''
-      },
-      quizState: {
-        questions: [],
-        chapter: '0',
-        set: '0',
-        mode: 'onebyone',
-        currentIndex: 0,
-        answers: {},
-        score: 0,
-        xpEarned: 0,
-        hasSubmitted: false,
-        secondsTaken: 0,
-        timerInterval: null
+    function normalizeSetName(sheetName) {
+      if (!sheetName) return "Set 1";
+      let name = sheetName.trim();
+      let match = name.match(/\d+/);
+      if (match) {
+        return "Set " + match[0];
       }
-    };
+      return name;
+    }
 
     let unsubscribeStudents = null;
     let unsubscribeAnnouncements = null;
     let unsubscribeMessages = null;
-
-    // Bank soalan fallback STPM untuk kestabilan tinggi sekiranya sambungan awan terganggu
-    const localFallbackQuestions = [
-      {
-        id: "LOCAL_B1_Q01",
-        chapter: "1",
-        sheetName: "Set 1",
-        text: "Antara yang berikut, yang manakah merupakan bidang kajian makroekonomi?",
-        options: [
-          "Kajian tentang gelagat pengguna dalam pasaran barang",
-          "Kajian tentang penentuan harga faktor pengeluaran",
-          "Kajian tentang tingkat harga umum dan inflasi negara",
-          "Kajian tentang kos pengeluaran firma individu"
-        ],
-        answer: 2,
-        explanation: "Makroekonomi mengkaji petunjuk ekonomi agregat (menyeluruh) seperti tingkat harga umum, inflasi, guna tenaga, dan pendapatan negara."
-      },
-      {
-        id: "LOCAL_B1_Q02",
-        chapter: "1",
-        sheetName: "Set 1",
-        text: "Dasar fiskal mengawal ekonomi negara melalui instrumen...",
-        options: [
-          "Kadar bunga dan rizab tunai bank",
-          "Perbelanjaan kerajaan dan cukai",
-          "Kadar pertukaran wang asing",
-          "Pemberian pinjaman mikro"
-        ],
-        answer: 1,
-        explanation: "Dasar fiskal dikawal oleh kerajaan menggunakan instrumen cukai ($T$) dan perbelanjaan kerajaan ($G$)."
-      },
-      {
-        id: "LOCAL_B2_Q01",
-        chapter: "2",
-        sheetName: "Set 1",
-        text: "Pendapatan negara dihitung dengan menggunakan tiga kaedah utama, kecuali...",
-        options: [
-          "Kaedah perbelanjaan",
-          "Kaedah keluaran",
-          "Kaedah pendapatan",
-          "Kaedah pembiayaan"
-        ],
-        answer: 3,
-        explanation: "Tiga kaedah pengiraan pendapatan negara yang sah ialah kaedah keluaran, kaedah perbelanjaan, dan kaedah pendapatan."
-      },
-      {
-        id: "LOCAL_B3_Q01",
-        chapter: "3",
-        sheetName: "Set 1",
-        text: "Dalam analisis ekonomi 2 sektor, keseimbangan pendapatan negara tercapai apabila...",
-        options: [
-          "$Y = C + I$",
-          "$Y = C + S$",
-          "$S = Y - I$",
-          "$Y = C + I + G$"
-        ],
-        answer: 0,
-        explanation: "Keseimbangan pendapatan negara bagi ekonomi 2 sektor tercapai apabila penawaran agregat ($Y$) sama dengan perbelanjaan agregat dirancang ($C + I$)."
-      },
-      {
-        id: "LOCAL_B4_Q01",
-        chapter: "4",
-        sheetName: "Set 1",
-        text: "Fungsi utama wang dalam ekonomi moden adalah sebagai...",
-        options: [
-          "Alat pengukur kekayaan peribadi sahaja",
-          "Alat perantaraan pertukaran yang sah",
-          "Alat kawalan inflasi langsung",
-          "Jaminan kestabilan politik"
-        ],
-        answer: 1,
-        explanation: "Wang berfungsi sebagai alat perantaraan pertukaran yang menyelesaikan masalah kehendak serentak yang bertindih dalam sistem barter."
-      }
-    ];
 
     window.showView = function(viewId) {
       const views = ['view-loading', 'view-auth', 'view-teacher-dashboard', 'view-student-dashboard', 'view-quiz', 'view-results'];
@@ -1170,8 +1105,8 @@
 
     window.fetchQuestionsFromCloud = async function() {
       if (!window.state || !window.state.apiConfig || !window.state.apiConfig.gasUrl) {
-          window.globalQuestions = localFallbackQuestions;
-          return true;
+          window.globalQuestions = [];
+          return false;
       }
       try {
           const response = await fetch(window.state.apiConfig.gasUrl, {
@@ -1184,34 +1119,62 @@
           try {
               data = JSON.parse(text);
           } catch (e) {
-              console.warn("Gagal menghurai JSON Google Sheets. Menggunakan soalan fallback.");
-              window.globalQuestions = localFallbackQuestions;
-              return true;
+              console.warn("Gagal menghurai JSON dari Google Sheet.");
+              window.globalQuestions = [];
+              window.updateSelectorsFromQuestions();
+              return false;
           }
           
           if (data && data.questions) {
+              const setQuestionCounters = {};
+
               window.globalQuestions = data.questions.map((q, idx) => {
+                  const currentSetTabName = normalizeSetName(q.set || "Set 1");
+                  
+                  if (setQuestionCounters[currentSetTabName] === undefined) {
+                      setQuestionCounters[currentSetTabName] = 0;
+                  }
+                  
+                  const setSpecificIndex = setQuestionCounters[currentSetTabName];
+                  setQuestionCounters[currentSetTabName]++;
+
+                  let calculatedBab = "1";
+                  if (setSpecificIndex >= 0 && setSpecificIndex <= 19) {
+                      calculatedBab = "1";
+                  } else if (setSpecificIndex >= 20 && setSpecificIndex <= 39) {
+                      calculatedBab = "2";
+                  } else if (setSpecificIndex >= 40 && setSpecificIndex <= 59) {
+                      calculatedBab = "3";
+                  } else if (setSpecificIndex >= 60 && setSpecificIndex <= 79) {
+                      calculatedBab = "4";
+                  } else if (setSpecificIndex >= 80 && setSpecificIndex <= 99) {
+                      calculatedBab = "5";
+                  } else {
+                      calculatedBab = q.chapter ? q.chapter.toString() : "1";
+                  }
+
                   return {
                       id: `Q_${idx}_${Date.now()}`,
-                      chapter: q.chapter ? q.chapter.toString() : "1",
-                      sheetName: q.set || "Set 1",
+                      chapter: calculatedBab,
+                      sheetName: currentSetTabName,
                       text: q.q,
                       options: q.opts && q.opts.length > 0 ? q.opts : ["Pilihan A", "Pilihan B", "Pilihan C", "Pilihan D"],
                       answer: q.ans !== undefined ? q.ans : 0,
                       explanation: q.explanation || "Rujuk analisis konsep makroekonomi untuk perbincangan lanjut."
                   };
               });
+
               window.updateSelectorsFromQuestions();
               return true;
           }
-          window.globalQuestions = localFallbackQuestions;
+          window.globalQuestions = [];
           window.updateSelectorsFromQuestions();
-          return true;
+          return false;
       } catch(e) {
-          console.error("Ralat pautan Google Sheet, mengaktifkan soalan fallback tempatan:", e);
-          window.globalQuestions = localFallbackQuestions;
+          console.error("Gagal menarik soalan awan:", e);
+          window.globalQuestions = [];
           window.updateSelectorsFromQuestions();
-          return true;
+          return false;
       }
     };
 
@@ -1231,7 +1194,7 @@
       const uniqueChapters = new Set();
 
       pool.forEach(q => {
-        if (q.sheetName) uniqueSets.add(q.sheetName.trim());
+        if (q.sheetName) uniqueSets.add(normalizeSetName(q.sheetName));
         if (q.chapter) uniqueChapters.add(q.chapter.toString().trim());
       });
 
@@ -1303,7 +1266,7 @@
         window.syncDatabaseWithBackend();
         window.showCustomModal(
           "Gagal Menyegerak", 
-          "Gagal menghubungi Google Sheet. Menggunakan bank soalan sandaran tempatan.", 
+          "Gagal menghubungi Google Sheet. Pastikan pautan awan yang anda masukkan tepat atau tiada sekatan rangkaian.", 
           "alert-triangle", 
           false
         );
@@ -1378,7 +1341,7 @@
           });
           window.renderStudentsTable();
       }, (error) => {
-          console.error("Ralat pemantauan senarai pelajar:", error);
+          console.error("Kesalahan memantau data siswa dari Firestore:", error);
       });
     };
 
@@ -1465,7 +1428,7 @@
            window.renderAnnouncements(announcements);
 
        }, (error) => {
-           console.error("Ralat pemantauan pengumuman:", error);
+           console.error("Ralat saat memantau pengumuman:", error);
        });
     };
 
@@ -1663,6 +1626,7 @@
       window.state.user = null;
       window.state.activeClassCode = null;
       window.state.activeClassName = null;
+      window.state.selectedRole = null;
       
       if (window.auth) {
         await window.auth.signOut();
@@ -1673,17 +1637,13 @@
     function cleanJsonString(raw) {
         if (!raw) return "[]";
         let cleaned = raw.trim();
-        
-        // Memotong kod markdown secara dinamik tanpa risiko kegagalan rendering
-        if (cleaned.startsWith("```")) {
-            const indexN = cleaned.indexOf("\n");
-            if (indexN !== -1) {
-                cleaned = cleaned.substring(indexN + 1);
-            } else {
-                cleaned = cleaned.substring(3);
-            }
+        const backticks = String.fromCharCode(96) + String.fromCharCode(96) + String.fromCharCode(96);
+        let match1 = cleaned.match(new RegExp("^" + backticks + "(?:json)?\\n?", "i"));
+        if (match1) {
+            cleaned = cleaned.substring(match1[0].length);
         }
-        if (cleaned.endsWith("```")) {
+        let match2 = cleaned.match(new RegExp("\\n?" + backticks + "$", "i"));
+        if (match2) {
             cleaned = cleaned.substring(0, cleaned.length - 3);
         }
         cleaned = cleaned.trim();
@@ -1804,12 +1764,12 @@
         if (!geminiKey) {
             loader.classList.add('hidden');
             btn.disabled = false;
-            window.showCustomModal("Kunci API Tiada", "Sistem memerlukan Kunci API Gemini. Sila masukkan dalam menu Tetapan.", "alert-triangle", false);
+            window.showCustomModal("Kunci API Tiada", "Sistem memerlukan Kunci API Gemini untuk menjana soalan secara terus. Sila masukkannya dalam ikon Tetapan di penjuru atas.", "alert-triangle", false);
             return;
         }
 
         const modelsToTry = [
-          "gemini-3-flash-preview",
+          "gemini-2.5-flash-preview-09-2025",
           "gemini-2.5-flash",
           "gemini-1.5-flash"
         ];
@@ -1825,10 +1785,10 @@
           const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${geminiKey}`;
           const numQuestions = 20; 
           
-          const systemPrompt = `Anda adalah pakar penilai ekonomi STPM terulung di Malaysia. Bina ${numQuestions} soalan aneka pilihan aras tinggi (KBAT) bertemakan Sukatan Pelajaran Makroekonomi STPM. Gunakan kod LaTeX matematik (seperti $$) untuk sebarang formula. SANGAT PENTING: Jangan gunakan sebarang tanda petikan ganda (") di dalam nilai teks, gunakan tanda petikan tunggal (') jika perlu. Kembalikan jawapan dalam format JSON yang bersih mengikut struktur array objek: [{"Chapter": 1, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}]. Pastikan ia adalah valid JSON sahaja, tanpa sebarang markdown triple backticks.`;
+          const systemPrompt = `Anda adalah pakar penilai ekonomi STPM terulung di Malaysia. Bina ${numQuestions} soalan aneka pilihan aras tinggi (KBAT) bertemakan Sukatan Pelajaran Makroekonomi STPM. Gunakan kod LaTeX matematik (seperti $$) untuk sebarang formula. SANGAT PENTING: Jangan gunakan sebarang tanda petikan ganda (") di dalam nilai teks (soalan, pilihan, atau penjelasan), gunakan tanda petikan tunggal (') jika perlu. Kembalikan jawapan dalam format JSON yang bersih mengikut struktur array objek: [{"Chapter": 1, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}]. Pastikan ia adalah valid JSON sahaja, tanpa sebarang markdown.`;
 
           const query = chapter === "0" 
-            ? `Bina 20 soalan berkualiti tinggi meliputi semua bab (campuran rawak Bab 1 hingga Bab 5). Tulis dalam Bahasa Melayu rasmi akademik.` 
+            ? `Bina 20 soalan berkualiti tinggi meliputi semua bab (campuran rawak Bab 1 hingga Bab 5, 4 soalan setiap bab). Tulis dalam Bahasa Melayu rasmi akademik.` 
             : `Bina 20 soalan berkualiti tinggi khusus bagi Bab ${chapter}. Tulis dalam Bahasa Melayu rasmi akademik.`;
 
           const payload = {
@@ -1940,7 +1900,7 @@
                 await window.fetchQuestionsFromCloud(); 
                 loader.classList.add('hidden');
                 btn.disabled = false;
-                window.showCustomModal("Proses Selesai!", `Soalan-soalan telah disimpan ke Set ${nextSetNum} di Google Sheet anda.`, "sparkles", true);
+                window.showCustomModal("Proses Selesai!", `Soalan-soalan telah berjaya dijana dan disimpan ke Set ${nextSetNum} di pangkalan data Google Sheet anda.`, "sparkles", true);
             } else {
                 throw new Error("Gagal menyinkronisasikan ke dalam Sheet.");
             }
@@ -1970,14 +1930,14 @@
 
             loader.classList.add('hidden');
             btn.disabled = false;
-            window.showCustomModal("CSV Sedia!", `Fail Makroverse_Set_${nextSetNum}_Questions.csv berjaya dijana.`, "check-circle", true);
+            window.showCustomModal("CSV Sedia!", `Fail Makroverse_Set_${nextSetNum}_Questions.csv berjaya dimuat turun. Sila tampal isi fail ini ke Google Sheet secara manual di bawah tab <b>Set ${nextSetNum}</b>.`, "check-circle", true);
           }
 
         } catch (err) {
           console.error(err);
           loader.classList.add('hidden');
           btn.disabled = false;
-          window.showCustomModal("Ralat Pemprosesan", "Gagal menghubungi pelayan AI. Sila pastikan kunci API yang dimasukkan adalah sah.", "alert-triangle", false);
+          window.showCustomModal("Ralat Pemprosesan", "Sistem gagal menghubungi pelayan AI atau terdapat kerosakan struktur balasan. Ralat:<br><pre class='text-xs mt-2 text-red-400 text-left bg-zinc-950 p-2 rounded max-h-32 overflow-y-auto whitespace-pre-wrap'>" + err.message + "</pre><br><span class='text-[10px] text-zinc-500'>Sila pastikan Kunci API Gemini yang dimasukkan pada menu Tetapan adalah sah dan aktif di Google AI Studio anda.</span>", "alert-triangle", false);
         }
     };
 
@@ -1988,8 +1948,8 @@
 
         let pool = window.globalQuestions;
 
-        if (pool.length === 0) {
-          window.showCustomModal("Bank Soalan Kosong", "Minta bimbingan guru anda untuk menerbitkan materi Google Sheet yang baharu.", "info");
+        if (!pool || pool.length === 0) {
+          window.showCustomModal("Bank Soalan Kosong", "Belum ada soalan yang sedia ada. Sila tekan butang Kemaskini Soalan atau minta bimbingan guru anda untuk menerbitkan materi Google Sheet yang baharu.", "info");
           return;
         }
 
@@ -2003,7 +1963,7 @@
         }
 
         if (tabFilteredPool.length === 0) {
-          window.showCustomModal("Soalan Tidak Ditemui", "Tiada padanan soalan untuk pilihan anda.", "info");
+          window.showCustomModal("Soalan Tidak Ditemui", "Tiada padanan soalan untuk pilihan Set/Bab anda cari. Sila mencuba tetapan yang lain.", "info");
           return;
         }
 
@@ -2012,6 +1972,7 @@
         const endIdx = startIdx + 20;
         
         let setFilteredPool = tabFilteredPool.slice(startIdx, endIdx);
+        
         if (setFilteredPool.length === 0) {
           setFilteredPool = tabFilteredPool.slice(0, 20); 
         }
@@ -2019,7 +1980,7 @@
         window.state.quizState.questions = [...setFilteredPool];
         
         if (window.state.quizState.questions.length === 0) {
-          window.showCustomModal("Kosong", "Sistem tidak dapat mengumpulkan soalan.", "info");
+          window.showCustomModal("Kosong", "Sistem tidak dapat mengumpulkan soalan yang memadai untuk pilihan anda ini.", "info");
           window.exitQuiz();
           return;
         }
@@ -2163,7 +2124,7 @@
         const submitBtnWrapper = document.createElement('div');
         submitBtnWrapper.className = "pt-4 flex flex-col sm:flex-row justify-end gap-3";
         submitBtnWrapper.innerHTML = `
-          <button onclick="window.exitQuiz()" class="w-full sm:w-auto bg-zinc-800 hover:bg-zinc-700 text-white font-extrabold px-8 py-3.5 rounded-xl transition-all border border-white/10 text-center leading-tight text-xs sm:text-sm min-h-[3rem]">
+          <button onclick="window.exitQuiz()" class="w-full sm:w-auto bg-zinc-800 hover:bg-zinc-700 text-white font-extrabold px-8 py-3.5 rounded-xl border border-white/10 text-center leading-tight text-xs sm:text-sm min-h-[3rem]">
             Batalkan Pengujian
           </button>
           <button onclick="window.submitExamSheet()" class="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold px-8 py-3.5 rounded-xl transition-all shadow-lg text-center leading-tight text-xs sm:text-sm min-h-[3rem]">
@@ -2277,7 +2238,7 @@
     }
 
     window.exitQuiz = function() {
-        if (confirm("Adakah anda benar-benar pasti ingin membatalkan sesi ujian? Semua pencapaian dan XP semasa tidak akan direkodkan.")) {
+        if (confirm("Adakah anda benar-benar pasti ingin membatalkan sesi ujian yang sedang berjalan ini? Semua pencapaian dan XP tidak akan direkodkan.")) {
           if (window.state.quizState.timerInterval) clearInterval(window.state.quizState.timerInterval);
           window.backToDashboard();
         }
@@ -2442,7 +2403,6 @@
           }
         });
       } else {
-         console.warn("Mod luar talian diaktifkan.");
          let savedProfile = localStorage.getItem('macronexus_user_profile');
          if (savedProfile) {
            try {
@@ -2471,7 +2431,7 @@
 
       setTimeout(() => {
         if (!window.firebaseReady || !window.state.user) {
-          console.warn("Firebase mengambil masa terlalu lama. Memintas ke mod tempatan...");
+          console.warn("Memintas ke mod tempatan...");
           if (typeof window.initApp === 'function') {
             window.initApp();
           }
