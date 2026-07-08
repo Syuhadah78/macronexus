@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="id" class="h-full">
+<html lang="ms" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MacroNexus - Menghubung Ilmu, Membina Kecemerlangan</title>
   
-  <!-- Pasang Tailwind CSS melalui CDN -->
+  <!-- Memuatkan Tailwind CSS melalui CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -25,15 +25,15 @@
     }
   </script>
 
-  <!-- Pasang Lucide Icons melalui CDN -->
+  <!-- Memuatkan Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Google Fonts -->
+  <!-- Google Fonts (Plus Jakarta Sans) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- MathJax untuk memaparkan rumus LaTeX secara dinamik -->
+  <!-- MathJax untuk menyokong simbol dan formula ekonomi LaTeX -->
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
   <!-- Firebase SDK -->
@@ -42,7 +42,7 @@
     import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getFirestore, doc, setDoc, getDoc, collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, serverTimestamp, orderBy } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-    // Konfigurasi Firebase web app MacroNexus rasmi (macronexus-7805)
+    // Konfigurasi rasmi projek Firebase MacroNexus
     const firebaseConfig = {
       apiKey: "AIzaSyCDAGpmffFqw0ImEjmQmpmcRsoZ-v3UMqw",
       authDomain: "macronexus-7805.firebaseapp.com",
@@ -59,13 +59,12 @@
       auth = getAuth(app);
       db = getFirestore(app);
     } catch(e) {
-      console.warn("Firebase tidak ditemukan di lingkungan ini. Berjalan dalam mode lokal.");
+      console.warn("Firebase tidak dapat dimuatkan secara automatik. Mod tempatan diaktifkan.");
     }
     
-    // Tetapkan terus ID Aplikasi secara mutlak untuk pangkalan data Firestore
     const appId = 'macronexus-7805';
 
-    // Mengeksport ke objek global Window untuk digunakan oleh skrip logik aplikasi
+    // Eksport fungsi dan objek Firebase ke tetingkap global
     window.db = db;
     window.auth = auth;
     window.appId = appId;
@@ -86,10 +85,9 @@
     window.GoogleAuthProvider = GoogleAuthProvider;
     window.signInWithPopup = signInWithPopup;
 
-    // Mendefinisikan fungsi log masuk Google secara global
     window.loginWithGoogle = async function() {
       if (!auth) {
-        if(window.showCustomModal) window.showCustomModal("Ralat", "Sistem autentikasi Firebase belum sedia atau disekat oleh pelayar web anda.", "alert-triangle");
+        if(window.showCustomModal) window.showCustomModal("Ralat Sistem", "Sistem autentikasi Firebase belum sedia atau disekat oleh pelayar web anda.", "alert-triangle");
         return;
       }
       const provider = new GoogleAuthProvider();
@@ -102,7 +100,6 @@
         const firebaseUser = result.user;
         const email = firebaseUser.email || "";
         
-        // Deteksi peran otomatis berdasarkan prefiks email DELIMa secara mutlak
         let detectedRole = 'student';
         const emailLower = email.toLowerCase();
         if (emailLower.startsWith('g-')) {
@@ -113,7 +110,6 @@
           detectedRole = window.state.role;
         }
         
-        // Membina profil pengguna baru
         const profile = {
           id: firebaseUser.uid,
           name: firebaseUser.displayName || "Pengguna MacroNexus",
@@ -126,7 +122,6 @@
           correct: 0
         };
 
-        // Simpan ke Firestore
         if (profile.role === 'student' && db) {
           try {
             const privateDocRef = doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'profile', 'main');
@@ -140,7 +135,7 @@
               await setDoc(studentDocRef, profile);
             }
           } catch (e) {
-            console.warn("Gagal menyimpan profil pelajar di Firestore:", e);
+            console.warn("Gagal menyimpan profil pelajar:", e);
           }
         } else if (profile.role === 'teacher' && db) {
           try {
@@ -156,42 +151,37 @@
           }
         }
 
-        // Simpan secara tempatan
         localStorage.setItem('macronexus_user_profile', JSON.stringify(profile));
         
-        // Kemaskini state global aplikasi sebelum beralih skrin
         if (window.state) {
           window.state.user = profile;
           window.state.role = profile.role;
         }
 
-        // Jalankan penarikan soalan jika sedia
         if (window.fetchQuestionsFromCloud) {
           await window.fetchQuestionsFromCloud();
         }
 
       } catch (error) {
-        // Deteksi ralat domain yang tidak diizinkan tanpa membanjiri log konsol dengan ralat merah
         if (error.code === 'auth/unauthorized-domain' || (error.message && error.message.includes('auth/unauthorized-domain'))) {
           const currentDomain = window.location.hostname;
           if (window.showCustomModal) {
             window.showCustomModal(
               "Domain Pratinjau Belum Diizinkan", 
-              `Domain pratinjau saat ini (<b>${currentDomain}</b>) belum terdaftar di Firebase Console proyek Anda.<br><br><b>Solusi Cepat & Mudah:</b><br>Silakan gunakan metode <b>Daftar & Masuk Manual</b> di bawah. Fitur ini berfungsi 100% dengan normal dan menyimpan semua data Anda ke database secara langsung tanpa konfigurasi domain tambahan!`, 
+              `Domain pratinjau saat ini (<b>${currentDomain}</b>) belum terdaftar di Firebase Console.<br><br><b>Solusi Cepat:</b><br>Sila gunakan kaedah <b>Daftar & Masuk Manual</b> di bawah. Ia berfungsi 100% dan terus merekodkan data pembelajaran anda!`, 
               "shield-alert"
             );
           }
         } else {
-          console.error("Kesalahan log masuk Google:", error);
+          console.error("Kesalahan masuk Google:", error);
           if (window.showCustomModal) {
-            window.showCustomModal("Kesalahan Log Masuk", "Gagal masuk menggunakan Google/DELIMa. Silakan cuba lagi.", "alert-triangle");
+            window.showCustomModal("Ralat Log Masuk", "Gagal masuk menggunakan akaun Google/DELIMa.", "alert-triangle");
           }
         }
         if (window.showView) window.showView('view-auth');
       }
     };
 
-    // Aliran dwi-arah mengelakkan ralat perlumbaan memuat turun fail
     window.firebaseReady = true;
     if(typeof window.initApp === 'function') {
         window.initApp();
@@ -206,7 +196,6 @@
     }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #09090b; }
-    ::-webkit-scrollbar-shadow { background: #09090b; }
     ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #f97316; }
     
@@ -226,23 +215,21 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between overflow-x-hidden">
 
-  <!-- ==========================================
-       A. SISTEM MODAL PEMBERITAHUAN (MAKLUMAN)
-       ========================================== -->
+  <!-- MODAL NOTIFIKASI UTAMA -->
   <div id="custom-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
     <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-orange-500/20 text-center transform scale-95 transition-transform duration-300" id="custom-modal-content">
       <div id="modal-icon-container" class="inline-flex p-4 rounded-full bg-orange-500/10 text-orange-500 mb-4 shadow-lg shadow-orange-500/10">
         <i id="modal-icon" data-lucide="alert-triangle" class="w-8 h-8 sm:w-10 sm:h-10"></i>
       </div>
       <h3 id="modal-title" class="text-xl sm:text-2xl font-bold text-white mb-2 break-words">Pemberitahuan</h3>
-      <div id="modal-message" class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-6 break-words text-left overflow-y-auto max-h-60 custom-scrollbar pr-1 text-center font-medium font-sans"></div>
-      <button onclick="window.closeCustomModal()" class="w-full py-3 px-4 min-h-[3rem] flex items-center justify-center text-center bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-extrabold rounded-xl transition-all transform scale-[1.02] shadow-lg shadow-orange-500/20 whitespace-normal break-words leading-tight text-xs sm:text-sm">
-        Paham & Teruskan
+      <div id="modal-message" class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-6 break-words text-left overflow-y-auto max-h-60 custom-scrollbar pr-1 text-center font-medium"></div>
+      <button onclick="window.closeCustomModal()" class="w-full py-3 px-4 min-h-[3rem] flex items-center justify-center text-center bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-extrabold rounded-xl transition-all transform scale-[1.02] shadow-lg shadow-orange-500/20 text-xs sm:text-sm">
+        Faham & Teruskan
       </button>
     </div>
   </div>
 
-  <!-- MODAL SAMBUNG KELAS GURU -->
+  <!-- MODAL PEMULIHAN AKAUN GURU -->
   <div id="teacher-resume-modal" class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
     <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-amber-500/20 text-center transform scale-95 transition-transform duration-300" id="teacher-resume-content">
       <div class="inline-flex p-4 rounded-full bg-amber-500/10 text-amber-500 mb-4 shadow-lg shadow-amber-500/10">
@@ -250,17 +237,14 @@
       </div>
       <h3 class="text-xl sm:text-2xl font-bold text-white mb-2">Akaun Kelas Ditemui!</h3>
       <p class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-6 break-words">
-        Sistem mengesan nama anda sudah mempunyai pautan kod kelas sedia ada iaitu <strong id="resume-class-code" class="text-amber-400 break-all"></strong>. Adakah cikgu ingin meneruskan ke kelas tersebut atau membina kelas yang baharu?
+        Sistem mengesan anda sudah mempunyai kelas sedia ada iaitu <strong id="resume-class-code" class="text-amber-400 break-all"></strong>. Adakah cikgu ingin meneruskan sesi kelas tersebut?
       </p>
       <div class="flex flex-col gap-3">
-        <button onclick="window.resumeExistingClass()" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center leading-tight bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold rounded-xl transition-all shadow-lg hover:scale-[1.02] whitespace-normal break-words text-xs sm:text-sm">
+        <button onclick="window.resumeExistingClass()" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold rounded-xl transition-all shadow-lg hover:scale-[1.02] text-xs sm:text-sm">
           Teruskan ke Kelas Sedia Ada
         </button>
-        <button onclick="window.startNewClassFlow()" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center leading-tight bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl transition-all border border-white/5 whitespace-normal break-words text-xs sm:text-sm">
+        <button onclick="window.startNewClassFlow()" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl transition-all border border-white/5 text-xs sm:text-sm">
           Bina Kelas Baharu
-        </button>
-        <button onclick="window.closeTeacherResumeModal()" class="w-full py-2.5 px-4 flex items-center justify-center text-zinc-500 hover:text-zinc-300 text-xs sm:text-sm font-bold transition-all min-h-[2.5rem]">
-          Batal
         </button>
       </div>
     </div>
@@ -274,46 +258,43 @@
       </div>
       <h3 class="text-xl sm:text-2xl font-bold text-white mb-2">Keluarkan Pelajar?</h3>
       <p class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-6 break-words">
-        Adakah anda pasti ingin mengeluarkan <strong id="delete-student-name" class="text-red-400"></strong> daripada kelas anda? Tindakan ini akan mengosongkan rekod kod kelas mereka.
+        Adakah cikgu pasti mahu mengeluarkan <strong id="delete-student-name" class="text-red-400"></strong> dari senarai kelas? Rekod kod kelas mereka akan dikosongkan.
       </p>
       <div class="flex flex-col gap-3">
-        <button id="btn-confirm-delete-execute" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center leading-tight bg-gradient-to-r from-red-600 to-orange-600 text-white font-extrabold rounded-xl transition-all shadow-lg hover:scale-[1.02] text-xs sm:text-sm">
+        <button id="btn-confirm-delete-execute" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center bg-gradient-to-r from-red-600 to-orange-600 text-white font-extrabold rounded-xl transition-all shadow-lg hover:scale-[1.02] text-xs sm:text-sm">
           Ya, Keluarkan
         </button>
-        <button onclick="window.closeConfirmDeleteModal()" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center leading-tight bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl transition-all border border-white/5 text-xs sm:text-sm">
+        <button onclick="window.closeConfirmDeleteModal()" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl transition-all border border-white/5 text-xs sm:text-sm">
           Batal
         </button>
       </div>
     </div>
   </div>
 
-  <!-- API URL & AI Config Modal -->
+  <!-- CONFIGURASI MODAL SYSTEM -->
   <div id="api-config-modal" class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
     <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-blue-500/20 transform scale-95 transition-transform duration-300" id="api-config-content">
       <div class="inline-flex p-4 rounded-full bg-blue-500/10 text-blue-500 mb-4 shadow-lg shadow-blue-500/10">
         <i data-lucide="settings" class="w-8 h-8 sm:w-10 sm:h-10"></i>
       </div>
-      <h3 class="text-xl sm:text-2xl font-bold text-white mb-2">Konfigurasi Sistem & AI</h3>
+      <h3 class="text-xl sm:text-2xl font-bold text-white mb-2">Papan Tetapan Sistem</h3>
       <p class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-4 text-center">
-        Tetapkan pautan Google Apps Script serta Kunci API peribadi anda di sini.
+        Konfigurasikan sistem pangkalan data dan penjana soalan AI anda di sini.
       </p>
       <div class="flex flex-col gap-3 text-left">
         <div>
-          <label class="block text-[11px] sm:text-xs font-bold text-zinc-400 uppercase tracking-wide mb-1">Google Apps Script URL</label>
+          <label class="block text-[11px] sm:text-xs font-bold text-zinc-400 uppercase tracking-wide mb-1">URL Google Apps Script</label>
           <input id="api-config-url-input" type="url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" />
         </div>
         <div>
-          <label class="block text-[11px] sm:text-xs font-bold text-zinc-400 uppercase tracking-wide mb-1">Kunci API Kecerdasan Buatan (Gemini)</label>
-          <input id="api-config-gemini-input" type="password" placeholder="Tampal API Key peribadi anda di sini" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" />
-          <p class="text-[10px] text-zinc-500 mt-1 leading-normal">
-            Sistem menggunakan model terkini Gemini Flash untuk integrasi penjanaan soalan yang pantas.
-          </p>
+          <label class="block text-[11px] sm:text-xs font-bold text-zinc-400 uppercase tracking-wide mb-1">Kunci API Gemini (AI)</label>
+          <input id="api-config-gemini-input" type="password" placeholder="Tampal API Key Gemini peribadi anda" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" />
         </div>
         <div class="flex flex-col gap-2 pt-3">
-          <button onclick="window.saveApiUrlConfig()" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center leading-tight bg-gradient-to-r from-blue-500 to-cyan-500 text-black font-extrabold rounded-xl transition-all shadow-lg hover:scale-[1.02] whitespace-normal break-words text-xs sm:text-sm">
-            Simpan Konfigurasi
+          <button onclick="window.saveApiUrlConfig()" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center bg-gradient-to-r from-blue-500 to-cyan-500 text-black font-extrabold rounded-xl transition-all shadow-lg hover:scale-[1.02] text-xs sm:text-sm">
+            Simpan Tetapan
           </button>
-          <button onclick="window.closeApiConfigModal()" class="w-full py-2.5 px-4 flex items-center justify-center text-zinc-500 hover:text-zinc-300 text-xs sm:text-sm font-bold transition-all min-h-[2.5rem]">
+          <button onclick="window.closeApiConfigModal()" class="w-full py-2.5 px-4 flex items-center justify-center text-zinc-500 hover:text-zinc-300 text-xs sm:text-sm font-bold min-h-[2.5rem]">
             Batal
           </button>
         </div>
@@ -321,9 +302,7 @@
     </div>
   </div>
 
-  <!-- ==========================================
-       B. PANEL NAVIGASI ATAS (NAVBAR)
-       ========================================== -->
+  <!-- BAR NAVIGASI (NAVBAR) -->
   <nav id="navbar" class="bg-zinc-950/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-40 hidden">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
@@ -340,8 +319,7 @@
         </div>
         
         <div class="flex items-center gap-2 sm:gap-4">
-          <!-- Tombol pengaturan dikawal secara dinamis (Hanya Guru yang boleh melihatnya) -->
-          <button id="nav-settings-btn" onclick="window.openApiConfigModal()" class="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition-all hidden" title="Konfigurasi Sistem">
+          <button id="nav-settings-btn" onclick="window.openApiConfigModal()" class="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition-all hidden" title="Konfigurasi">
             <i data-lucide="settings" class="w-5 h-5"></i>
           </button>
           <div class="text-right hidden md:block">
@@ -359,18 +337,16 @@
     </div>
   </nav>
 
-  <!-- ==========================================
-       C. PANDANGAN APLIKASI
-       ========================================== -->
+  <!-- SEKSYEN KANDUNGAN UTAMA -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-grow w-full relative">
 
-    <!-- VIEW 1: SKRIN PEMUATAN (LOADING SCREEN) -->
+    <!-- VIEW 1: KIPAS PEMUAT (LOADING SCREEN) -->
     <div id="view-loading" class="flex flex-col items-center justify-center py-32">
       <div class="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
       <p id="loading-text" class="text-zinc-400 text-xs sm:text-sm font-medium text-center px-4">Menghubungkan Portal MacroNexus...</p>
     </div>
 
-    <!-- VIEW 2: SKRIN PENDAFTARAN / MASUK -->
+    <!-- VIEW 2: SKRIN AUTENTIKASI (AUTH VIEW) -->
     <div id="view-auth" class="hidden max-w-md mx-auto py-4 sm:py-10">
       <div class="glass-panel p-5 sm:p-8 rounded-3xl shadow-2xl border border-white/5">
         <div class="text-center mb-6 sm:mb-8">
@@ -378,24 +354,23 @@
             <i data-lucide="globe-2" class="h-7 w-7 sm:h-8 sm:w-8 text-white"></i>
           </div>
           <h2 class="text-2xl sm:text-3xl font-black text-white mb-1 leading-tight">MacroNexus</h2>
-          <p class="text-brand-amber font-semibold text-[11px] sm:text-xs mb-3">Menghubung Ilmu, Membina Kecemerlangan</p>
+          <p class="text-amber-500 font-semibold text-[11px] sm:text-xs mb-3">Menghubung Ilmu, Membina Kecemerlangan</p>
           <p class="text-zinc-400 text-xs sm:text-sm px-2">Sistem Pembelajaran Pintar STPM Makroekonomi</p>
         </div>
 
-        <form id="auth-form" class="space-y-5 sm:space-y-6">
+        <form id="auth-form" class="space-y-5">
           <div class="grid grid-cols-2 gap-3" id="role-selection">
             <button type="button" onclick="window.setAuthRole('student')" id="btn-role-student" class="p-3 sm:p-4 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-amber-500 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem]">
               <i data-lucide="users" class="w-5 h-5 sm:w-6 sm:h-6 shrink-0"></i>
-              <span class="font-bold text-xs sm:text-sm text-center break-words whitespace-normal leading-tight">Pelajar</span>
+              <span class="font-bold text-xs sm:text-sm leading-tight">Pelajar</span>
             </button>
             <button type="button" onclick="window.setAuthRole('teacher')" id="btn-role-teacher" class="p-3 sm:p-4 rounded-xl border-2 border-zinc-800 hover:border-zinc-700 text-zinc-400 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem]">
               <i data-lucide="graduation-cap" class="w-5 h-5 sm:w-6 sm:h-6 shrink-0"></i>
-              <span class="font-bold text-xs sm:text-sm text-center break-words whitespace-normal leading-tight">Guru</span>
+              <span class="font-bold text-xs sm:text-sm leading-tight">Guru</span>
             </button>
           </div>
 
-          <!-- GOOGLE / DELIMA LOGIN BUTTON -->
-          <div class="mb-4">
+          <div>
             <button type="button" onclick="window.loginWithGoogle()" class="w-full bg-white text-black font-bold py-3.5 px-4 rounded-xl shadow-lg hover:bg-gray-100 transition-all flex items-center justify-center gap-3 text-xs sm:text-sm transform hover:scale-[1.02]">
               <svg class="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -406,14 +381,14 @@
               Masuk dengan Google / DELIMa
             </button>
 
-            <!-- MAKLUMAN KHAS PENGGUNA DELIMa -->
+            <!-- Notis khas DELIMa -->
             <div class="mt-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-left">
               <div class="flex gap-2 items-start text-amber-500 font-bold text-xs mb-1">
                 <i data-lucide="info" class="w-4 h-4 shrink-0 mt-0.5 animate-pulse"></i>
                 <span>Makluman Penting Pengguna DELIMa</span>
               </div>
               <p class="text-[10px] text-zinc-400 leading-relaxed font-medium">
-                Sistem keselamatan Google Workspace KPM menyekat akaun DELIMa (<span class="text-amber-400 font-semibold">@moe-dl.edu.my</span>) daripada mendaftar masuk secara automatik ke aplikasi luar yang baru dibina.
+                Sistem keselamatan KPM kadangkala menyekat kemasukan automatik akaun DELIMa (<span class="text-amber-400 font-semibold">@moe-dl.edu.my</span>) ke aplikasi baharu.
               </p>
               <p class="text-[10px] text-zinc-300 leading-relaxed font-bold mt-1.5 border-t border-amber-500/10 pt-1.5">
                 👉 Sila isi nama penuh & kod kelas pada ruangan <span class="text-orange-400 font-extrabold">Daftar & Masuk Manual</span> di bawah untuk mula belajar tanpa sebarang sekatan!
@@ -421,7 +396,7 @@
             </div>
           </div>
 
-          <div class="flex items-center gap-3 my-5">
+          <div class="flex items-center gap-3 my-4">
             <div class="flex-grow h-px bg-white/10"></div>
             <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">ATAU DAFTAR MANUAL</span>
             <div class="flex-grow h-px bg-white/10"></div>
@@ -430,17 +405,17 @@
           <div class="space-y-4">
             <div>
               <label class="block text-[11px] sm:text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Nama Penuh</label>
-              <input required id="auth-name" type="text" placeholder="Contoh: Muhammad Alif" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all" />
+              <input required id="auth-name" type="text" placeholder="Contoh: Muhammad Alif" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all" Y />
             </div>
 
             <div id="field-class-code">
-              <label id="label-classcode" class="block text-[11px] sm:text-xs font-bold text-zinc-400 tracking-wide mb-1 whitespace-normal break-words">Kod Kelas (Wajib Untuk Pelajar)</label>
-              <input id="auth-classcode" type="text" placeholder="Contoh: MKR8291" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all uppercase" />
-              <p id="desc-classcode" class="text-[10px] text-zinc-500 mt-1.5 leading-tight break-words">Dapatkan kod kelas dari guru anda.</p>
+              <label id="label-classcode" class="block text-[11px] sm:text-xs font-bold text-zinc-400 tracking-wide mb-1">Kod Kelas (Wajib Untuk Pelajar)</label>
+              <input id="auth-classcode" type="text" placeholder="Contoh: MKR8291" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all uppercase" />
+              <p id="desc-classcode" class="text-[10px] text-zinc-500 mt-1.5 leading-tight">Dapatkan kod kelas daripada guru pengajar anda.</p>
             </div>
           </div>
 
-          <button id="btn-auth-submit" type="submit" class="w-full min-h-[3.25rem] bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 text-black font-extrabold py-3 px-4 rounded-xl shadow-lg shadow-orange-500/25 transition-all transform hover:scale-[1.02] flex items-center justify-center text-center whitespace-normal break-words leading-tight text-xs sm:text-sm">
+          <button id="btn-auth-submit" type="submit" class="w-full min-h-[3.25rem] bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 text-black font-extrabold py-3 px-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.02] text-xs sm:text-sm">
             Daftar & Masuk Manual
           </button>
         </form>
@@ -449,41 +424,41 @@
 
     <!-- VIEW 3: PAPAN PEMUKA GURU (TEACHER DASHBOARD) -->
     <div id="view-teacher-dashboard" class="hidden space-y-6 sm:space-y-8 animate-slide-in">
-      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 sm:gap-6 border-b border-white/5 pb-5 sm:pb-6">
-        <div class="w-full lg:w-auto">
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-white/5 pb-5 sm:pb-6">
+        <div>
           <h1 class="text-2xl sm:text-3xl font-black text-white leading-tight">Panel Pengajar</h1>
-          <p class="text-zinc-400 text-xs sm:text-sm mt-1 leading-relaxed break-words">Kelola kelas, buat soalan AI, dan pantau prestasi pelajar.</p>
+          <p class="text-zinc-400 text-xs sm:text-sm mt-1">Kelola kelas, jana soalan dengan bantuan AI, dan pantau prestasi pelajar.</p>
         </div>
         
         <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-          <!-- Form Bina Kelas Baharu -->
+          <!-- Form Bina Kelas -->
           <form id="create-class-form" class="flex flex-col sm:flex-row gap-2 w-full">
-            <input required id="new-class-name" type="text" placeholder="Nama Kelas Baharu" class="bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 outline-none w-full sm:w-44 text-xs sm:text-sm text-center sm:text-left" />
-            <button type="submit" class="bg-gradient-to-tr from-orange-500 to-amber-500 text-black px-4 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all shrink-0 text-xs sm:text-sm shadow-lg hover:scale-105 min-h-[3rem] whitespace-normal text-center break-words">
-              <i data-lucide="plus" class="w-4 h-4 shrink-0"></i> <span>Bina Kelas</span>
+            <input required id="new-class-name" type="text" placeholder="Nama Kelas Baharu" class="bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-orange-500 outline-none w-full sm:w-44 text-xs sm:text-sm" />
+            <button type="submit" class="bg-gradient-to-tr from-orange-500 to-amber-500 text-black px-4 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all shrink-0 text-xs sm:text-sm hover:scale-105">
+              <i data-lucide="plus" class="w-4 h-4"></i> <span>Bina Kelas</span>
             </button>
           </form>
 
           <div class="hidden sm:block w-px bg-white/10 mx-1"></div>
           
-          <!-- Form Masuk Semula Kelas -->
-          <form id="resume-class-form" class="flex flex-col sm:flex-row gap-2 w-full mt-2 sm:mt-0 border-t sm:border-t-0 border-white/5 pt-3 sm:pt-0">
-            <input required id="resume-class-input" type="text" placeholder="Kod Kelas Lama" class="bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-zinc-500 outline-none w-full sm:w-48 text-xs sm:text-sm uppercase text-center sm:text-left" />
-            <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all shrink-0 text-xs sm:text-sm border border-white/5 shadow-lg hover:scale-105 min-h-[3rem] whitespace-normal text-center break-words">
-              <i data-lucide="log-in" class="w-4 h-4 shrink-0"></i> <span>Masuk Semula</span>
+          <!-- Form Hubung Semula Kelas -->
+          <form id="resume-class-form" class="flex flex-col sm:flex-row gap-2 w-full mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/5">
+            <input required id="resume-class-input" type="text" placeholder="Kod Kelas Lama" class="bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-zinc-500 outline-none w-full sm:w-48 text-xs sm:text-sm uppercase" />
+            <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all shrink-0 text-xs sm:text-sm border border-white/5 hover:scale-105">
+              <i data-lucide="log-in" class="w-4 h-4"></i> <span>Masuk Semula</span>
             </button>
           </form>
         </div>
       </div>
 
       <div id="active-class-banner" class="hidden bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div class="w-full sm:w-auto">
-          <h3 class="text-orange-400 font-bold text-lg leading-tight break-words" id="display-class-name">Nama Kelas</h3>
-          <p class="text-xs text-zinc-400 mt-1 leading-relaxed break-words">Berikan kod ini kepada pelajar anda untuk mendaftar masuk.</p>
+        <div>
+          <h3 class="text-orange-400 font-bold text-lg leading-tight" id="display-class-name">Nama Kelas</h3>
+          <p class="text-xs text-zinc-400 mt-1">Sila berikan kod ini kepada pelajar anda untuk pendaftaran masuk.</p>
         </div>
         <div class="bg-zinc-950 px-4 py-2.5 rounded-xl border border-zinc-800 flex items-center justify-between gap-4 w-full sm:w-auto">
           <span class="text-lg sm:text-2xl font-black text-white tracking-widest uppercase truncate" id="display-class-code">MKR000</span>
-          <button onclick="window.copyClassCode()" class="text-zinc-400 hover:text-white transition-colors shrink-0 p-2 bg-zinc-900 rounded-lg min-w-[2.25rem] min-h-[2.25rem] flex items-center justify-center" title="Salin Kod">
+          <button onclick="window.copyClassCode()" class="text-zinc-400 hover:text-white transition-colors shrink-0 p-2 bg-zinc-900 rounded-lg flex items-center justify-center" title="Salin Kod">
             <i data-lucide="copy" class="w-4 h-4"></i>
           </button>
         </div>
@@ -492,35 +467,35 @@
       <!-- Kad Statistik Papan Pemuka Guru -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-8">
         <div class="glass-panel p-4 sm:p-6 rounded-3xl relative overflow-hidden">
-          <div class="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-br from-orange-500 to-amber-500 opacity-5 rounded-bl-full"></div>
-          <div class="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500 mb-3 sm:mb-4">
+          <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-orange-500 to-amber-500 opacity-5 rounded-bl-full"></div>
+          <div class="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500 mb-3">
             <i data-lucide="users" class="w-5 h-5"></i>
           </div>
           <div id="stat-teacher-students" class="text-2xl sm:text-3xl font-black text-white mb-1">0</div>
-          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Pelajar Aktif</div>
+          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider">Pelajar Aktif</div>
         </div>
         <div class="glass-panel p-4 sm:p-6 rounded-3xl relative overflow-hidden">
-          <div class="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-br from-amber-500 to-yellow-500 opacity-5 rounded-bl-full"></div>
-          <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 mb-3 sm:mb-4">
+          <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-amber-500 to-yellow-500 opacity-5 rounded-bl-full"></div>
+          <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 mb-3">
             <i data-lucide="target" class="w-5 h-5"></i>
           </div>
           <div id="stat-teacher-attempts" class="text-2xl sm:text-3xl font-black text-white mb-1">0</div>
-          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Latihan Selesai</div>
+          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider">Latihan Selesai</div>
         </div>
         <div class="glass-panel p-4 sm:p-6 rounded-3xl relative overflow-hidden">
-          <div class="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-br from-yellow-500 to-gold opacity-5 rounded-bl-full"></div>
-          <div class="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-500 mb-3 sm:mb-4">
+          <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-yellow-500 to-gold opacity-5 rounded-bl-full"></div>
+          <div class="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-500 mb-3">
             <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
           </div>
           <div id="stat-teacher-accuracy" class="text-2xl sm:text-3xl font-black text-white mb-1">0%</div>
-          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider leading-tight">Ketepatan Kelas</div>
+          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider">Ketepatan Kelas</div>
         </div>
       </div>
 
       <!-- AI Question Generator Widget -->
       <div class="glass-panel p-4 sm:p-6 rounded-3xl border border-orange-500/10 mt-8">
-        <h2 class="text-base sm:text-xl font-bold text-white flex items-center gap-2 mb-4 leading-tight">
-          <i data-lucide="sparkles" class="text-orange-500 w-5 h-5 shrink-0"></i> Penjana Soalan STPM AI
+        <h2 class="text-base sm:text-xl font-bold text-white flex items-center gap-2 mb-4">
+          <i data-lucide="sparkles" class="text-orange-500 w-5 h-5"></i> Penjana Soalan STPM AI
         </h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <div>
@@ -535,14 +510,14 @@
             </select>
           </div>
           <div>
-            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Target Penyimpanan AI</label>
+            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Sasaran Penyimpanan AI</label>
             <select id="ai-gen-destination" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
-              <option value="sheet" selected>Simpan Terus ke Google Sheet Baru</option>
+              <option value="sheet" selected>Simpan Terus ke Google Sheet Baharu</option>
               <option value="csv">Jana & Muat Turun Fail CSV</option>
             </select>
           </div>
           <div class="flex flex-col justify-end md:col-span-1 sm:col-span-2">
-            <button onclick="window.generateLiveQuestions()" id="btn-generate-batch" class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 text-xs sm:text-sm min-h-[3rem] leading-tight text-center disabled:opacity-50 whitespace-normal break-words">
+            <button onclick="window.generateLiveQuestions()" id="btn-generate-batch" class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 text-xs sm:text-sm min-h-[3rem] text-center leading-tight">
               <i data-lucide="cloud-upload" class="w-4 h-4 shrink-0"></i> <span>Jana & Proses Soalan</span>
             </button>
           </div>
@@ -550,16 +525,16 @@
 
         <div id="ai-batch-loader" class="hidden flex-col items-center py-6 bg-zinc-950 rounded-2xl border border-orange-500/10 mt-4 px-4 text-center">
           <div class="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-          <p id="loader-status-text" class="text-sm font-bold text-amber-500 leading-tight">Berkomunikasi dengan Google Apps Script...</p>
-          <p id="loader-progress-text" class="text-[10px] sm:text-xs text-zinc-400 mt-1 max-w-sm">Sila tunggu sementara pelayan menyusun soalan untuk anda.</p>
+          <p id="loader-status-text" class="text-sm font-bold text-amber-500">Berkomunikasi dengan Google Apps Script...</p>
+          <p id="loader-progress-text" class="text-[10px] sm:text-xs text-zinc-400 mt-1 max-w-sm">Sila tunggu sebentar sementara pelayan menyusun soalan untuk anda.</p>
         </div>
       </div>
 
       <!-- Student List Table -->
       <div class="bg-zinc-950 border border-white/5 rounded-3xl overflow-hidden shadow-xl mt-8">
         <div class="p-4 sm:p-6 border-b border-white/5">
-          <h2 class="text-base sm:text-xl font-bold text-white flex items-center gap-2 leading-tight">
-            <i data-lucide="users" class="text-orange-400 w-5 h-5 shrink-0"></i> Senarai Pelajar
+          <h2 class="text-base sm:text-xl font-bold text-white flex items-center gap-2">
+            <i data-lucide="users" class="text-orange-400 w-5 h-5"></i> Senarai Pelajar
           </h2>
         </div>
         <div class="overflow-x-auto custom-scrollbar">
@@ -581,9 +556,8 @@
         </div>
       </div>
 
-      <!-- Lajur Pengumuman Guru & Sembang Kelas (Untuk Guru) -->
+      <!-- PENGUMUMAN DAN SEMBANG KELAS (GURU) -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mt-8">
-        <!-- Pengurus Pengumuman Kelas -->
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between h-[380px]">
           <div>
             <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-4">
@@ -604,7 +578,6 @@
           </div>
         </div>
 
-        <!-- Pemantauan Mesej Murid -->
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between h-[380px]">
           <div class="flex flex-col flex-grow overflow-hidden">
             <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-2 shrink-0">
@@ -624,10 +597,9 @@
         <div class="absolute top-0 right-0 w-48 sm:w-64 h-48 sm:h-64 bg-orange-500/5 rounded-full blur-3xl pointer-events-none"></div>
         <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6">
           <div class="w-full md:w-auto">
-            <h1 id="welcome-student-title" class="text-2xl sm:text-3xl font-black text-white mb-2 leading-tight break-words">Selamat Belajar! 📚</h1>
-            <p id="student-live-cloud-text" class="text-zinc-400 max-w-lg text-xs sm:text-sm leading-relaxed break-words mb-3">Prestasi dan skor kuiz anda kini disimpan secara live ke Google Sheets!</p>
+            <h1 id="welcome-student-title" class="text-2xl sm:text-3xl font-black text-white mb-2 leading-tight">Selamat Belajar! 📚</h1>
+            <p id="student-live-cloud-text" class="text-zinc-400 max-w-lg text-xs sm:text-sm leading-relaxed mb-3">Prestasi dan skor kuiz anda kini disimpan secara live ke Google Sheets!</p>
             
-            <!-- Elemen Spanduk Kelas Berlangsung Sesuai Permintaan -->
             <div id="student-active-class-info" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs sm:text-sm font-bold hidden">
               <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
               <span id="student-active-class-text"></span>
@@ -636,42 +608,39 @@
         </div>
       </div>
 
-      <!-- Ruangan Sertai Kelas (Jika belum ada Kod Kelas) -->
+      <!-- Panel Sertai Kelas -->
       <div id="student-join-class-panel" class="hidden glass-panel p-5 sm:p-6 rounded-3xl border border-amber-500/30 animate-slide-in">
         <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 mb-3">
-          <i data-lucide="key-round" class="text-amber-500 w-5 h-5 shrink-0"></i> Sertai Kelas Guru
+          <i data-lucide="key-round" class="text-amber-500 w-5 h-5"></i> Sertai Kelas Guru
         </h3>
-        <p class="text-xs text-zinc-400 mb-4 leading-relaxed">Anda belum menyertai mana-mana kelas. Sila masukkan Kod Kelas yang diberikan oleh Guru anda untuk menyegerakkan prestasi dan menghantar mesej.</p>
+        <p class="text-xs text-zinc-400 mb-4 leading-relaxed">Sila masukkan Kod Kelas yang diberikan oleh Guru anda untuk menyegerakkan pencapaian dan menghantar mesej.</p>
         <form id="student-join-class-form" class="flex flex-col sm:flex-row gap-3">
-          <input required id="student-join-class-input" type="text" placeholder="Contoh: MKR1234" class="bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-1 focus:ring-amber-500 outline-none transition-all uppercase" />
-          <button type="submit" class="bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold px-6 py-3 rounded-xl transition-all shrink-0 text-xs flex items-center justify-center gap-1.5 hover:scale-[1.02]">
+          <input required id="student-join-class-input" type="text" placeholder="Contoh: MKR1234" class="bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs sm:text-sm focus:ring-1 focus:ring-amber-500 outline-none uppercase" />
+          <button type="submit" class="bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold px-6 py-3 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5">
             <i data-lucide="plus-circle" class="w-4 h-4"></i> Sertai Kelas
           </button>
         </form>
       </div>
 
-      <!-- Baris 1: Soalan Terjawab, Ketepatan & Tahap Masteri Sebaris Melintang -->
+      <!-- Kad Pencapaian Pelajar (Sebaris) -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
         
-        <!-- Soalan Terjawab (Kiri) -->
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col items-center justify-center text-center min-h-[160px]">
           <div class="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500 mb-3">
             <i data-lucide="target" class="w-5 h-5"></i>
           </div>
           <div id="stat-student-questions" class="text-lg sm:text-2xl font-black text-white font-mono">0</div>
-          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider mt-1 leading-tight break-words">Soalan Terjawab</div>
+          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider mt-1 leading-tight">Soalan Terjawab</div>
         </div>
 
-        <!-- Ketepatan (Tengah) -->
         <div class="glass-panel p-5 sm:p-6 rounded-3xl text-center flex flex-col items-center justify-center min-h-[160px]">
           <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 mb-3">
             <i data-lucide="trophy" class="w-5 h-5"></i>
           </div>
           <div id="stat-student-accuracy" class="text-lg sm:text-2xl font-black text-white font-mono">0%</div>
-          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider mt-1 leading-tight break-words">Ketepatan</div>
+          <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider mt-1 leading-tight">Ketepatan</div>
         </div>
 
-        <!-- Tahap Masteri (Kanan) -->
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-center min-h-[160px]">
           <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-end mb-3 gap-2">
             <div>
@@ -680,7 +649,7 @@
                 <div id="student-level-badge" class="px-2 py-1 rounded-lg bg-orange-500/10 text-orange-500 flex items-center justify-center font-bold border border-orange-500/20 text-xs shrink-0">
                   L1
                 </div>
-                <span class="truncate max-w-[120px] sm:max-w-none text-sm sm:text-base font-semibold" id="student-level-num">Tahap 1</span>
+                <span class="truncate text-sm sm:text-base font-semibold" id="student-level-num">Tahap 1</span>
               </div>
             </div>
             <div class="text-left sm:text-right">
@@ -694,7 +663,7 @@
 
       </div>
 
-      <!-- Baris 2: Tetapan Pilihan Latihan (Teratur) -->
+      <!-- Tetapan Kuiz -->
       <div class="glass-panel p-5 sm:p-6 rounded-3xl space-y-4 border border-orange-500/20">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-3 gap-3">
           <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
@@ -702,15 +671,14 @@
           </h3>
           <div class="flex gap-2 w-full sm:w-auto shrink-0 font-sans">
             <button onclick="window.triggerManualSync()" class="flex-1 sm:flex-none bg-zinc-900 hover:bg-zinc-800 text-amber-500 font-extrabold text-[11px] sm:text-xs px-4 py-2 rounded-xl border border-white/5 flex items-center justify-center gap-1.5 min-h-[2.5rem] transition-all">
-              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 shrink-0"></i> <span>Kemaskini Soalan</span>
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Segarkan Soalan</span>
             </button>
             <button onclick="window.startQuizFlow()" class="flex-1 sm:flex-none bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold text-[11px] sm:text-xs px-5 py-2 rounded-xl shadow-lg flex items-center justify-center gap-1.5 min-h-[2.5rem] transition-all">
-              <i data-lucide="play" class="w-3.5 h-3.5 fill-current shrink-0"></i> <span>Mula Latihan</span>
+              <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> <span>Mula Kuiz</span>
             </button>
           </div>
         </div>
         
-        <!-- Pilihan Dropdown Disusun Semula: Set, Bab, Mod Latihan -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Set Soalan</label>
@@ -724,7 +692,7 @@
             </select>
           </div>
           <div>
-            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Bab</label>
+            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Bab Latihan</label>
             <select id="student-chapter-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
               <option value="0" selected>Semua Bab</option>
               <option value="1">Bab 1: Pengenalan Makroekonomi</option>
@@ -737,52 +705,49 @@
           <div>
             <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Mod Latihan</label>
             <select id="student-mode-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
-              <option value="onebyone" selected>Satu Persatu</option>
-              <option value="exam">Semua Soalan Sekaligus (20 Soalan)</option>
+              <option value="onebyone" selected>Satu Persatu (Semakan Terus)</option>
+              <option value="exam">Peperiksaan (Sekaligus 20 Soalan)</option>
             </select>
           </div>
         </div>
       </div>
 
-      <!-- Baris 3: Pengumuman Kelas & Mesej Murid (Sebaris) -->
+      <!-- PENGUMUMAN DAN SEMBANG KELAS (PELAJAR) -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-        <!-- Pengumuman Kelas -->
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col h-[380px]">
           <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 mb-3 border-b border-white/5 pb-2 shrink-0">
-            <i data-lucide="megaphone" class="text-orange-500 w-5 h-5 shrink-0"></i> Pengumuman Kelas
+            <i data-lucide="megaphone" class="text-orange-500 w-5 h-5"></i> Pengumuman Kelas
           </h3>
           <div id="student-announcements-list" class="flex-grow space-y-3 overflow-y-auto custom-scrollbar pr-2 min-h-0">
-             <p class="text-zinc-500 text-xs italic">Tiada pengumuman dari guru anda setakat ini.</p>
+             <p class="text-zinc-500 text-xs italic">Tiada pengumuman setakat ini.</p>
           </div>
         </div>
 
-        <!-- Mesej Murid -->
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between h-[380px]">
           <div class="flex flex-col flex-grow overflow-hidden">
             <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-2 shrink-0">
-              <i data-lucide="message-circle" class="text-amber-500 w-5 h-5 shrink-0"></i> Mesej Murid
+              <i data-lucide="message-circle" class="text-amber-500 w-5 h-5"></i> Sembang Kelas
             </h3>
             <div id="student-messages-container" class="flex-grow space-y-3 overflow-y-auto pr-1 custom-scrollbar pb-2 min-h-0">
-              <p class="text-zinc-500 text-xs italic">Belum ada mesej di kelas ini.</p>
+              <p class="text-zinc-500 text-xs italic">Belum ada sembang dalam kelas ini.</p>
             </div>
             
             <form id="student-message-form" class="flex gap-2 pt-3 border-t border-white/5 mt-2 shrink-0">
-              <input required id="student-message-input" type="text" placeholder="Taip mesej atau soalan anda di sini..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-white text-xs sm:text-sm focus:ring-1 focus:ring-amber-500 outline-none transition-all" />
-              <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-bold px-4 py-2 rounded-xl transition-all shrink-0 text-xs flex items-center justify-center gap-1.5">
+              <input required id="student-message-input" type="text" placeholder="Taip mesej anda di sini..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-white text-xs sm:text-sm focus:ring-1 focus:ring-amber-500 outline-none" />
+              <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-bold px-4 py-2 rounded-xl text-xs flex items-center justify-center gap-1.5">
                 <i data-lucide="send" class="w-4 h-4"></i> Hantar
               </button>
             </form>
           </div>
         </div>
       </div>
-
     </div>
 
     <!-- VIEW 5: ENGIN KUIZ (QUIZ ENGINE) -->
     <div id="view-quiz" class="hidden max-w-3xl mx-auto space-y-6 animate-slide-in">
       <div class="glass-panel p-4 sm:p-5 rounded-2xl flex items-center justify-between border border-white/5">
         <div class="flex items-center gap-3">
-          <button onclick="window.exitQuiz()" class="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition-all" title="Batalkan Latihan">
+          <button onclick="window.exitQuiz()" class="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition-all">
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
           </button>
           <div>
@@ -798,47 +763,44 @@
         </div>
       </div>
 
-      <!-- Bar Kemajuan Kuiz -->
       <div class="w-full bg-zinc-950 rounded-full h-1" id="quiz-progress-bar-wrapper">
-        <div id="quiz-progress-bar" class="bg-gradient-to-r from-orange-500 to-amber-500 h-1 rounded-full transition-all duration-300 w-[10%]"></div>
+        <div id="quiz-progress-bar" class="bg-gradient-to-r from-orange-500 to-amber-500 h-1 rounded-full transition-all duration-300 w-0"></div>
       </div>
 
-      <!-- KAD UTAMA QUIZ -->
+      <!-- KAD UTAMA KUIZ -->
       <div class="glass-panel p-5 sm:p-8 rounded-3xl border border-white/5 space-y-6">
         
-        <!-- PANDANGAN 1: MOD SATU-SATU (SINGLE-VIEW) -->
         <div id="quiz-single-view" class="space-y-6">
-          <div id="quiz-question-text" class="text-sm sm:text-lg text-white font-medium leading-relaxed break-words font-sans"></div>
+          <div id="quiz-question-text" class="text-sm sm:text-lg text-white font-medium leading-relaxed break-words"></div>
           <div id="quiz-options-container" class="grid grid-cols-1 gap-3 sm:gap-4"></div>
           
-          <div id="quiz-explanation-box" class="hidden bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 sm:p-5 space-y-3 animate-slide-in">
+          <div id="quiz-explanation-box" class="hidden bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 sm:p-5 space-y-3">
             <div class="flex items-center gap-2 text-orange-400 font-bold text-xs sm:text-sm">
               <i data-lucide="info" class="w-4 h-4"></i>
-              <span>Penjelasan Konseptual</span>
+              <span>Perbincangan Konseptual</span>
             </div>
-            <div id="quiz-explanation-text" class="text-zinc-300 text-xs sm:text-sm leading-relaxed break-words font-sans"></div>
+            <div id="quiz-explanation-text" class="text-zinc-300 text-xs sm:text-sm leading-relaxed break-words"></div>
           </div>
         </div>
 
-        <!-- PANDANGAN 2: MOD PEPERIKSAAN (MULTI-VIEW) -->
         <div id="quiz-multi-view" class="hidden space-y-8 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2"></div>
 
       </div>
 
       <div class="flex justify-end gap-3 w-full" id="quiz-control-buttons">
-        <button onclick="window.exitQuiz()" class="w-full sm:w-auto bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-extrabold px-6 py-3.5 rounded-xl transition-all text-center leading-tight whitespace-normal break-words text-xs sm:text-sm min-h-[3rem]">
+        <button onclick="window.exitQuiz()" class="w-full sm:w-auto bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-extrabold px-6 py-3.5 rounded-xl text-xs sm:text-sm min-h-[3rem]">
           Batal Latihan
         </button>
-        <button id="btn-quiz-submit" class="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-extrabold px-8 py-3.5 rounded-xl transition-all shadow-lg text-center leading-tight whitespace-normal break-words text-xs sm:text-sm min-h-[3rem]">
+        <button id="btn-quiz-submit" class="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-extrabold px-8 py-3.5 rounded-xl shadow-lg text-xs sm:text-sm min-h-[3rem]">
           Sahkan Jawapan
         </button>
-        <button id="btn-quiz-next" class="hidden w-full sm:w-auto bg-zinc-800 hover:bg-zinc-700 text-white font-extrabold px-8 py-3.5 rounded-xl transition-all border border-white/10 text-center leading-tight whitespace-normal break-words text-xs sm:text-sm min-h-[3rem]">
+        <button id="btn-quiz-next" class="hidden w-full sm:w-auto bg-zinc-800 hover:bg-zinc-700 text-white font-extrabold px-8 py-3.5 rounded-xl border border-white/10 text-xs sm:text-sm min-h-[3rem]">
           Soalan Seterusnya
         </button>
       </div>
     </div>
 
-    <!-- VIEW 6: SKRIN KEPUTUSAN KUIZ (RESULTS SCREEN) -->
+    <!-- VIEW 6: KEPUTUSAN KUIZ (RESULTS SCREEN) -->
     <div id="view-results" class="hidden max-w-md mx-auto text-center space-y-6 sm:space-y-8 animate-slide-in py-6">
       <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/5 space-y-6 relative overflow-hidden">
         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -849,22 +811,22 @@
 
         <div class="space-y-2">
           <h2 class="text-2xl sm:text-3xl font-black text-white">Latihan Selesai!</h2>
-          <p class="text-zinc-400 text-xs sm:text-sm leading-normal px-2">Hebat! Anda telah berjaya menyelesaikan siri cabaran makroekonomi ini.</p>
+          <p class="text-zinc-400 text-xs sm:text-sm px-2">Hebat! Anda telah berjaya menyelesaikan cabaran kuiz ini.</p>
         </div>
 
         <div class="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
           <div class="p-3 bg-zinc-950 rounded-2xl border border-white/5">
             <span class="text-[10px] text-zinc-500 uppercase tracking-widest block font-bold mb-1">XP Diperoleh</span>
-            <span id="results-xp-gained" class="text-lg sm:text-2xl font-black text-orange-500 font-mono">+150 XP</span>
+            <span id="results-xp-gained" class="text-lg sm:text-2xl font-black text-orange-500 font-mono">+0 XP</span>
           </div>
           <div class="p-3 bg-zinc-950 rounded-2xl border border-white/5">
             <span class="text-[10px] text-zinc-500 uppercase tracking-widest block font-bold mb-1">Ketepatan</span>
-            <span id="results-accuracy" class="text-lg sm:text-2xl font-black text-amber-400 font-mono">80%</span>
+            <span id="results-accuracy" class="text-lg sm:text-2xl font-black text-amber-400 font-mono">0%</span>
           </div>
         </div>
       </div>
 
-      <button onclick="window.backToDashboard()" class="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-black rounded-xl transition-all shadow-lg transform hover:scale-[1.02] text-xs sm:text-sm min-h-[3.25rem]">
+      <button onclick="window.backToDashboard()" class="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-black rounded-xl shadow-lg text-xs sm:text-sm">
         Kembali ke Papan Pemuka
       </button>
     </div>
@@ -873,11 +835,11 @@
 
   <footer class="bg-zinc-950 border-t border-white/5 py-6 mt-auto">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
-      <div class="text-center md:text-left leading-normal">
+      <div class="text-center md:text-left">
         <p class="font-bold text-zinc-400">© 2026 Makroverse STPM. Hak Cipta Terpelihara.</p>
-        <p class="mt-0.5">Berhubung secara rasmi dengan Google Sheet dan Gemini AI.</p>
+        <p class="mt-0.5">Sistem Pintar bersepadu Google Sheet dan Gemini AI.</p>
       </div>
-      <div class="flex items-center gap-3">
+      <div>
         <span class="px-2.5 py-1 bg-zinc-900 rounded-full border border-zinc-800 text-emerald-500 text-[10px] sm:text-xs font-semibold flex items-center gap-1.5">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Cloud & AI Sedia Ada
         </span>
@@ -918,7 +880,7 @@
     let unsubscribeAnnouncements = null;
     let unsubscribeMessages = null;
 
-    // Kumpulan Bank Soalan Cadangan STPM (Fallback) jika sambungan Google Sheet bermasalah (Meliputi semua 5 Set & Bab)
+    // Bank soalan fallback STPM untuk kestabilan tinggi sekiranya sambungan awan terganggu
     const localFallbackQuestions = [
       {
         id: "LOCAL_B1_Q01",
@@ -928,7 +890,7 @@
         options: [
           "Kajian tentang gelagat pengguna dalam pasaran barang",
           "Kajian tentang penentuan harga faktor pengeluaran",
-          "Kajian tentang tingkat harga umum and inflasi negara",
+          "Kajian tentang tingkat harga umum dan inflasi negara",
           "Kajian tentang kos pengeluaran firma individu"
         ],
         answer: 2,
@@ -974,7 +936,7 @@
           "$Y = C + I + G$"
         ],
         answer: 0,
-        explanation: "Keseimbangan pendapatan negara bagi ekonomi 2 sektor (isi rumah dan firma) tercapai apabila penawaran agregat ($Y$) sama dengan permintaan agregat ($AD = C + I$)."
+        explanation: "Keseimbangan pendapatan negara bagi ekonomi 2 sektor tercapai apabila penawaran agregat ($Y$) sama dengan perbelanjaan agregat dirancang ($C + I$)."
       },
       {
         id: "LOCAL_B4_Q01",
@@ -1019,7 +981,7 @@
               await window.signInAnonymously(window.auth);
           }
       } catch (err) {
-          console.warn("Autentikasi senyap gagal, menunggu pengguna masuk.");
+          console.warn("Autentikasi senyap gagal, sedia untuk pengesahan manual.");
           window.showView('view-auth');
       }
     };
@@ -1115,7 +1077,7 @@
       }));
 
       window.closeApiConfigModal();
-      window.showCustomModal("Konfigurasi Disimpan!", "Maklumat Google Apps Script & Kunci API Gemini anda telah berjaya disimpan secara tempatan.", "check-circle", true);
+      window.showCustomModal("Tetapan Disimpan!", "Maklumat Apps Script & API Key Gemini anda telah dikemaskini.", "check-circle", true);
       window.fetchQuestionsFromCloud();
     };
 
@@ -1222,7 +1184,7 @@
           try {
               data = JSON.parse(text);
           } catch (e) {
-              console.warn("Gagal menghurai JSON dari Google Sheet. Menggunakan bank soalan alternatif.");
+              console.warn("Gagal menghurai JSON Google Sheets. Menggunakan soalan fallback.");
               window.globalQuestions = localFallbackQuestions;
               return true;
           }
@@ -1246,7 +1208,7 @@
           window.updateSelectorsFromQuestions();
           return true;
       } catch(e) {
-          console.error("Gagal menarik soalan awan, beralih ke local fallback:", e);
+          console.error("Ralat pautan Google Sheet, mengaktifkan soalan fallback tempatan:", e);
           window.globalQuestions = localFallbackQuestions;
           window.updateSelectorsFromQuestions();
           return true;
@@ -1333,7 +1295,7 @@
         window.syncDatabaseWithBackend(); 
         window.showCustomModal(
           "Penyegerakan Berjaya! 🔄", 
-          "Semua set soalan dan bab terkini telah berjaya dimuat turun dan diselaraskan daripada pangkalan data awan (Google Sheets)!", 
+          "Materi set soalan dan bab terkini telah dimuat turun dari Google Sheets!", 
           "check-circle", 
           true
         );
@@ -1341,7 +1303,7 @@
         window.syncDatabaseWithBackend();
         window.showCustomModal(
           "Gagal Menyegerak", 
-          "Pangkalan data awan gagal dihubungi. Menggunakan bank soalan sandaran tempatan buat masa ini.", 
+          "Gagal menghubungi Google Sheet. Menggunakan bank soalan sandaran tempatan.", 
           "alert-triangle", 
           false
         );
@@ -1416,7 +1378,7 @@
           });
           window.renderStudentsTable();
       }, (error) => {
-          console.error("Kesalahan memantau data siswa dari Firestore:", error);
+          console.error("Ralat pemantauan senarai pelajar:", error);
       });
     };
 
@@ -1426,7 +1388,7 @@
       tbody.innerHTML = '';
 
       if (!window.state.students || window.state.students.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-zinc-500">Tidak ada pelajar berdaftar dalam kelas ini.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-zinc-500">Tiada pelajar berdaftar dalam kelas ini.</td></tr>`;
         window.updateTeacherStats(0, 0, 0);
         return;
       }
@@ -1443,7 +1405,7 @@
         tr.className = "hover:bg-white/5 transition-colors border-b border-white/5";
         
         const td1 = document.createElement('td'); td1.className = "p-3 sm:p-4 font-bold text-white whitespace-nowrap"; td1.textContent = student.name;
-        const td2 = document.createElement('td'); td2.className = "p-3 sm:p-4 text-zinc-400 font-mono text-[11px] sm:text-xs tracking-wider uppercase"; td2.textContent = student.classCode || 'TIDAK ADA';
+        const td2 = document.createElement('td'); td2.className = "p-3 sm:p-4 text-zinc-400 font-mono text-[11px] sm:text-xs tracking-wider uppercase"; td2.textContent = student.classCode || 'TIADA';
         const td3 = document.createElement('td'); td3.className = "p-3 sm:p-4 whitespace-nowrap"; td3.innerHTML = `<span class="px-2 py-1 rounded bg-orange-500/10 text-orange-400 font-bold text-[10px] sm:text-xs">Lvl ${student.level || 1}</span>`;
         const td4 = document.createElement('td'); td4.className = "p-3 sm:p-4 font-bold text-amber-400 font-mono whitespace-nowrap"; td4.textContent = `${student.xp || 0} XP`;
         const td5 = document.createElement('td'); td5.className = "p-3 sm:p-4 font-bold font-mono text-emerald-400 whitespace-nowrap"; td5.textContent = `${accuracy}%`;
@@ -1503,7 +1465,7 @@
            window.renderAnnouncements(announcements);
 
        }, (error) => {
-           console.error("Ralat saat memantau pengumuman:", error);
+           console.error("Ralat pemantauan pengumuman:", error);
        });
     };
 
@@ -1532,7 +1494,7 @@
         if (studentList) {
             studentList.innerHTML = '';
             if (announcements.length === 0) {
-                studentList.innerHTML = '<p class="text-zinc-500 text-xs italic">Tiada pengumuman dari guru anda setakat ini.</p>';
+                studentList.innerHTML = '<p class="text-zinc-500 text-xs italic">Tiada pengumuman daripada guru anda setakat ini.</p>';
             } else {
                 announcements.forEach(a => {
                     const div = document.createElement('div');
@@ -1619,7 +1581,7 @@
            renderMsgToContainer('student-messages-container');
 
        }, (error) => {
-           console.error("Ralat saat memantau mesej:", error);
+           console.error("Ralat semasa pemantauan mesej:", error);
        });
     };
 
@@ -1632,7 +1594,7 @@
         el.select();
         document.execCommand('copy');
         document.body.removeChild(el);
-        window.showCustomModal("Disalin", "Kod kelas " + classCodeText + " telah berjaya disalin ke papan klip!", "check-circle", true);
+        window.showCustomModal("Disalin!", "Kod kelas " + classCodeText + " disalin ke papan klip.", "check-circle", true);
       }
     };
 
@@ -1655,10 +1617,10 @@
             await window.updateDoc(studentDocRef, { classCode: '' });
 
             window.closeConfirmDeleteModal();
-            window.showCustomModal("Berjaya", "Pelajar " + studentName + " telah berjaya dikeluarkan dari kelas.", "check-circle", true);
+            window.showCustomModal("Selesai", "Pelajar " + studentName + " berjaya dikeluarkan.", "check-circle", true);
           } catch (e) {
             console.error("Gagal mengeluarkan pelajar:", e);
-            window.showCustomModal("Ralat", "Gagal mengeluarkan pelajar dari kelas.", "alert-triangle");
+            window.showCustomModal("Ralat", "Gagal memproses pengeluaran pelajar.", "alert-triangle");
           }
         };
       }
@@ -1711,13 +1673,18 @@
     function cleanJsonString(raw) {
         if (!raw) return "[]";
         let cleaned = raw.trim();
-        let match1 = cleaned.match(new RegExp("^```(?:json)?\\n?", "i"));
-        if (match1) {
-            cleaned = cleaned.substring(match1[0].length);
+        
+        // Memotong kod markdown secara dinamik tanpa risiko kegagalan rendering
+        if (cleaned.startsWith("```")) {
+            const indexN = cleaned.indexOf("\n");
+            if (indexN !== -1) {
+                cleaned = cleaned.substring(indexN + 1);
+            } else {
+                cleaned = cleaned.substring(3);
+            }
         }
-        let match2 = cleaned.match(new RegExp("\\n?```$", "i"));
-        if (match2) {
-            cleaned = cleaned.substring(0, cleaned.length - match2[0].length);
+        if (cleaned.endsWith("```")) {
+            cleaned = cleaned.substring(0, cleaned.length - 3);
         }
         cleaned = cleaned.trim();
         
@@ -1837,11 +1804,12 @@
         if (!geminiKey) {
             loader.classList.add('hidden');
             btn.disabled = false;
-            window.showCustomModal("Kunci API Tiada", "Sistem memerlukan Kunci API Gemini untuk menjana soalan secara terus. Sila masukkannya dalam ikon Tetapan di penjuru atas.", "alert-triangle", false);
+            window.showCustomModal("Kunci API Tiada", "Sistem memerlukan Kunci API Gemini. Sila masukkan dalam menu Tetapan.", "alert-triangle", false);
             return;
         }
 
         const modelsToTry = [
+          "gemini-3-flash-preview",
           "gemini-2.5-flash",
           "gemini-1.5-flash"
         ];
@@ -1857,10 +1825,10 @@
           const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${geminiKey}`;
           const numQuestions = 20; 
           
-          const systemPrompt = `Anda adalah pakar penilai ekonomi STPM terulung di Malaysia. Bina ${numQuestions} soalan aneka pilihan aras tinggi (KBAT) bertemakan Sukatan Pelajaran Makroekonomi STPM. Gunakan kod LaTeX matematik (seperti $$) untuk sebarang formula. SANGAT PENTING: Jangan gunakan sebarang tanda petikan ganda (") di dalam nilai teks (soalan, pilihan, atau penjelasan), gunakan tanda petikan tunggal (') jika perlu. Kembalikan jawapan dalam format JSON yang bersih mengikut struktur array objek: [{"Chapter": 1, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}]. Pastikan ia adalah valid JSON sahaja, tanpa sebarang markdown triple backticks.`;
+          const systemPrompt = `Anda adalah pakar penilai ekonomi STPM terulung di Malaysia. Bina ${numQuestions} soalan aneka pilihan aras tinggi (KBAT) bertemakan Sukatan Pelajaran Makroekonomi STPM. Gunakan kod LaTeX matematik (seperti $$) untuk sebarang formula. SANGAT PENTING: Jangan gunakan sebarang tanda petikan ganda (") di dalam nilai teks, gunakan tanda petikan tunggal (') jika perlu. Kembalikan jawapan dalam format JSON yang bersih mengikut struktur array objek: [{"Chapter": 1, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}]. Pastikan ia adalah valid JSON sahaja, tanpa sebarang markdown triple backticks.`;
 
           const query = chapter === "0" 
-            ? `Bina 20 soalan berkualiti tinggi meliputi semua bab (campuran rawak Bab 1 hingga Bab 5, 4 soalan setiap bab). Tulis dalam Bahasa Melayu rasmi akademik.` 
+            ? `Bina 20 soalan berkualiti tinggi meliputi semua bab (campuran rawak Bab 1 hingga Bab 5). Tulis dalam Bahasa Melayu rasmi akademik.` 
             : `Bina 20 soalan berkualiti tinggi khusus bagi Bab ${chapter}. Tulis dalam Bahasa Melayu rasmi akademik.`;
 
           const payload = {
@@ -1972,7 +1940,7 @@
                 await window.fetchQuestionsFromCloud(); 
                 loader.classList.add('hidden');
                 btn.disabled = false;
-                window.showCustomModal("Proses Selesai!", `Soalan-soalan telah berjaya dijana dan disimpan ke <strong>Set ${nextSetNum}</strong> di pangkalan data Google Sheet anda.`, "sparkles", true);
+                window.showCustomModal("Proses Selesai!", `Soalan-soalan telah disimpan ke Set ${nextSetNum} di Google Sheet anda.`, "sparkles", true);
             } else {
                 throw new Error("Gagal menyinkronisasikan ke dalam Sheet.");
             }
@@ -2002,14 +1970,14 @@
 
             loader.classList.add('hidden');
             btn.disabled = false;
-            window.showCustomModal("CSV Siap!", `Fail <strong>Makroverse_Set_${nextSetNum}_Questions.csv</strong> berjaya dimuat turun. Sila tampal isi fail ini ke Google Sheet secara manual di bawah tab <b>Set ${nextSetNum}</b>.`, "check-circle", true);
+            window.showCustomModal("CSV Sedia!", `Fail Makroverse_Set_${nextSetNum}_Questions.csv berjaya dijana.`, "check-circle", true);
           }
 
         } catch (err) {
           console.error(err);
           loader.classList.add('hidden');
           btn.disabled = false;
-          window.showCustomModal("Ralat Pemprosesan", "Sistem gagal menghubungi pelayan AI atau terdapat kerosakan struktur balasan. Ralat:<br><pre class='text-xs mt-2 text-red-400 text-left bg-zinc-950 p-2 rounded max-h-32 overflow-y-auto whitespace-pre-wrap'>" + err.message + "</pre><br><span class='text-[10px] text-zinc-500'>Sila pastikan Kunci API Gemini yang dimasukkan pada menu Tetapan adalah sah dan aktif di Google AI Studio anda.</span>", "alert-triangle", false);
+          window.showCustomModal("Ralat Pemprosesan", "Gagal menghubungi pelayan AI. Sila pastikan kunci API yang dimasukkan adalah sah.", "alert-triangle", false);
         }
     };
 
@@ -2021,7 +1989,7 @@
         let pool = window.globalQuestions;
 
         if (pool.length === 0) {
-          window.showCustomModal("Bank Soalan Kosong", "Belum ada soalan yang sedia ada. Minta bimbingan guru anda untuk menerbitkan materi Google Sheet yang baharu.", "info");
+          window.showCustomModal("Bank Soalan Kosong", "Minta bimbingan guru anda untuk menerbitkan materi Google Sheet yang baharu.", "info");
           return;
         }
 
@@ -2035,7 +2003,7 @@
         }
 
         if (tabFilteredPool.length === 0) {
-          window.showCustomModal("Soalan Tidak Ditemui", "Tiada padanan soalan untuk pilihan Set/Bab anda cari. Sila mencuba tetapan yang lain.", "info");
+          window.showCustomModal("Soalan Tidak Ditemui", "Tiada padanan soalan untuk pilihan anda.", "info");
           return;
         }
 
@@ -2044,7 +2012,6 @@
         const endIdx = startIdx + 20;
         
         let setFilteredPool = tabFilteredPool.slice(startIdx, endIdx);
-        
         if (setFilteredPool.length === 0) {
           setFilteredPool = tabFilteredPool.slice(0, 20); 
         }
@@ -2052,7 +2019,7 @@
         window.state.quizState.questions = [...setFilteredPool];
         
         if (window.state.quizState.questions.length === 0) {
-          window.showCustomModal("Kosong", "Sistem tidak dapat mengumpulkan soalan yang memadai untuk pilihan anda ini.", "info");
+          window.showCustomModal("Kosong", "Sistem tidak dapat mengumpulkan soalan.", "info");
           window.exitQuiz();
           return;
         }
@@ -2196,10 +2163,10 @@
         const submitBtnWrapper = document.createElement('div');
         submitBtnWrapper.className = "pt-4 flex flex-col sm:flex-row justify-end gap-3";
         submitBtnWrapper.innerHTML = `
-          <button onclick="window.exitQuiz()" class="w-full sm:w-auto bg-zinc-800 hover:bg-zinc-700 text-white font-extrabold px-8 py-3.5 rounded-xl transition-all border border-white/10 text-center leading-tight whitespace-normal break-words text-xs sm:text-sm min-h-[3rem]">
+          <button onclick="window.exitQuiz()" class="w-full sm:w-auto bg-zinc-800 hover:bg-zinc-700 text-white font-extrabold px-8 py-3.5 rounded-xl transition-all border border-white/10 text-center leading-tight text-xs sm:text-sm min-h-[3rem]">
             Batalkan Pengujian
           </button>
-          <button onclick="window.submitExamSheet()" class="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold px-8 py-3.5 rounded-xl transition-all shadow-lg text-center leading-tight whitespace-normal break-words text-xs sm:text-sm min-h-[3rem]">
+          <button onclick="window.submitExamSheet()" class="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold px-8 py-3.5 rounded-xl transition-all shadow-lg text-center leading-tight text-xs sm:text-sm min-h-[3rem]">
             Hantar Semua Jawapan
           </button>
         `;
@@ -2310,7 +2277,7 @@
     }
 
     window.exitQuiz = function() {
-        if (confirm("Adakah anda benar-benar pasti ingin mematalkan sesi ujian yang sedang berjalan ini? Semua pencapaian dan XP tidak akan direkodkan.")) {
+        if (confirm("Adakah anda benar-benar pasti ingin membatalkan sesi ujian? Semua pencapaian dan XP semasa tidak akan direkodkan.")) {
           if (window.state.quizState.timerInterval) clearInterval(window.state.quizState.timerInterval);
           window.backToDashboard();
         }
@@ -2475,8 +2442,7 @@
           }
         });
       } else {
-         // MOD LUAR TALIAN (OFFLINE FALLBACK): Jika Firebase disekat atau gagal dimuatkan sepenuhnya
-         console.warn("Mod luar talian diaktifkan. Berfungsi menggunakan storan tempatan (localStorage).");
+         console.warn("Mod luar talian diaktifkan.");
          let savedProfile = localStorage.getItem('macronexus_user_profile');
          if (savedProfile) {
            try {
@@ -2503,19 +2469,15 @@
       
       window.fetchQuestionsFromCloud();
 
-      // Had masa kecemasan (Bypass Safety Timeout): 
-      // Jika selepas 3.5 saat Firebase masih gagal dimuatkan (firebaseReady tiada),
-      // kami akan memaksa initApp() berjalan menggunakan Mod Luar Talian (offline mode) secara automatik.
       setTimeout(() => {
         if (!window.firebaseReady || !window.state.user) {
-          console.warn("Firebase mengambil masa terlalu lama untuk sedia. Memintas sekatan secara automatik...");
+          console.warn("Firebase mengambil masa terlalu lama. Memintas ke mod tempatan...");
           if (typeof window.initApp === 'function') {
             window.initApp();
           }
         }
       }, 3500);
 
-      // Pencetus sistem asinkronus dwi-arah sekiranya Firebase pantas dimuatkan
       if (window.firebaseReady && typeof window.initApp === 'function') {
         window.initApp();
       }
@@ -2525,7 +2487,7 @@
           btnQuizSubmit.onclick = () => {
               const selected = window.state.quizState.answers[window.state.quizState.currentIndex];
               if (selected === undefined) {
-                window.showCustomModal("Jawapan Kosong", "Anda perlu memilih sekurang-kurangnya satu jawapan sebelum memverifikasi.", "alert-circle");
+                window.showCustomModal("Jawapan Kosong", "Sila pilih sekurang-kurangnya satu jawapan sebelum memverifikasi.", "alert-circle");
                 return;
               }
 
@@ -2624,7 +2586,7 @@
                   profile.className = classData.className || "";
                   profile.teacherName = classData.teacherName || "";
                 } else {
-                  window.showCustomModal("Kod Kelas Diperlukan", "Pelajar wajib memasukkan kod kelas guru untuk mendaftar secara manual.", "alert-triangle");
+                  window.showCustomModal("Kod Kelas Diperlukan", "Pelajar wajib memasukkan kod kelas guru untuk mendaftar masuk secara manual.", "alert-triangle");
                   window.showView('view-auth');
                   return;
                 }
@@ -2720,7 +2682,7 @@
             window.state.user = user;
             localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
 
-            window.showCustomModal("Kelas Berjaya Dibina!", "Tahniah! Kelas <b>" + className + "</b> telah berjaya dibina dengan kod kelas: <strong class='text-orange-500 font-mono tracking-wider'>" + classCode + "</strong>. Kongsikan kod ini kepada murid anda.", "check-circle", true);
+            window.showCustomModal("Kelas Berjaya Dibina!", "Tahniah! Kelas <b>" + className + "</b> dengan kod kelas: <strong class='text-orange-500 font-mono tracking-wider'>" + classCode + "</strong> telah berjaya dibina.", "check-circle", true);
             
             window.syncDatabaseWithBackend();
           } catch (err) {
@@ -2775,7 +2737,7 @@
             window.state.user = user;
             localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
 
-            window.showCustomModal("Kembali Berjaya!", "Anda telah berjaya masuk semula ke kelas <b>" + classData.className + "</b>.", "check-circle", true);
+            window.showCustomModal("Masuk Semula Berjaya!", "Anda telah berjaya masuk semula ke kelas <b>" + classData.className + "</b>.", "check-circle", true);
             
             window.syncDatabaseWithBackend();
           } catch (err) {
@@ -2827,7 +2789,7 @@
             window.state.user = user;
             localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
 
-            window.showCustomModal("Kelas Berjaya Disertai!", "Tahniah! Anda telah berjaya menyertai kelas <b>" + classData.className + "</b>.", "check-circle", true);
+            window.showCustomModal("Kelas Berjaya Disertai!", "Tahniah! Anda telah menyertai kelas <b>" + classData.className + "</b>.", "check-circle", true);
             
             window.syncDatabaseWithBackend();
           } catch (err) {
