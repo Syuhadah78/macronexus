@@ -418,7 +418,8 @@
       console.warn("Firebase tidak ditemukan di lingkungan ini. Berjalan dalam mode lokal.");
     }
     
-    const appId = 'macronexus-7805';
+    // PEMBETULAN: Menggunakan ID aplikasi dinamik untuk keizinan keselamatan Firestore
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'macronexus-7805';
 
     // Mengeksport ke objek global Window untuk digunakan oleh skrip logik aplikasi
     window.db = db;
@@ -867,11 +868,11 @@
             <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Liputan Bab</label>
             <select id="ai-gen-chapter" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
               <option value="0" selected>Semua Soalan (100 Soalan Campuran)</option>
-              <option value="1">Bab 1: Pengenalan Makroekonomi (20 Soalan)</option>
-              <option value="2">Bab 2: Perakaunan Pendapatan Negara (20 Soalan)</option>
-              <option value="3">Bab 3: Keseimbangan Pendapatan Negara (20 Soalan)</option>
-              <option value="4">Bab 4: Wang, Bank dan Dasar Kewangan (20 Soalan)</option>
-              <option value="5">Bab 5: Perdagangan Antarabangsa (20 Soalan)</option>
+              <option value="1">Bab 1: Pengenalan Makroekonomi</option>
+              <option value="2">Bab 2: Perakaunan Pendapatan Negara</option>
+              <option value="3">Bab 3: Keseimbangan Pendapatan Negara</option>
+              <option value="4">Bab 4: Wang, Bank dan Dasar Kewangan</option>
+              <option value="5">Bab 5: Perdagangan Antarabangsa</option>
             </select>
           </div>
           <div>
@@ -938,7 +939,7 @@
           </div>
           <div class="border-t border-white/5 pt-3 mt-3">
             <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-2">Pengumuman Terkini:</h4>
-            <div id="teacher-announcements-list" class="overflow-y-auto max-h-[80px] custom-scrollbar space-y-1 text-xs text-zinc-400">
+            <div id="teacher-announcements-list" class="overflow-y-auto max-h-[80px] custom-scrollbar space-y-1 text-xs text-zinc-400 font-sans">
               <p class="text-zinc-600 italic">Belum ada pengumuman.</p>
             </div>
           </div>
@@ -1017,7 +1018,7 @@
             <div>
               <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider mb-1">Tahap Penguasaan</div>
               <div class="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
-                <div id="student-level-badge" class="px-2 py-1 rounded-lg bg-orange-500/10 text-orange-500 flex items-center justify-center font-bold border border-orange-500/20 text-xs shrink-0">
+                <div id="student-level-badge" class="px-2 py-1 rounded-lg bg-orange-500/10 text-orange-400 font-bold border border-orange-500/20 text-xs shrink-0">
                   L1
                 </div>
                 <span class="truncate max-w-[120px] sm:max-w-none text-sm sm:text-base font-semibold" id="student-level-num">Tahap 1</span>
@@ -1042,10 +1043,10 @@
           </h3>
           <div class="flex gap-2 w-full sm:w-auto shrink-0 font-sans">
             <button onclick="window.triggerManualSync()" class="flex-1 sm:flex-none bg-zinc-900 hover:bg-zinc-800 text-amber-500 font-extrabold text-[11px] sm:text-xs px-4 py-2 rounded-xl border border-white/5 flex items-center justify-center gap-1.5 min-h-[2.5rem] transition-all">
-              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 shrink-0"></i> <span>Kemaskini Soalan</span>
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5" shrink-0></i> <span>Kemaskini Soalan</span>
             </button>
             <button onclick="window.startQuizFlow()" class="flex-1 sm:flex-none bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold text-[11px] sm:text-xs px-5 py-2 rounded-xl shadow-lg flex items-center justify-center gap-1.5 min-h-[2.5rem] transition-all">
-              <i data-lucide="play" class="w-3.5 h-3.5 fill-current shrink-0"></i> <span>Mula Latihan</span>
+              <i data-lucide="play" class="w-3.5 h-3.5 fill-current" shrink-0></i> <span>Mula Latihan</span>
             </button>
           </div>
         </div>
@@ -1077,8 +1078,8 @@
           <div>
             <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Mod Latihan</label>
             <select id="student-mode-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
-              <option value="onebyone" selected>Satu Persatu (Semakan Terus)</option>
-              <option value="exam">Peperiksaan (Sekaligus 20 Soalan)</option>
+              <option value="onebyone" selected>Satu Persatu</option>
+              <option value="exam">Semua Soalan Sekaligus (20 Soalan)</option>
             </select>
           </div>
         </div>
@@ -1091,7 +1092,7 @@
           <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 mb-3 border-b border-white/5 pb-2 shrink-0">
             <i data-lucide="megaphone" class="text-orange-500 w-5 h-5 shrink-0"></i> Pengumuman Kelas
           </h3>
-          <div id="student-announcements-list" class="flex-grow space-y-3 overflow-y-auto custom-scrollbar pr-2 min-h-0">
+          <div id="student-announcements-list" class="flex-grow space-y-3 overflow-y-auto custom-scrollbar pr-2 min-h-0 font-sans text-left">
              <p class="text-zinc-500 text-xs italic">Tiada pengumuman dari guru anda setakat ini.</p>
           </div>
         </div>
@@ -1100,13 +1101,13 @@
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between h-[380px]">
           <div class="flex flex-col flex-grow overflow-hidden">
             <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-2 shrink-0">
-              <i data-lucide="message-circle" class="text-amber-500 w-5 h-5 shrink-0"></i> Sembang Kelas
+              <i data-lucide="message-square" class="text-amber-500 w-5 h-5 shrink-0"></i> Mesej Murid
             </h3>
             <div id="student-messages-container" class="flex-grow space-y-3 overflow-y-auto pr-1 custom-scrollbar pb-2 min-h-0">
-              <p class="text-zinc-500 text-xs italic">Belum ada sembang dalam kelas ini.</p>
+              <p class="text-zinc-500 text-xs italic">Belum ada mesej di kelas ini.</p>
             </div>
             
-            <form id="student-message-form" class="flex gap-2 pt-3 border-t border-white/5 mt-2 shrink-0 font-sans">
+            <form id="student-message-form" class="flex gap-2 pt-3 border-t border-white/5 mt-2 shrink-0">
               <input required id="student-message-input" type="text" placeholder="Taip mesej atau soalan anda di sini..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-white text-xs sm:text-sm focus:ring-1 focus:ring-amber-500 outline-none transition-all" />
               <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-bold px-4 py-2 rounded-xl transition-all shrink-0 text-xs flex items-center justify-center gap-1.5">
                 <i data-lucide="send" class="w-4 h-4"></i> Hantar
@@ -1148,10 +1149,10 @@
         
         <!-- PANDANGAN 1: MOD SATU-SATU (SINGLE-VIEW) -->
         <div id="quiz-single-view" class="space-y-6">
-          <div id="quiz-question-text" class="text-sm sm:text-lg text-white font-medium leading-relaxed break-words font-sans"></div>
+          <div id="quiz-question-text" class="text-sm sm:text-lg text-white font-medium leading-relaxed break-words font-sans text-left"></div>
           <div id="quiz-options-container" class="grid grid-cols-1 gap-3 sm:gap-4"></div>
           
-          <div id="quiz-explanation-box" class="hidden bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 sm:p-5 space-y-3 animate-slide-in">
+          <div id="quiz-explanation-box" class="hidden bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 sm:p-5 space-y-3 animate-slide-in text-left">
             <div class="flex items-center gap-2 text-orange-400 font-bold text-xs sm:text-sm">
               <i data-lucide="info" class="w-4 h-4"></i>
               <span>Penjelasan Konseptual</span>
@@ -1161,7 +1162,7 @@
         </div>
 
         <!-- PANDANGAN 2: MOD PEPERIKSAAN (MULTI-VIEW) -->
-        <div id="quiz-multi-view" class="hidden space-y-8 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2"></div>
+        <div id="quiz-multi-view" class="hidden space-y-8 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2 text-left"></div>
 
       </div>
 
@@ -1178,7 +1179,7 @@
       </div>
     </div>
 
-    <!-- VIEW 6: SKRIN KEPUTUSAN KUIZ (RESULTS SCREEN) -->
+    <!-- VIEW 6: KEPUTUSAN KUIZ (RESULTS SCREEN) -->
     <div id="view-results" class="hidden max-w-md mx-auto text-center space-y-6 sm:space-y-8 animate-slide-in py-6">
       <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/5 space-y-6 relative overflow-hidden">
         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -1214,7 +1215,7 @@
   <footer class="bg-zinc-950 border-t border-white/5 py-6 mt-auto">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
       <div class="text-center md:text-left leading-normal">
-        <p class="font-bold text-zinc-400">© 2026 Makroverse STPM. Hak Cipta Terpelihara.</p>
+        <p class="font-bold text-zinc-400">© 2026 MacroNexus STPM. Hak Cipta Terpelihara.</p>
         <p class="mt-0.5">Berhubung secara rasmi dengan Google Sheet dan Gemini AI.</p>
       </div>
       <div class="flex items-center gap-3">
