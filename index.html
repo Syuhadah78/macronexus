@@ -418,7 +418,6 @@
       console.warn("Firebase tidak ditemukan di lingkungan ini. Berjalan dalam mode lokal.");
     }
     
-    // PEMBETULAN: Menggunakan ID aplikasi dinamik untuk keizinan keselamatan Firestore
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'macronexus-7805';
 
     // Mengeksport ke objek global Window untuk digunakan oleh skrip logik aplikasi
@@ -868,11 +867,11 @@
             <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Liputan Bab</label>
             <select id="ai-gen-chapter" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
               <option value="0" selected>Semua Soalan (100 Soalan Campuran)</option>
-              <option value="1">Bab 1: Pengenalan Makroekonomi</option>
-              <option value="2">Bab 2: Perakaunan Pendapatan Negara</option>
-              <option value="3">Bab 3: Keseimbangan Pendapatan Negara</option>
-              <option value="4">Bab 4: Wang, Bank dan Dasar Kewangan</option>
-              <option value="5">Bab 5: Perdagangan Antarabangsa</option>
+              <option value="1">Bab 1: Pengenalan Makroekonomi (20 Soalan)</option>
+              <option value="2">Bab 2: Perakaunan Pendapatan Negara (20 Soalan)</option>
+              <option value="3">Bab 3: Keseimbangan Pendapatan Negara (20 Soalan)</option>
+              <option value="4">Bab 4: Wang, Bank dan Dasar Kewangan (20 Soalan)</option>
+              <option value="5">Bab 5: Perdagangan Antarabangsa (20 Soalan)</option>
             </select>
           </div>
           <div>
@@ -1353,7 +1352,6 @@
     async function makeCloudCall(action, payload = {}) {
       if (!window.state || !window.state.apiConfig || !window.state.apiConfig.gasUrl) return { success: false };
       try {
-          // Selaraskan kiriman menggunakan JSON murni agar kompatibel dengan Apps Script Anda
           const response = await fetch(window.state.apiConfig.gasUrl, {
               method: 'POST',
               body: JSON.stringify({ action: action, ...payload })
@@ -1362,7 +1360,6 @@
           if (response.ok) {
               return { success: true };
           }
-          // Jika status adalah 200 atau 0 (disebabkan oleh redirection CORS pelayar), anggap berjaya
           return { success: response.status === 200 || response.status === 0 };
       } catch (error) {
           console.error("Ralat semasa melakukan makeCloudCall:", error);
@@ -1371,608 +1368,371 @@
     }
     window.makeCloudCall = makeCloudCall;
 
-    async function fetchQuestionsFromCloud() {
-      if (!window.state || !window.state.apiConfig || !window.state.apiConfig.gasUrl) {
-          window.globalQuestions = localFallbackQuestions;
-          return true;
-      }
-      try {
-          const response = await fetch(window.state.apiConfig.gasUrl, {
-              method: 'POST',
-              body: JSON.stringify({ action: 'fetch_all' })
-          });
-          const text = await response.text();
-          
-          let data;
-          try {
-              data = JSON.parse(text);
-          } catch (e) {
-              console.warn("Gagal menghurai JSON dari Google Sheet. Menggunakan bank soalan alternatif.");
-              window.globalQuestions = localFallbackQuestions;
-              window.updateSelectorsFromQuestions();
-              return true;
-          }
-          
-          if (data && data.questions) {
-              const setQuestionCounters = {};
-
-              window.globalQuestions = data.questions.map((q, idx) => {
-                  // Pembaca kunci dinamis tanpa mengira huruf besar/kecil & spasi kosong
-                  const getProp = (obj, keys) => {
-                      for (let key of keys) {
-                          if (obj[key] !== undefined) return obj[key];
-                          const foundKey = Object.keys(obj).find(k => k.trim().toLowerCase() === key.toLowerCase());
-                          if (foundKey !== undefined) return obj[foundKey];
-                      }
-                      return undefined;
-                  };
-
-                  const sheetNameValue = getProp(q, ["set", "Set", "sheetName", "SheetName", "tabName"]) || "Set 1";
-                  const currentSetTabName = window.normalizeSetName ? window.normalizeSetName(sheetNameValue) : sheetNameValue;
-
-                  if (setQuestionCounters[currentSetTabName] === undefined) {
-                      setQuestionCounters[currentSetTabName] = 0;
-                  }
-                  
-                  const setSpecificIndex = setQuestionCounters[currentSetTabName];
-                  setQuestionCounters[currentSetTabName]++;
-
-                  let calculatedBab = "1";
-                  if (setSpecificIndex >= 0 && setSpecificIndex <= 19) {
-                      calculatedBab = "1";
-                  } else if (setSpecificIndex >= 20 && setSpecificIndex <= 39) {
-                      calculatedBab = "2";
-                  } else if (setSpecificIndex >= 40 && setSpecificIndex <= 59) {
-                      calculatedBab = "3";
-                  } else if (setSpecificIndex >= 60 && setSpecificIndex <= 79) {
-                      calculatedBab = "4";
-                  } else if (setSpecificIndex >= 80 && setSpecificIndex <= 99) {
-                      calculatedBab = "5";
-                  } else {
-                      calculatedBab = getProp(q, ["Chapter", "chapter", "bab", "Bab"]) ? getProp(q, ["Chapter", "chapter", "bab", "Bab"]).toString() : "1";
-                  }
-
-                  const textValue = getProp(q, ["q", "Question", "question", "text", "Text", "Soalan"]) || "Soalan Makroekonomi STPM";
-                  
-                  const optA = getProp(q, ["OptionA", "optionA", "optA", "Option A", "option_a", "PilihanA", "pilihanA"]) || "Pilihan A";
-                  const optB = getProp(q, ["OptionB", "optionB", "optB", "Option B", "option_b", "PilihanB", "pilihanB"]) || "Pilihan B";
-                  const optC = getProp(q, ["OptionC", "optionC", "optC", "Option C", "option_c", "PilihanC", "pilihanC"]) || "Pilihan C";
-                  const optD = getProp(q, ["OptionD", "optionD", "optD", "Option D", "option_d", "PilihanD", "pilihanD"]) || "Pilihan D";
-
-                  const optionsArray = q.opts && q.opts.length > 0 ? q.opts : [optA, optB, optC, optD];
-
-                  const ansVal = getProp(q, ["CorrectAnswer", "correctAnswer", "ans", "answer", "Correct Answer", "Jawapan"]) || "A";
-                  let correctIndex = 0;
-                  if (typeof ansVal === 'number') {
-                      correctIndex = ansVal;
-                  } else {
-                      const letter = ansVal.toString().trim().toUpperCase();
-                      correctIndex = ['A', 'B', 'C', 'D'].indexOf(letter);
-                      if (correctIndex === -1) {
-                          correctIndex = parseInt(ansVal) || 0;
-                      }
-                  }
-
-                  // === PENAMBAHBAIKAN SINKRONISASI LAJUR EXPLANATION SECARA DINAMIK ===
-                  const cleanExplanation = getProp(q, ["Explanation", "explanation", "exp", "Exp", "Penerangan", "Ulasan"]) || "Tiada penerangan tambahan disertakan bagi soalan ini.";
-
-                  return {
-                      id: `Q_${idx}_${Date.now()}`,
-                      chapter: calculatedBab,
-                      sheetName: currentSetTabName,
-                      text: textValue,
-                      options: optionsArray,
-                      answer: correctIndex,
-                      explanation: cleanExplanation
-                  };
-              });
-
-              window.updateSelectorsFromQuestions();
-              return true;
-          }
-          window.globalQuestions = localFallbackQuestions;
-          window.updateSelectorsFromQuestions();
-          return true;
-      } catch(e) {
-          console.error("Gagal menarik soalan awan, beralih ke local fallback:", e);
-          window.globalQuestions = localFallbackQuestions;
-          window.updateSelectorsFromQuestions();
-          return true;
-      }
-    }
-    window.fetchQuestionsFromCloud = fetchQuestionsFromCloud;
-
-    window.updateSelectorsFromQuestions = function() {
-      const pool = window.globalQuestions || [];
-      if (pool.length === 0) return;
-
-      const setSelector = document.getElementById('student-set-selector');
-      const chapterSelector = document.getElementById('student-chapter-selector');
-
-      if (!setSelector || !chapterSelector) return;
-
-      const currentSelectedSet = setSelector.value;
-      const currentSelectedChapter = chapterSelector.value;
-
-      const uniqueSets = new Set();
-      const uniqueChapters = new Set();
-
-      pool.forEach(q => {
-        if (q.sheetName) uniqueSets.add(window.normalizeSetName(q.sheetName));
-        if (q.chapter) uniqueChapters.add(q.chapter.toString().trim());
-      });
-
-      const sortedSets = Array.from(uniqueSets).sort((a, b) => {
-        return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
-      });
-
-      const sortedChapters = Array.from(uniqueChapters).sort((a, b) => parseInt(a) - parseInt(b));
-
-      setSelector.innerHTML = '<option value="0">Semua Set</option>';
-      sortedSets.forEach(setName => {
-        let val = setName;
-        let match = setName.match(/Set\s*(\d+)/i);
-        if (match) {
-          val = match[1];
-        }
-        const opt = document.createElement('option');
-        opt.value = val;
-        opt.textContent = setName;
-        setSelector.appendChild(opt);
-      });
-
-      const chapterNames = {
-        "1": "Bab 1: Pengenalan Makroekonomi",
-        "2": "Bab 2: Perakaunan Pendapatan Negara",
-        "3": "Bab 3: Keseimbangan Pendapatan Negara",
-        "4": "Bab 4: Wang, Bank dan Dasar Kewangan",
-        "5": "Bab 5: Perdagangan Antarabangsa"
-      };
-
-      chapterSelector.innerHTML = '<option value="0">Semua Bab</option>';
-      sortedChapters.forEach(chapNum => {
-        const opt = document.createElement('option');
-        opt.value = chapNum;
-        opt.textContent = chapterNames[chapNum] || `Bab ${chapNum}`;
-        chapterSelector.appendChild(opt);
-      });
-
-      if (Array.from(setSelector.options).some(o => o.value === currentSelectedSet)) {
-        setSelector.value = currentSelectedSet;
-      } else {
-        setSelector.value = "0";
-      }
-
-      if (Array.from(chapterSelector.options).some(o => o.value === currentSelectedChapter)) {
-        chapterSelector.value = currentSelectedChapter;
-      } else {
-        chapterSelector.value = "0";
-      }
+    window.fetchStudentWelcomeMessage = function() {
+      const quotes = ["Teruskan menjawab untuk mengumpul lebih banyak XP hari ini!", "Cemerlang STPM adalah sasaran utama kita!", "Wang & Bank adalah bab paling menarik untuk dikuasai!"];
+      const liveCloudEl = document.getElementById('student-live-cloud-text');
+      if (liveCloudEl) liveCloudEl.innerHTML = `Prestasi dan skor kuiz anda disimpan secara real-time. <br><span class="text-amber-500/80 italic font-medium">" ${quotes[Math.floor(Math.random() * quotes.length)]} "</span>`;
     };
 
-    window.triggerManualSync = async function() {
-      window.showView('view-loading');
-      const loadingText = document.getElementById('loading-text');
-      if (loadingText) loadingText.innerText = "Menyegerakkan bank soalan dari Google Sheets...";
+    window.updateStudentDashboardUI = function() {
+      const user = window.state.user;
+      if (!user) return;
       
-      const success = await window.fetchQuestionsFromCloud();
+      document.getElementById('welcome-student-title').innerText = "Selamat Datang, " + window.escapeHtml(user.name) + "! 📚";
       
-      if (success) {
-        window.updateSelectorsFromQuestions();
-        window.syncDatabaseWithBackend(); 
-        window.showCustomModal(
-          "Penyegerakan Berjaya! 🔄", 
-          "Materi set soalan dan bab terkini telah dimuat turun dari Google Sheets!", 
-          "check-circle", 
-          true
-        );
-      } else {
-        window.syncDatabaseWithBackend();
-        window.showCustomModal(
-          "Gagal Menyegerak", 
-          "Gagal menghubungi Google Sheet. Pastikan pautan awan yang anda masukkan tepat atau tiada sekatan rangkaian.", 
-          "alert-triangle", 
-          false
-        );
-      }
-    };
+      const currentXp = user.xp || 0;
+      const level = user.level || 1;
+      const relativeXp = currentXp - ((level - 1) * 200);
+      const percent = Math.min(100, Math.max(0, Math.round((relativeXp / 200) * 100)));
 
-    window.loadTeacherDashboardData = function() {
-      window.showView('view-teacher-dashboard');
+      if(document.getElementById('student-level-badge')) document.getElementById('student-level-badge').innerText = "L" + level;
+      if(document.getElementById('student-level-num')) document.getElementById('student-level-num').innerText = "Tahap " + level;
+      if(document.getElementById('student-current-xp')) document.getElementById('student-current-xp').innerText = currentXp;
+      if(document.getElementById('student-next-xp')) document.getElementById('student-next-xp').innerText = level * 200;
+      if(document.getElementById('student-xp-bar')) document.getElementById('student-xp-bar').style.width = percent + "%";
 
-      if (window.state.activeClassCode) {
-        const displayClassName = document.getElementById('display-class-name');
-        const displayClassCode = document.getElementById('display-class-code');
-        const activeClassBanner = document.getElementById('active-class-banner');
-
-        if (activeClassBanner) activeClassBanner.classList.remove('hidden');
-        if (displayClassName) displayClassName.innerText = window.state.activeClassName || "Kelas Makroekonomi";
-        if (displayClassCode) displayClassCode.innerText = window.state.activeClassCode;
-
-        window.listenStudents();
-        window.listenAnnouncements();
-        window.listenMessages();
-      } else {
-        const activeClassBanner = document.getElementById('active-class-banner');
-        if (activeClassBanner) activeClassBanner.classList.add('hidden');
-      }
-    };
-
-    window.syncDatabaseWithBackend = function() {
-      if (!window.state || !window.state.user) return;
+      if(document.getElementById('stat-student-questions')) document.getElementById('stat-student-questions').innerText = user.attempts || 0;
+      if(document.getElementById('stat-student-accuracy')) document.getElementById('stat-student-accuracy').innerText = (user.attempts > 0 ? Math.round((user.correct / user.attempts) * 100) : 0) + "%";
       
-      document.getElementById('nav-user-name').innerText = window.state.user.name;
-      document.getElementById('nav-user-role').innerText = window.state.role === 'teacher' ? 'Guru' : 'Pelajar';
-      document.getElementById('nav-avatar').innerText = window.state.user.name.charAt(0).toUpperCase();
+      const joinClassPanel = document.getElementById('student-join-class-panel');
+      if (joinClassPanel) joinClassPanel.classList.toggle('hidden', !!user.classCode);
 
-      const settingsBtn = document.getElementById('nav-settings-btn');
-      if (settingsBtn) {
-        if (window.state.role === 'teacher') {
-          settingsBtn.classList.remove('hidden');
+      const classInfoEl = document.getElementById('student-active-class-info');
+      const classTextEl = document.getElementById('student-active-class-text');
+      if (classInfoEl && classTextEl) {
+        if (user.classCode) {
+          classInfoEl.classList.remove('hidden');
+          classTextEl.innerHTML = `Kelas Berlangsung : <strong class="text-white tracking-wider">${window.escapeHtml(user.classCode)}</strong> Oleh Cikgu <span class="text-white">${window.escapeHtml(user.teacherName) || "Guru"}</span>`;
         } else {
-          settingsBtn.classList.add('hidden');
+          classInfoEl.classList.add('hidden');
         }
       }
-
-      if (window.state.role === 'teacher') {
-        window.loadTeacherDashboardData();
-      } else {
-        window.updateStudentDashboardUI();
-        window.showView('view-student-dashboard');
-        
-        if (window.state.user.classCode) {
-          window.listenAnnouncements();
-          window.listenMessages();
-        }
-      }
+      window.fetchStudentWelcomeMessage();
     };
 
-    window.listenStudents = function() {
-      if (!window.auth || !window.auth.currentUser || !window.state.activeClassCode) return;
-      
-      if (unsubscribeStudents) {
-          unsubscribeStudents();
-      }
+    window.generateLiveQuestions = async function() {
+        const chapter = document.getElementById('ai-gen-chapter').value;
+        const loader = document.getElementById('ai-batch-loader');
+        const btn = document.getElementById('btn-generate-batch');
 
-      const studentsRef = window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'students');
-      unsubscribeStudents = window.onSnapshot(studentsRef, (snapshot) => {
-          window.state.students = [];
-          snapshot.forEach((doc) => {
-              const data = doc.data();
-              if (data.classCode === window.state.activeClassCode) {
-                  window.state.students.push({ id: doc.id, ...data });
+        if (!window.state.apiConfig.gasUrl || !window.state.apiConfig.geminiKey) {
+            window.showCustomModal("Tetapan Tidak Lengkap", "Sila masukkan URL Apps Script dan Kunci API Gemini dalam menu Tetapan terlebih dahulu.", "alert-circle", false);
+            return;
+        }
+
+        loader.classList.remove('hidden');
+        btn.disabled = true;
+        document.getElementById('loader-status-text').innerText = "Menghubungkan ke Gemini AI...";
+
+        const modelsToTry = ["gemini-2.5-flash-preview-09-2025", "gemini-2.5-flash", "gemini-1.5-flash"];
+        let resultJsonRaw = null;
+        let responseSuccess = false;
+
+        for (let m = 0; m < modelsToTry.length; m++) {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelsToTry[m]}:generateContent?key=${window.state.apiConfig.geminiKey}`;
+          const numQuestions = 20; 
+          const systemPrompt = `Anda adalah pakar penilai ekonomi STPM. Bina ${numQuestions} soalan aneka pilihan (KBAT) Makroekonomi STPM. Kembalikan jawapan dalam format JSON tulen: [{"Chapter": 1, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}]. PASTIKAN RESPONSE ANDA ADALAH JSON SAHAJA TANPA BACKTICKS ATAU PENERANGAN LAIN.`;
+          const query = chapter === "0" ? "Bina 20 soalan meliputi semua bab (campuran rawak)." : `Bina 20 soalan khusus bagi Bab ${chapter}.`;
+
+          try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: query }] }],
+                  systemInstruction: { parts: [{ text: systemPrompt }] },
+                  generationConfig: { responseMimeType: "application/json" }
+                })
+            });
+            if (response.ok) {
+                const result = await response.json();
+                resultJsonRaw = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (resultJsonRaw) { responseSuccess = true; break; }
+            }
+          } catch (err) { console.error(err); }
+        }
+
+        if (!responseSuccess) {
+            loader.classList.add('hidden');
+            btn.disabled = false;
+            window.showCustomModal("Ralat AI", "Sistem gagal menghubungi pelayan AI Gemini.", "alert-triangle", false);
+            return;
+        }
+
+        document.getElementById('loader-status-text').innerText = "Menyiapkan integrasi ke Google Sheets...";
+        try {
+          const cleanJson = JSON.parse(window.cleanJsonString(resultJsonRaw));
+          
+          let maxSetNumber = 5; 
+          (window.globalQuestions || []).forEach(q => {
+              if (q.sheetName && q.sheetName.match(/Set\s*(\d+)/i)) {
+                  maxSetNumber = Math.max(maxSetNumber, parseInt(q.sheetName.match(/Set\s*(\d+)/i)[1]));
               }
           });
-          window.renderStudentsTable();
-      }, (error) => {
-          console.error("Kesalahan memantau data siswa dari Firestore:", error);
-      });
-    };
+          const nextSetNum = maxSetNumber + 1;
+          const babCounters = {};
 
-    window.renderStudentsTable = function() {
-      const tbody = document.getElementById('students-table-body');
-      if (!tbody) return;
-      tbody.innerHTML = '';
+          const gasPayload = cleanJson.map((q) => {
+              const qChapter = q.Chapter ? q.Chapter.toString() : (chapter === "0" ? "1" : chapter);
+              babCounters[qChapter] = (babCounters[qChapter] || 0) + 1;
+              return {
+                  QuestionID: `SET${nextSetNum}_B${qChapter}_Q${babCounters[qChapter].toString().padStart(2, '0')}`,
+                  Chapter: parseInt(qChapter),
+                  Topic: "Janaan AI Moden",
+                  Difficulty: "STPM",
+                  Question: q.Question || q.question,
+                  OptionA: q.OptionA || q.optionA,
+                  OptionB: q.OptionB || q.optionB,
+                  OptionC: q.OptionC || q.optionC,
+                  OptionD: q.OptionD || q.optionD,
+                  CorrectAnswer: q.CorrectAnswer || q.correctAnswer || "A",
+                  Explanation: q.Explanation || q.explanation || "",
+                  ImageURL: "", Formula: "", Type: "MCQ", Tags: "KBAT-AI", Status: "Aktif"
+              };
+          });
 
-      if (!window.state.students || window.state.students.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-zinc-500">Tiada pelajar berdaftar dalam kelas ini.</td></tr>`;
-        window.updateTeacherStats(0, 0, 0);
-        return;
-      }
-
-      let totalAttempts = 0;
-      let totalCorrect = 0;
-
-      window.state.students.forEach(student => {
-        totalAttempts += student.attempts || 0;
-        totalCorrect += student.correct || 0;
-        const accuracy = student.attempts > 0 ? Math.round((student.correct / student.attempts) * 100) : 0;
-
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-white/5 transition-colors border-b border-white/5";
-        
-        const td1 = document.createElement('td'); td1.className = "p-3 sm:p-4 font-bold text-white whitespace-nowrap"; td1.textContent = student.name;
-        const td2 = document.createElement('td'); td2.className = "p-3 sm:p-4 text-zinc-400 font-mono text-[11px] sm:text-xs tracking-wider uppercase"; td2.textContent = student.classCode || 'TIADA';
-        const td3 = document.createElement('td'); td3.className = "p-3 sm:p-4 whitespace-nowrap"; td3.innerHTML = `<span class="px-2 py-1 rounded bg-orange-500/10 text-orange-400 font-bold border border-orange-500/20 text-xs shrink-0">Lvl ${student.level || 1}</span>`;
-        const td4 = document.createElement('td'); td4.className = "p-3 sm:p-4 font-bold text-amber-400 font-mono whitespace-nowrap"; td4.textContent = `${student.xp || 0} XP`;
-        const td5 = document.createElement('td'); td5.className = "p-3 sm:p-4 font-bold font-mono text-emerald-400 whitespace-nowrap"; td5.textContent = `${accuracy}%`;
-        const td6 = document.createElement('td'); td6.className = "p-3 sm:p-4 text-center whitespace-nowrap";
-        
-        const delBtn = document.createElement('button');
-        delBtn.className = "p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all";
-        delBtn.title = "Keluarkan Pelajar";
-        delBtn.innerHTML = `<i data-lucide="user-x" class="w-4 h-4"></i>`;
-        delBtn.onclick = function() {
-            const safeName = student.name ? student.name.split("'").join("\\'") : "";
-            window.confirmDeleteStudent(student.id, safeName);
-        };
-        td6.appendChild(delBtn);
-
-        tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4); tr.appendChild(td5); tr.appendChild(td6);
-        tbody.appendChild(tr);
-      });
-
-      const classAccuracy = totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0;
-      window.updateTeacherStats(window.state.students.length, totalAttempts, classAccuracy);
-      initLucide();
-    };
-
-    window.updateTeacherStats = function(studentsCount, attemptsCount, accuracyVal) {
-      const statStudents = document.getElementById('stat-teacher-students');
-      const statAttempts = document.getElementById('stat-teacher-attempts');
-      const statAccuracy = document.getElementById('stat-teacher-accuracy');
-
-      if (statStudents) statStudents.innerText = studentsCount;
-      if (statAttempts) statAttempts.innerText = attemptsCount;
-      if (statAccuracy) statAccuracy.innerText = `${accuracyVal}%`;
-    };
-
-    window.listenAnnouncements = function() {
-       if (!window.auth || !window.auth.currentUser || !window.state || !window.state.user || !window.state.user.classCode) return;
-       
-       if (unsubscribeAnnouncements) unsubscribeAnnouncements();
-
-       const q = window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'announcements');
-       
-       unsubscribeAnnouncements = window.onSnapshot(q, (snapshot) => {
-           let announcements = [];
-           snapshot.forEach(doc => {
-               const data = doc.data();
-               if (data.classCode === window.state.user.classCode) {
-                   announcements.push({id: doc.id, ...data});
-               }
-           });
-
-           announcements.sort((a, b) => {
-               const timeA = a.timestamp ? a.timestamp.toMillis() : Date.now();
-               const timeB = b.timestamp ? b.timestamp.toMillis() : Date.now();
-               return timeB - timeA;
-           });
-
-           window.renderAnnouncements(announcements);
-
-       }, (error) => {
-           console.error("Ralat saat memantau pengumuman:", error);
-       });
-    };
-
-    window.renderAnnouncements = function(announcements) {
-        const teacherList = document.getElementById('teacher-announcements-list');
-        if (teacherList) {
-            teacherList.innerHTML = '';
-            if (announcements.length === 0) {
-                teacherList.innerHTML = '<p class="text-zinc-600 italic">Belum ada pengumuman.</p>';
-            } else {
-                announcements.forEach(a => {
-                    const div = document.createElement('div');
-                    div.className = "bg-zinc-900 p-2 rounded border border-zinc-800 mb-1 text-left";
-                    const span = document.createElement('span');
-                    span.className = "text-orange-400 font-bold";
-                    span.textContent = (a.senderName || "Guru") + ": ";
-                    div.appendChild(span);
-                    const tNode = document.createTextNode(a.text || "");
-                    div.appendChild(tNode);
-                    teacherList.appendChild(div);
-                });
-            }
-        }
-
-        const studentList = document.getElementById('student-announcements-list');
-        if (studentList) {
-            studentList.innerHTML = '';
-            if (announcements.length === 0) {
-                studentList.innerHTML = '<p class="text-zinc-500 text-xs italic">Tiada pengumuman dari guru anda setakat ini.</p>';
-            } else {
-                announcements.forEach(a => {
-                    const div = document.createElement('div');
-                    div.className = "bg-orange-500/10 p-3 rounded-lg border border-orange-500/20 text-xs text-zinc-300 text-left";
-                    const strong = document.createElement('strong');
-                    strong.className = "text-orange-400 block mb-1";
-                    strong.textContent = "Cikgu " + (a.senderName || "Guru");
-                    div.appendChild(strong);
-                    const tNode = document.createTextNode(a.text || "");
-                    div.appendChild(tNode);
-                    studentList.appendChild(div);
-                });
-            }
-        }
-    };
-
-    window.listenMessages = function() {
-       if (!window.auth || !window.auth.currentUser || !window.state || !window.state.user || !window.state.user.classCode) return;
-
-       if (unsubscribeMessages) unsubscribeMessages();
-
-       const q = window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'messages');
-       
-       unsubscribeMessages = window.onSnapshot(q, (snapshot) => {
-           let msgs = [];
-           snapshot.forEach(doc => {
-               const data = doc.data();
-               if (data.classCode === window.state.user.classCode) {
-                   msgs.push({id: doc.id, ...data});
-               }
-           });
-
-           msgs.sort((a, b) => {
-               const timeA = a.timestamp ? a.timestamp.toMillis() : Date.now();
-               const timeB = b.timestamp ? b.timestamp.toMillis() : Date.now();
-               return timeA - timeB; 
-           });
-
-           const renderMsgToContainer = (containerId) => {
-               const container = document.getElementById(containerId);
-               if (!container) return;
-               
-               container.innerHTML = '';
-               
-               if (msgs.length === 0) {
-                   const p = document.createElement('p');
-                   p.className = "text-zinc-500 text-xs italic";
-                   p.textContent = "Belum ada mesej di kelas ini.";
-                   container.appendChild(p);
-               } else {
-                   msgs.forEach(m => {
-                       const date = m.timestamp ? new Date(m.timestamp.toMillis()).toLocaleString('id-ID', {hour: '2-digit', minute:'2-digit', day:'numeric', month:'short'}) : 'Baru saja';
-                       const colorClass = getColorClassForString(m.senderId || m.senderName);
-                       
-                       const wrap = document.createElement('div');
-                       wrap.className = "bg-zinc-900/50 p-3 rounded-xl border border-white/5 text-xs text-zinc-300 mb-2 text-left";
-                       
-                       const headerDiv = document.createElement('div');
-                       headerDiv.className = "flex justify-between items-center mb-1";
-                       
-                       const strong = document.createElement('strong');
-                       strong.className = colorClass;
-                       strong.textContent = m.senderName;
-                       
-                       const spanDate = document.createElement('span');
-                       spanDate.className = "text-[9px] text-zinc-500";
-                       spanDate.textContent = date;
-                       
-                       headerDiv.appendChild(strong);
-                       headerDiv.appendChild(spanDate);
-                       wrap.appendChild(headerDiv);
-                       
-                       const msgP = document.createElement('p');
-                       msgP.textContent = m.text;
-                       wrap.appendChild(msgP);
-                       
-                       container.appendChild(wrap);
-                   });
-                   container.scrollTop = container.scrollHeight;
-               }
-           };
-
-           renderMsgToContainer('teacher-messages-container');
-           renderMsgToContainer('student-messages-container');
-
-       }, (error) => {
-           console.error("Ralat saat memantau mesej:", error);
-       });
-    };
-
-    window.copyClassCode = function() {
-      const classCodeText = document.getElementById('display-class-code')?.innerText;
-      if (classCodeText) {
-        const el = document.createElement('textarea');
-        el.value = classCodeText;
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
-        window.showCustomModal("Disalin!", "Kod kelas " + classCodeText + " disalin ke papan klip.", "check-circle", true);
-      }
-    };
-
-    window.resumeExistingClass = function() {
-      const modal = document.getElementById('teacher-resume-modal');
-      if (modal) {
-        modal.classList.remove('opacity-100');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-      }
-      window.syncDatabaseWithBackend();
-    };
-
-    window.startNewClassFlow = function() {
-      const modal = document.getElementById('teacher-resume-modal');
-      if (modal) {
-        modal.classList.remove('opacity-100');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-      }
-      window.state.activeClassCode = null;
-      window.state.activeClassName = null;
-      if (window.state.user) {
-        window.state.user.classCode = '';
-        window.state.user.className = '';
-        localStorage.setItem('macronexus_user_profile', JSON.stringify(window.state.user));
-      }
-      window.syncDatabaseWithBackend();
-    };
-
-    window.closeTeacherResumeModal = function() {
-      const modal = document.getElementById('teacher-resume-modal');
-      if (modal) {
-        modal.classList.remove('opacity-100');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-      }
-    };
-
-    window.confirmDeleteStudent = function(studentId, studentName) {
-      const deleteModal = document.getElementById('confirm-delete-modal');
-      const deleteNameEl = document.getElementById('delete-student-name');
-      const confirmBtn = document.getElementById('btn-confirm-delete-execute');
-
-      if (deleteModal && deleteNameEl && confirmBtn) {
-        deleteNameEl.textContent = studentName;
-        deleteModal.classList.remove('hidden');
-        setTimeout(() => { deleteModal.classList.add('opacity-100'); }, 50);
-
-        confirmBtn.onclick = async function() {
-          try {
-            const privateDocRef = window.doc(window.db, 'artifacts', window.appId, 'users', studentId, 'profile', 'main');
-            const studentDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', studentId);
-
-            await window.updateDoc(privateDocRef, { classCode: '' });
-            await window.updateDoc(studentDocRef, { classCode: '' });
-
-            window.closeConfirmDeleteModal();
-            window.showCustomModal("Selesai", "Pelajar " + studentName + " berjaya dikeluarkan.", "check-circle", true);
-          } catch (e) {
-            console.error("Gagal mengeluarkan pelajar:", e);
-            window.showCustomModal("Ralat", "Gagal memproses pengeluaran pelajar.", "alert-triangle");
+          if (document.getElementById('ai-gen-destination').value === 'sheet') {
+            const res = await window.makeCloudCall('saveQuestions', { questionsJson: JSON.stringify(gasPayload) });
+            if (res.success) {
+                await window.fetchQuestionsFromCloud(); 
+                window.showCustomModal("Proses Selesai!", `Soalan telah berjaya dijana dan disimpan ke Set ${nextSetNum} di pangkalan data Google Sheet anda.`, "sparkles", true);
+            } else throw new Error("Gagal menyinkronisasikan ke dalam Sheet.");
+          } else {
+            let csvContent = ["QuestionID", "Chapter", "Topic", "Difficulty", "Question", "OptionA", "OptionB", "OptionC", "OptionD", "CorrectAnswer", "Explanation", "ImageURL", "Formula", "Type", "Tags", "Status"].join(",") + "\n";
+            gasPayload.forEach(q => {
+              csvContent += Object.values(q).map(cell => `"${(cell||'').toString().replace(/"/g, '""')}"`).join(",") + "\n";
+            });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
+            link.download = `Makroverse_Set_${nextSetNum}_Questions.csv`;
+            link.click();
+            window.showCustomModal("CSV Sedia!", "Fail CSV berjaya dimuat turun.", "check-circle", true);
           }
-        };
-      }
+        } catch (err) {
+          window.showCustomModal("Ralat Pemformatan", "Gagal memproses susunan jawapan dari AI.", "alert-triangle", false);
+        }
+        loader.classList.add('hidden');
+        btn.disabled = false;
     };
 
-    window.closeConfirmDeleteModal = function() {
-      const modal = document.getElementById('confirm-delete-modal');
-      if (modal) {
-        modal.classList.remove('opacity-100');
-        setTimeout(() => { modal.classList.add('hidden'); }, 300);
-      }
+    window.startQuizFlow = function() {
+        const selectedChap = document.getElementById('student-chapter-selector').value;
+        const selectedSet = document.getElementById('student-set-selector').value;
+        const selectedMode = document.getElementById('student-mode-selector').value;
+
+        let pool = window.globalQuestions;
+        if (!pool || pool.length === 0) {
+          window.showCustomModal("Bank Soalan Kosong", "Minta bimbingan guru anda untuk menerbitkan materi Google Sheet yang baharu.", "info");
+          return;
+        }
+
+        if (selectedChap !== "0") pool = pool.filter(q => q.chapter === selectedChap);
+        if (selectedSet !== "0") pool = pool.filter(q => q.sheetName && q.sheetName.toLowerCase().includes(`set ${selectedSet}`));
+
+        if (pool.length === 0) {
+          window.showCustomModal("Soalan Tidak Ditemui", "Tiada padanan soalan untuk pilihan Set/Bab anda cari.", "info");
+          return;
+        }
+
+        const startIdx = ((parseInt(selectedSet) || 1) - 1) * 20;
+        let setFilteredPool = pool.slice(startIdx, startIdx + 20);
+        if (setFilteredPool.length === 0) setFilteredPool = pool.slice(0, 20); 
+        
+        window.state.quizState.questions = [...setFilteredPool];
+        window.state.quizState.chapter = selectedChap === "0" ? "Semua Bab" : selectedChap;
+        window.state.quizState.set = selectedSet === "0" ? "Semua Set" : `Set ${selectedSet}`;
+        window.state.quizState.mode = selectedMode;
+        window.state.quizState.currentIndex = 0;
+        window.state.quizState.answers = {};
+        window.state.quizState.score = 0;
+        window.state.quizState.xpEarned = 0;
+        window.state.quizState.hasSubmitted = false;
+        window.state.quizState.secondsTaken = 0;
+
+        if (window.state.quizState.timerInterval) clearInterval(window.state.quizState.timerInterval);
+        window.state.quizState.timerInterval = setInterval(() => {
+          window.state.quizState.secondsTaken++;
+          window.updateTimerDisplay();
+        }, 1000);
+        window.updateTimerDisplay();
+
+        window.showView('view-quiz');
+        window.setupQuizLayout();
     };
 
-    window.setAuthRole = function(role) {
-      window.state.selectedRole = role;
-      const btnStudent = document.getElementById('btn-role-student');
-      const btnTeacher = document.getElementById('btn-role-teacher');
-      const fieldClassCode = document.getElementById('field-class-code');
-      const authClassCode = document.getElementById('auth-classcode');
-
-      if (role === 'student') {
-        if(btnStudent) btnStudent.className = "p-3 sm:p-4 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-amber-500 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem] w-full";
-        if(btnTeacher) btnTeacher.className = "p-3 sm:p-4 rounded-xl border-2 border-zinc-800 hover:border-zinc-700 text-zinc-400 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem] w-full";
-        if(fieldClassCode) fieldClassCode.classList.remove('hidden');
-        if(authClassCode) authClassCode.required = true;
-      } else {
-        if(btnStudent) btnStudent.className = "p-3 sm:p-4 rounded-xl border-2 border-zinc-800 hover:border-zinc-700 text-zinc-400 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem] w-full";
-        if(btnTeacher) btnTeacher.className = "p-3 sm:p-4 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-amber-500 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem] w-full";
-        if(fieldClassCode) fieldClassCode.classList.add('hidden');
-        if(authClassCode) authClassCode.required = false;
-      }
+    window.updateTimerDisplay = function() {
+        const totalSecs = window.state.quizState.secondsTaken;
+        document.getElementById('quiz-timer').innerText = `${Math.floor(totalSecs / 60).toString().padStart(2, '0')}:${(totalSecs % 60).toString().padStart(2, '0')}`;
     };
 
-    window.handleLogout = async function() {
-      if (unsubscribeStudents) unsubscribeStudents();
-      if (unsubscribeAnnouncements) unsubscribeAnnouncements();
-      if (unsubscribeMessages) unsubscribeMessages();
-      
-      localStorage.removeItem('macronexus_user_profile');
-      window.state.user = null;
-      window.state.activeClassCode = null;
-      window.state.activeClassName = null;
-      window.state.selectedRole = null;
-      
-      if (window.auth) {
-        await window.auth.signOut();
-      }
-      window.showView('view-auth');
+    window.setupQuizLayout = function() {
+        const isOneByOne = window.state.quizState.mode === 'onebyone';
+        document.getElementById('quiz-single-view').classList.toggle('hidden', !isOneByOne);
+        document.getElementById('quiz-multi-view').classList.toggle('hidden', isOneByOne);
+        document.getElementById('quiz-progress-bar-wrapper').classList.toggle('hidden', !isOneByOne);
+        document.getElementById('quiz-index-indicator').classList.toggle('invisible', !isOneByOne);
+        document.getElementById('quiz-control-buttons').classList.toggle('hidden', !isOneByOne);
+        
+        if (isOneByOne) window.renderSingleQuestion();
+        else window.renderMultiQuestions();
+    };
+
+    window.renderSingleQuestion = function() {
+        const q = window.state.quizState.questions[window.state.quizState.currentIndex];
+        document.getElementById('quiz-chapter-indicator').innerText = `Bab ${window.state.quizState.chapter} — ${window.state.quizState.set}`;
+        document.getElementById('quiz-index-indicator').innerText = `Soalan ${window.state.quizState.currentIndex + 1} daripada ${window.state.quizState.questions.length}`;
+        document.getElementById('quiz-progress-bar').style.width = `${Math.round((window.state.quizState.currentIndex / window.state.quizState.questions.length) * 100)}%`;
+        document.getElementById('quiz-question-text').innerHTML = q.text;
+
+        const container = document.getElementById('quiz-options-container');
+        container.innerHTML = '';
+        window.state.quizState.hasSubmitted = false;
+
+        document.getElementById('quiz-explanation-box').classList.add('hidden');
+        document.getElementById('btn-quiz-submit').classList.remove('hidden');
+        document.getElementById('btn-quiz-next').classList.add('hidden');
+
+        q.options.forEach((option, index) => {
+          const btn = document.createElement('button');
+          btn.id = `opt-${index}`;
+          btn.onclick = () => window.selectSingleOption(index);
+          btn.className = "w-full text-left p-4 rounded-2xl border-2 border-zinc-800 hover:border-zinc-700 bg-zinc-950 text-xs sm:text-sm text-zinc-300 transition-all font-medium flex items-center gap-3 break-words whitespace-normal leading-relaxed min-h-[3.5rem]";
+          btn.innerHTML = `<span class="w-6 h-6 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-500 font-extrabold flex items-center justify-center shrink-0 font-mono text-[11px]">${String.fromCharCode(65 + index)}</span><span class="flex-grow">${option}</span>`;
+          container.appendChild(btn);
+        });
+        if (window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise();
+    };
+
+    window.selectSingleOption = function(index) {
+        if (window.state.quizState.hasSubmitted) return;
+        const currentSelected = window.state.quizState.answers[window.state.quizState.currentIndex];
+        if (currentSelected !== undefined) {
+          const oldBtn = document.getElementById(`opt-${currentSelected}`);
+          if (oldBtn) oldBtn.className = "w-full text-left p-4 rounded-2xl border-2 border-zinc-800 hover:border-zinc-700 bg-zinc-950 text-xs sm:text-sm text-zinc-300 transition-all font-medium flex items-center gap-3 break-words whitespace-normal leading-relaxed min-h-[3.5rem]";
+        }
+        window.state.quizState.answers[window.state.quizState.currentIndex] = index;
+        document.getElementById(`opt-${index}`).className = "w-full text-left p-4 rounded-2xl border-2 border-orange-500 bg-orange-500/10 text-white transition-all font-bold flex items-center gap-3 break-words whitespace-normal leading-relaxed min-h-[3.5rem]";
+    };
+
+    window.renderMultiQuestions = function() {
+        const container = document.getElementById('quiz-multi-view');
+        container.innerHTML = '';
+        document.getElementById('quiz-chapter-indicator').innerText = `Bab ${window.state.quizState.chapter} — ${window.state.quizState.set} (Mod Peperiksaan)`;
+
+        window.state.quizState.questions.forEach((q, qIndex) => {
+          const qWrapper = document.createElement('div');
+          qWrapper.className = "p-5 rounded-2xl border border-white/5 bg-zinc-900/50 space-y-4";
+          qWrapper.innerHTML = `<h4 class="text-white font-medium text-sm sm:text-base leading-relaxed break-words"><span class="text-orange-500 font-bold font-mono mr-2">${qIndex + 1}.</span>${q.text}</h4>`;
+          
+          const optGrid = document.createElement('div');
+          optGrid.className = "grid grid-cols-1 gap-3";
+          q.options.forEach((opt, optIndex) => {
+            const btn = document.createElement('button');
+            btn.id = `multi-q-${qIndex}-opt-${optIndex}`;
+            btn.onclick = () => window.selectMultiOption(qIndex, optIndex);
+            btn.className = "w-full text-left p-3 rounded-xl border border-zinc-800 bg-zinc-950 text-xs sm:text-sm text-zinc-400 transition-all flex items-center gap-2 break-words whitespace-normal leading-relaxed";
+            btn.innerHTML = `<span class="w-5 h-5 rounded bg-zinc-900 border border-zinc-800 text-zinc-500 font-bold flex items-center justify-center shrink-0 font-mono text-[10px]">${String.fromCharCode(65 + optIndex)}</span><span class="flex-grow">${opt}</span>`;
+            optGrid.appendChild(btn);
+          });
+          qWrapper.appendChild(optGrid);
+          container.appendChild(qWrapper);
+        });
+
+        const submitBtnWrapper = document.createElement('div');
+        submitBtnWrapper.className = "pt-4 flex flex-col sm:flex-row justify-end gap-3";
+        submitBtnWrapper.innerHTML = `
+          <button onclick="window.exitQuiz()" class="w-full sm:w-auto bg-zinc-800 hover:bg-zinc-700 text-white font-extrabold px-8 py-3.5 rounded-xl border border-white/10 text-center leading-tight text-xs sm:text-sm min-h-[3rem]">Batal Latihan</button>
+          <button onclick="window.submitExamSheet()" class="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold px-8 py-3.5 rounded-xl shadow-lg text-center leading-tight text-xs sm:text-sm min-h-[3rem]">Hantar Jawapan</button>
+        `;
+        container.appendChild(submitBtnWrapper);
+        if (window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise();
+    };
+
+    window.selectMultiOption = function(qIndex, optIndex) {
+        const previousSelected = window.state.quizState.answers[qIndex];
+        if (previousSelected !== undefined) {
+          const oldBtn = document.getElementById(`multi-q-${qIndex}-opt-${previousSelected}`);
+          if (oldBtn) oldBtn.className = "w-full text-left p-3 rounded-xl border border-zinc-800 bg-zinc-950 text-xs sm:text-sm text-zinc-400 transition-all flex items-center gap-2 break-words whitespace-normal leading-relaxed";
+        }
+        window.state.quizState.answers[qIndex] = optIndex;
+        document.getElementById(`multi-q-${qIndex}-opt-${optIndex}`).className = "w-full text-left p-3 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-white transition-all font-bold flex items-center gap-2 break-words whitespace-normal leading-relaxed";
+    };
+
+    window.submitExamSheet = function() {
+        const totalQ = window.state.quizState.questions.length;
+        const answeredCount = Object.keys(window.state.quizState.answers).length;
+
+        if (answeredCount < totalQ) {
+          if (!confirm(`Sistem mengesan anda hanya menjawab ${answeredCount}/${totalQ} soalan. Adakah anda pasti mahu menghantar tugasan peperiksaan ini sekarang?`)) {
+            return;
+          }
+        }
+
+        if (window.state.quizState.timerInterval) clearInterval(window.state.quizState.timerInterval);
+
+        window.state.quizState.questions.forEach((q, qIndex) => {
+          const userAns = window.state.quizState.answers[qIndex];
+          if (userAns === q.answer) {
+            window.state.quizState.score++;
+            window.state.quizState.xpEarned += 30;
+          } else {
+            window.state.quizState.xpEarned += 10;
+          }
+        });
+
+        window.concludeQuiz();
+    };
+
+    window.concludeQuiz = async function() {
+        if (window.state.quizState.timerInterval) clearInterval(window.state.quizState.timerInterval);
+
+        const user = window.state.user;
+        user.attempts = (user.attempts || 0) + window.state.quizState.questions.length;
+        user.correct = (user.correct || 0) + window.state.quizState.score;
+        user.xp = (user.xp || 0) + window.state.quizState.xpEarned;
+        
+        const calculatedLevel = Math.floor(user.xp / 200) + 1;
+        if (calculatedLevel > (user.level || 1)) {
+          setTimeout(() => {
+            window.showCustomModal("Tahniah! Level Up 🎉", `Anda berjaya naik ke Tahap ${calculatedLevel}! Teruskan usaha murni anda.`, "award", true);
+          }, 800);
+        }
+        user.level = calculatedLevel;
+
+        localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
+
+        if (window.auth && window.auth.currentUser && user.role === 'student') {
+             try {
+                await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main'), { xp: user.xp, level: user.level, attempts: user.attempts, correct: user.correct });
+                await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', window.auth.currentUser.uid), { xp: user.xp, level: user.level, attempts: user.attempts, correct: user.correct });
+                const sessionId = 'SESSION_' + Date.now();
+                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'quiz_sessions', sessionId), {
+                    timestamp: window.serverTimestamp(), score: window.state.quizState.score, totalQuestions: window.state.quizState.questions.length, xpEarned: window.state.quizState.xpEarned, chapter: window.state.quizState.chapter, set: window.state.quizState.set, mode: window.state.quizState.mode, timeTakenSeconds: window.state.quizState.secondsTaken
+                });
+             } catch(e) { console.warn("Penyegerakan skor Firestore tertunda"); }
+        }
+
+        window.makeCloudCall('submit_score', { name: user.name, classCode: user.classCode, level: user.level, xp: user.xp, attempts: user.attempts, correct: user.correct });
+
+        const accuracy = Math.round((window.state.quizState.score / window.state.quizState.questions.length) * 100);
+        document.getElementById('results-xp-gained').innerText = `+${window.state.quizState.xpEarned} XP`;
+        document.getElementById('results-accuracy').innerText = `${accuracy}%`;
+
+        window.showView('view-results');
+    };
+
+    window.exitQuiz = function() {
+        if (confirm("Adakah anda pasti ingin membatalkan sesi latihan ini? Sebarang markah semasa tidak akan disimpan.")) {
+          if (window.state.quizState.timerInterval) clearInterval(window.state.quizState.timerInterval);
+          window.backToDashboard();
+        }
+    };
+
+    window.backToDashboard = function() {
+        window.syncDatabaseWithBackend();
     };
 
     window.initApp = function() {
-      // Mengelakkan aplikasi dimulakan dua kali secara serentak
       if (window.appInitialized) return;
       window.appInitialized = true;
 
@@ -1983,11 +1743,7 @@
           if (firebaseUser) {
             try {
               let savedProfile = localStorage.getItem('macronexus_user_profile');
-              let userProfile = null;
-              if (savedProfile) {
-                userProfile = JSON.parse(savedProfile);
-              }
-              
+              let userProfile = savedProfile ? JSON.parse(savedProfile) : null;
               let resolvedRole = userProfile ? userProfile.role : 'student';
               
               if (window.state && window.state.selectedRole) {
@@ -1996,51 +1752,29 @@
               
               const email = firebaseUser.email || "";
               const emailLower = email.toLowerCase();
-              if (emailLower.startsWith('g-')) {
-                resolvedRole = 'teacher';
-              } else if (emailLower.startsWith('m-')) {
-                resolvedRole = 'student';
-              }
+              if (emailLower.startsWith('g-')) resolvedRole = 'teacher';
+              else if (emailLower.startsWith('m-')) resolvedRole = 'student';
 
               if (!userProfile || userProfile.id !== firebaseUser.uid) {
                 userProfile = {
                   id: firebaseUser.uid,
                   name: firebaseUser.displayName || (resolvedRole === 'teacher' ? "Cikgu MacroNexus" : "Pelajar MacroNexus"),
-                  email: email,
-                  role: resolvedRole,
-                  classCode: '',
-                  xp: 0,
-                  level: 1,
-                  attempts: 0,
-                  correct: 0
+                  email: email, role: resolvedRole, classCode: '', xp: 0, level: 1, attempts: 0, correct: 0
                 };
-                localStorage.setItem('macronexus_user_profile', JSON.stringify(userProfile));
-              } else {
-                if (userProfile.role !== resolvedRole) {
-                  userProfile.role = resolvedRole;
-                  localStorage.setItem('macronexus_user_profile', JSON.stringify(userProfile));
-                }
+              } else if (userProfile.role !== resolvedRole) {
+                userProfile.role = resolvedRole;
               }
+              localStorage.setItem('macronexus_user_profile', JSON.stringify(userProfile));
 
               window.state.user = userProfile;
-              window.state.role = window.state.user.role;
-              
-              if (window.state.role === 'teacher') {
-                window.state.activeClassCode = window.state.user.classCode || null;
-                window.state.activeClassName = window.state.user.className || null;
-              } else {
-                window.state.activeClassCode = window.state.user.classCode || null;
-              }
+              window.state.role = userProfile.role;
+              window.state.activeClassCode = userProfile.classCode || null;
+              window.state.activeClassName = userProfile.className || null;
 
-              const navName = document.getElementById('nav-user-name');
-              const navRole = document.getElementById('nav-user-role');
-              const navAvatar = document.getElementById('nav-avatar');
-              const navbar = document.getElementById('navbar');
-
-              if(navName) navName.innerText = window.state.user.name || "Pelajar";
-              if(navRole) navRole.innerText = window.state.role === 'teacher' ? 'Cikgu' : 'Pelajar';
-              if(navAvatar) navAvatar.innerText = (window.state.user.name || "M").charAt(0).toUpperCase();
-              if(navbar) navbar.classList.remove('hidden');
+              if(document.getElementById('nav-user-name')) document.getElementById('nav-user-name').innerText = window.state.user.name || "Pelajar";
+              if(document.getElementById('nav-user-role')) document.getElementById('nav-user-role').innerText = window.state.role === 'teacher' ? 'Cikgu' : 'Pelajar';
+              if(document.getElementById('nav-avatar')) document.getElementById('nav-avatar').innerText = (window.state.user.name || "M").charAt(0).toUpperCase();
+              if(document.getElementById('navbar')) document.getElementById('navbar').classList.remove('hidden');
 
               window.setAuthRole(window.state.role);
 
@@ -2055,9 +1789,7 @@
                 window.updateStudentDashboardUI();
                 window.showView('view-student-dashboard');
                 window.fetchQuestionsFromCloud().then((success) => {
-                  if (success) {
-                    window.updateStudentDashboardUI();
-                  }
+                  if (success) window.updateStudentDashboardUI();
                 });
               }
             } catch (e) {
@@ -2078,30 +1810,28 @@
              window.state.role = userProfile.role;
              window.state.activeClassCode = userProfile.classCode || null;
              window.state.activeClassName = userProfile.className || null;
-             
              window.syncDatabaseWithBackend();
-           } catch(err) {
-             window.showView('view-auth');
-           }
+           } catch(err) { window.showView('view-auth'); }
          } else {
            window.showView('view-auth');
          }
       }
     };
+  </script>
 
+  <!-- LISTENER EVENTS BAWAH -->
+  <script>
     document.addEventListener('DOMContentLoaded', () => {
-      initLucide();
-      loadLocalSettings();
+      window.initLucide();
+      window.loadLocalSettings();
       window.setAuthRole('student');
       
       window.fetchQuestionsFromCloud();
 
       setTimeout(() => {
         if (!window.firebaseReady || !window.state.user) {
-          console.warn("Firebase mengambil masa terlalu lama. Memintas ke mod tempatan...");
-          if (typeof window.initApp === 'function') {
-            window.initApp();
-          }
+          console.warn("Firebase lambat. Memintas ke mod tempatan...");
+          if (typeof window.initApp === 'function') window.initApp();
         }
       }, 3500);
 
@@ -2114,7 +1844,7 @@
           btnQuizSubmit.onclick = () => {
               const selected = window.state.quizState.answers[window.state.quizState.currentIndex];
               if (selected === undefined) {
-                window.showCustomModal("Jawapan Kosong", "Sila pilih sekurang-kurangnya satu jawapan sebelum memverifikasi.", "alert-circle");
+                window.showCustomModal("Jawapan Kosong", "Sila pilih satu jawapan dahulu.", "alert-circle");
                 return;
               }
 
@@ -2128,24 +1858,20 @@
               if (isCorrect) {
                 window.state.quizState.score++;
                 window.state.quizState.xpEarned += 30;
-                if (selectedBtn) selectedBtn.className = "w-full text-left p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-500/10 text-white transition-all font-bold flex items-center gap-3 break-words whitespace-normal leading-relaxed min-h-[3.5rem]";
+                if (selectedBtn) selectedBtn.className = "w-full text-left p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-500/10 text-white transition-all font-bold flex items-center gap-3 break-words whitespace-normal min-h-[3.5rem]";
               } else {
                 window.state.quizState.xpEarned += 10;
-                if (selectedBtn) selectedBtn.className = "w-full text-left p-4 rounded-2xl border-2 border-red-500 bg-red-500/10 text-white transition-all font-bold flex items-center gap-3 break-words whitespace-normal leading-relaxed min-h-[3.5rem]";
-                if (correctBtn) correctBtn.className = "w-full text-left p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-500/10 text-white transition-all font-bold flex items-center gap-3 break-words whitespace-normal leading-relaxed min-h-[3.5rem]";
+                if (selectedBtn) selectedBtn.className = "w-full text-left p-4 rounded-2xl border-2 border-red-500 bg-red-500/10 text-white transition-all font-bold flex items-center gap-3 break-words whitespace-normal min-h-[3.5rem]";
+                if (correctBtn) correctBtn.className = "w-full text-left p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-500/10 text-white transition-all font-bold flex items-center gap-3 break-words whitespace-normal min-h-[3.5rem]";
               }
 
               const expBox = document.getElementById('quiz-explanation-box');
               const expText = document.getElementById('quiz-explanation-text');
               
-              let explanationContent = q.explanation ? q.explanation : "Tiada butiran tambahan disertakan bagi soalan ini.";
+              let explanationContent = q.explanation ? q.explanation : "Tiada penerangan tambahan disertakan bagi soalan ini.";
               let correctAnswerLabel = String.fromCharCode(65 + q.answer);
               
-              expText.innerHTML = `
-                <span class="block text-emerald-400 font-bold mb-2">Jawapan Tepat: ${correctAnswerLabel} - ${escapeHtml(q.options[q.answer])}</span>
-                <span class="block text-zinc-300">${explanationContent}</span>
-              `;
-              
+              expText.innerHTML = `<span class="block text-emerald-400 font-bold mb-2">Jawapan Tepat: ${correctAnswerLabel} - ${window.escapeHtml(q.options[q.answer])}</span><span class="block text-zinc-300">${explanationContent}</span>`;
               expBox.classList.remove('hidden');
 
               document.getElementById('btn-quiz-submit').classList.add('hidden');
@@ -2159,11 +1885,8 @@
       if (btnQuizNext) {
           btnQuizNext.onclick = () => {
               window.state.quizState.currentIndex++;
-              if (window.state.quizState.currentIndex < window.state.quizState.questions.length) {
-                renderSingleQuestion();
-              } else {
-                concludeQuiz();
-              }
+              if (window.state.quizState.currentIndex < window.state.quizState.questions.length) window.renderSingleQuestion();
+              else window.concludeQuiz();
           };
       }
 
@@ -2175,66 +1898,44 @@
           const rawClassCode = document.getElementById('auth-classcode').value.trim().toUpperCase();
 
           if (!name) return;
-
           window.showView('view-loading');
-          document.getElementById('loading-text').innerText = "Mendaftarkan profil & menghubungkan Firebase...";
+          document.getElementById('loading-text').innerText = "Mendaftarkan profil...";
 
           try {
               window.state.role = window.state.selectedRole || 'student';
-
-              if (window.auth && !window.auth.currentUser) {
-                  await window.signInAnonymously(window.auth);
-              }
-
+              if (window.auth && !window.auth.currentUser) await window.signInAnonymously(window.auth);
               const currentRole = window.state.role;
 
               const profile = {
                 id: window.auth && window.auth.currentUser ? window.auth.currentUser.uid : 'OFFLINE_' + Date.now(),
-                name: name,
-                email: "",
-                role: currentRole,
-                classCode: currentRole === 'student' ? rawClassCode : '',
-                xp: 0,
-                level: 1,
-                attempts: 0,
-                correct: 0
+                name: name, email: "", role: currentRole, classCode: currentRole === 'student' ? rawClassCode : '', xp: 0, level: 1, attempts: 0, correct: 0
               };
 
               if (currentRole === 'student' && window.db) {
                 if (rawClassCode) {
-                  const classDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', rawClassCode);
-                  const classDoc = await window.getDoc(classDocRef);
+                  const classDoc = await window.getDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', rawClassCode));
                   if (!classDoc.exists()) {
-                    window.showCustomModal("Kelas Tidak Wujud", "Kod kelas yang dimasukkan tidak sah. Sila dapatkan kod yang betul dari guru anda.", "alert-triangle");
-                    window.showView('view-auth');
-                    return;
+                    window.showCustomModal("Kelas Tidak Wujud", "Kod kelas tidak sah.", "alert-triangle");
+                    window.showView('view-auth'); return;
                   }
                   const classData = classDoc.data();
                   profile.className = classData.className || "";
                   profile.teacherName = classData.teacherName || "";
                 } else {
-                  window.showCustomModal("Kod Kelas Diperlukan", "Pelajar wajib memasukkan kod kelas guru untuk mendaftar masuk secara manual.", "alert-triangle");
-                  window.showView('view-auth');
-                  return;
+                  window.showCustomModal("Kod Kelas Diperlukan", "Pelajar wajib memasukkan kod.", "alert-triangle");
+                  window.showView('view-auth'); return;
                 }
-
-                const privateDocRef = window.doc(window.db, 'artifacts', window.appId, 'users', profile.id, 'profile', 'main');
-                const studentDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', profile.id);
-                await window.setDoc(privateDocRef, profile);
-                await window.setDoc(studentDocRef, profile);
+                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', profile.id, 'profile', 'main'), profile);
+                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', profile.id), profile);
               } else if (currentRole === 'teacher' && window.db) {
-                const privateDocRef = window.doc(window.db, 'artifacts', window.appId, 'users', profile.id, 'profile', 'main');
-                await window.setDoc(privateDocRef, profile);
+                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', profile.id, 'profile', 'main'), profile);
               }
 
               localStorage.setItem('macronexus_user_profile', JSON.stringify(profile));
               window.state.user = profile;
-
               await window.fetchQuestionsFromCloud();
               window.syncDatabaseWithBackend();
-
           } catch (error) {
-               console.error("Kesalahan log masuk:", error);
                window.showCustomModal("Ralat", "Gagal mendaftar. Sila cuba lagi.", "alert-triangle");
                window.showView('view-auth');
           }
@@ -2245,11 +1946,7 @@
       if (teacherAnnouncementForm) {
         teacherAnnouncementForm.addEventListener('submit', async (e) => {
            e.preventDefault();
-           if (!window.state || !window.state.user || !window.state.activeClassCode) {
-               window.showCustomModal("Ralat Penghantaran", "Sila bina atau masuk semula ke kelas aktif sebelum menghantar pengumuman.", "alert-triangle");
-               return;
-           }
-           
+           if (!window.state.activeClassCode) return;
            const input = document.getElementById('teacher-announcement-input');
            const text = input.value.trim();
            if (!text) return;
@@ -2257,18 +1954,14 @@
            try {
                if (window.db) {
                    await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'announcements'), {
-                       classCode: window.state.activeClassCode,
-                       text: text,
-                       timestamp: window.serverTimestamp(),
-                       senderName: window.state.user.name || "Guru",
-                       senderId: window.auth && window.auth.currentUser ? window.auth.currentUser.uid : 'offline'
+                       classCode: window.state.activeClassCode, text: text, timestamp: window.serverTimestamp(),
+                       senderName: window.state.user.name || "Guru", senderId: window.auth.currentUser ? window.auth.currentUser.uid : 'offline'
                    });
                }
                input.value = '';
-               window.showCustomModal("Siaran Berjaya! 📣", "Pengumuman anda telah berjaya dihantar ke dalam kelas.", "check-circle", true);
+               window.showCustomModal("Siaran Berjaya! 📣", "Pengumuman berjaya dihantar.", "check-circle", true);
            } catch(err) {
-               console.error("Gagal menyiarkan pengumuman:", err);
-               window.showCustomModal("Ralat", "Gagal menyiarkan pengumuman ke kelas.", "alert-triangle");
+               window.showCustomModal("Ralat", "Gagal menyiarkan pengumuman.", "alert-triangle");
            }
         });
       }
@@ -2277,11 +1970,7 @@
       if (studentMsgForm) {
         studentMsgForm.addEventListener('submit', async (e) => {
            e.preventDefault();
-           if (!window.state || !window.state.user || !window.state.user.classCode) {
-               window.showCustomModal("Ralat Penghantaran", "Anda mesti menyertai sebuah kelas aktif terlebih dahulu sebelum menghantar mesej.", "alert-triangle");
-               return;
-           }
-           
+           if (!window.state.user.classCode) return;
            const input = document.getElementById('student-message-input');
            const text = input.value.trim();
            if (!text) return;
@@ -2289,17 +1978,13 @@
            try {
                if (window.db) {
                    await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'messages'), {
-                       classCode: window.state.user.classCode,
-                       text: text,
-                       timestamp: window.serverTimestamp(),
-                       senderName: window.state.user.name,
-                       senderId: window.auth && window.auth.currentUser ? window.auth.currentUser.uid : 'offline'
+                       classCode: window.state.user.classCode, text: text, timestamp: window.serverTimestamp(),
+                       senderName: window.state.user.name, senderId: window.auth.currentUser ? window.auth.currentUser.uid : 'offline'
                    });
                }
                input.value = '';
            } catch(err) {
-               console.error("Gagal menghantar mesej:", err);
-               window.showCustomModal("Ralat", "Gagal menghantar mesej ke kelas.", "alert-triangle");
+               window.showCustomModal("Ralat", "Gagal menghantar mesej.", "alert-triangle");
            }
         });
       }
@@ -2312,41 +1997,28 @@
           if (!className) return;
 
           window.showView('view-loading');
-          const loadingText = document.getElementById('loading-text');
-          if (loadingText) loadingText.innerText = "Membina kelas baharu di awan...";
+          document.getElementById('loading-text').innerText = "Membina kelas...";
 
           try {
             const classCode = "MKR" + Math.floor(1000 + Math.random() * 9000);
-            
             const user = window.state.user;
             user.classCode = classCode;
             user.className = className;
 
-            if (window.db && window.auth && window.auth.currentUser) {
-                const teacherDocRef = window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main');
-                await window.setDoc(teacherDocRef, user);
-
-                const classDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', classCode);
-                await window.setDoc(classDocRef, {
-                  classCode: classCode,
-                  className: className,
-                  teacherId: window.auth.currentUser.uid,
-                  teacherName: user.name,
-                  timestamp: window.serverTimestamp ? window.serverTimestamp() : new Date()
+            if (window.db && window.auth.currentUser) {
+                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main'), user);
+                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', classCode), {
+                  classCode: classCode, className: className, teacherId: window.auth.currentUser.uid, teacherName: user.name, timestamp: window.serverTimestamp ? window.serverTimestamp() : new Date()
                 });
             }
 
             window.state.activeClassCode = classCode;
             window.state.activeClassName = className;
-            window.state.user = user;
             localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
-
-            window.showCustomModal("Kelas Berjaya Dibina!", "Tahniah! Kelas <b>" + className + "</b> dengan kod kelas: <strong class='text-orange-500 font-mono tracking-wider'>" + classCode + "</strong> telah berjaya dibina.", "check-circle", true);
-            
+            window.showCustomModal("Kelas Berjaya Dibina!", `Kod kelas: <b>${classCode}</b>`, "check-circle", true);
             window.syncDatabaseWithBackend();
           } catch (err) {
-            console.error("Gagal membina kelas:", err);
-            window.showCustomModal("Ralat", "Gagal membina kelas baharu. Sila cuba lagi.", "alert-triangle");
+            window.showCustomModal("Ralat", "Gagal membina kelas.", "alert-triangle");
             window.syncDatabaseWithBackend();
           }
         });
@@ -2360,19 +2032,15 @@
           if (!classCodeInput) return;
 
           window.showView('view-loading');
-          const loadingText = document.getElementById('loading-text');
-          if (loadingText) loadingText.innerText = "Menyemak kod kelas di awan...";
+          document.getElementById('loading-text').innerText = "Menyemak kod...";
 
           try {
             let classData = { className: "Kelas Makroekonomi" };
             if (window.db) {
-                const classDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', classCodeInput);
-                const classDoc = await window.getDoc(classDocRef);
-
+                const classDoc = await window.getDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', classCodeInput));
                 if (!classDoc.exists()) {
-                  window.showCustomModal("Kelas Tidak Ditemui", "Maaf, kod kelas " + classCodeInput + " tidak wujud dalam pangkalan data.", "alert-triangle");
-                  window.syncDatabaseWithBackend();
-                  return;
+                  window.showCustomModal("Tidak Ditemui", "Kod kelas tidak sah.", "alert-triangle");
+                  window.syncDatabaseWithBackend(); return;
                 }
                 classData = classDoc.data();
             }
@@ -2381,27 +2049,16 @@
             user.classCode = classCodeInput;
             user.className = classData.className;
 
-            if (window.db && window.auth && window.auth.currentUser) {
-                const teacherDocRef = window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main');
-                await window.setDoc(teacherDocRef, user);
+            if (window.db && window.auth.currentUser) {
+                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main'), user);
             }
-
-            localStorage.setItem(`makroverse_teacher_class_${user.name}`, JSON.stringify({
-              classCode: classCodeInput,
-              className: classData.className
-            }));
-
             window.state.activeClassCode = classCodeInput;
             window.state.activeClassName = classData.className;
-            window.state.user = user;
             localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
-
-            window.showCustomModal("Masuk Semula Berjaya!", "Anda telah berjaya masuk semula ke kelas <b>" + classData.className + "</b>.", "check-circle", true);
-            
+            window.showCustomModal("Berjaya!", "Anda masuk semula ke kelas.", "check-circle", true);
             window.syncDatabaseWithBackend();
           } catch (err) {
-            console.error("Gagal masuk semula kelas:", err);
-            window.showCustomModal("Ralat", "Gagal menyambung ke kelas sedia ada. Sila cuba lagi.", "alert-triangle");
+            window.showCustomModal("Ralat", "Gagal menyambung kelas.", "alert-triangle");
             window.syncDatabaseWithBackend();
           }
         });
@@ -2415,19 +2072,14 @@
           if (!classCodeInput) return;
 
           window.showView('view-loading');
-          const loadingText = document.getElementById('loading-text');
-          if (loadingText) loadingText.innerText = "Menyemak kod kelas di awan...";
-
+          
           try {
             let classData = { className: "Kelas Luar Talian", teacherName: "Cikgu" };
             if (window.db) {
-                const classDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', classCodeInput);
-                const classDoc = await window.getDoc(classDocRef);
-
+                const classDoc = await window.getDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', classCodeInput));
                 if (!classDoc.exists()) {
-                  window.showCustomModal("Kelas Tidak Ditemui", "Maaf, kod kelas " + classCodeInput + " tidak wujud dalam pangkalan data.", "alert-triangle");
-                  window.syncDatabaseWithBackend();
-                  return;
+                  window.showCustomModal("Tidak Ditemui", "Kod kelas tidak sah.", "alert-triangle");
+                  window.syncDatabaseWithBackend(); return;
                 }
                 classData = classDoc.data();
             }
@@ -2437,23 +2089,15 @@
             user.className = classData.className || "";
             user.teacherName = classData.teacherName || "";
 
-            if (window.db && window.auth && window.auth.currentUser) {
-                const privateDocRef = window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main');
-                const studentDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', window.auth.currentUser.uid);
-                
-                await window.setDoc(privateDocRef, user);
-                await window.setDoc(studentDocRef, user);
+            if (window.db && window.auth.currentUser) {
+                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main'), user);
+                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', window.auth.currentUser.uid), user);
             }
-
-            window.state.user = user;
             localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
-
-            window.showCustomModal("Kelas Berjaya Disertai!", "Tahniah! Anda telah berjaya menyertai kelas <b>" + classData.className + "</b>.", "check-circle", true);
-            
+            window.showCustomModal("Berjaya!", "Telah menyertai kelas.", "check-circle", true);
             window.syncDatabaseWithBackend();
           } catch (err) {
-            console.error("Gagal menyertai kelas:", err);
-            window.showCustomModal("Ralat", "Gagal menyertai kelas. Sila cuba lagi.", "alert-triangle");
+            window.showCustomModal("Ralat", "Gagal menyertai kelas.", "alert-triangle");
             window.syncDatabaseWithBackend();
           }
         });
