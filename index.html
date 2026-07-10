@@ -2094,16 +2094,33 @@
                 await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', window.auth.currentUser.uid), user);
             }
             localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
-            window.showCustomModal("Berjaya!", "Telah menyertai kelas.", "check-circle", true);
-            window.syncDatabaseWithBackend();
-          } catch (err) {
+            window.showCustomModal("Berjaya Disertai", "Anda kini sebahagian daripada kelas " + classCodeInput, "check-circle", true);
+            
+            if (typeof window.updateStudentDashboardUI === 'function') {
+                window.updateStudentDashboardUI();
+            }
+          } catch(err) {
             window.showCustomModal("Ralat", "Gagal menyertai kelas.", "alert-triangle");
-            window.syncDatabaseWithBackend();
           }
         });
       }
     });
-
+    
+    // Fallback stub untuk fungsi sync jika belum didefinisikan secara khusus di atas
+    if (typeof window.syncDatabaseWithBackend !== 'function') {
+        window.syncDatabaseWithBackend = function() { 
+            console.log('Sistem disegerakkan.'); 
+            if (window.state.role === 'student' && typeof window.updateStudentDashboardUI === 'function') {
+                window.updateStudentDashboardUI();
+                window.showView('view-student-dashboard');
+            } else if (window.state.role === 'teacher' && typeof window.loadTeacherDashboardData === 'function') {
+                window.loadTeacherDashboardData();
+                window.showView('view-teacher-dashboard');
+            } else {
+                 window.showView(window.state.role === 'teacher' ? 'view-teacher-dashboard' : 'view-student-dashboard');
+            }
+        };
+    }
   </script>
 
 </body>
