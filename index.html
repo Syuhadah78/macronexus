@@ -1352,6 +1352,7 @@
     async function makeCloudCall(action, payload = {}) {
       if (!window.state || !window.state.apiConfig || !window.state.apiConfig.gasUrl) return { success: false };
       try {
+          // Selaraskan kiriman menggunakan JSON murni agar kompatibel dengan Apps Script Anda
           const response = await fetch(window.state.apiConfig.gasUrl, {
               method: 'POST',
               body: JSON.stringify({ action: action, ...payload })
@@ -1360,6 +1361,7 @@
           if (response.ok) {
               return { success: true };
           }
+          // Jika status adalah 200 atau 0 (disebabkan oleh redirection CORS pelayar), anggap berjaya
           return { success: response.status === 200 || response.status === 0 };
       } catch (error) {
           console.error("Ralat semasa melakukan makeCloudCall:", error);
@@ -2094,33 +2096,16 @@
                 await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', window.auth.currentUser.uid), user);
             }
             localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
-            window.showCustomModal("Berjaya Disertai", "Anda kini sebahagian daripada kelas " + classCodeInput, "check-circle", true);
-            
-            if (typeof window.updateStudentDashboardUI === 'function') {
-                window.updateStudentDashboardUI();
-            }
-          } catch(err) {
+            window.showCustomModal("Berjaya!", "Telah menyertai kelas.", "check-circle", true);
+            window.syncDatabaseWithBackend();
+          } catch (err) {
             window.showCustomModal("Ralat", "Gagal menyertai kelas.", "alert-triangle");
+            window.syncDatabaseWithBackend();
           }
         });
       }
     });
-    
-    // Fallback stub untuk fungsi sync jika belum didefinisikan secara khusus di atas
-    if (typeof window.syncDatabaseWithBackend !== 'function') {
-        window.syncDatabaseWithBackend = function() { 
-            console.log('Sistem disegerakkan.'); 
-            if (window.state.role === 'student' && typeof window.updateStudentDashboardUI === 'function') {
-                window.updateStudentDashboardUI();
-                window.showView('view-student-dashboard');
-            } else if (window.state.role === 'teacher' && typeof window.loadTeacherDashboardData === 'function') {
-                window.loadTeacherDashboardData();
-                window.showView('view-teacher-dashboard');
-            } else {
-                 window.showView(window.state.role === 'teacher' ? 'view-teacher-dashboard' : 'view-student-dashboard');
-            }
-        };
-    }
+
   </script>
 
 </body>
