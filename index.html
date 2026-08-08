@@ -320,25 +320,26 @@
 
       <!-- AI Generator -->
       <div class="glass-panel p-4 sm:p-6 rounded-3xl border border-orange-500/10 mt-8">
-        <h2 class="text-base sm:text-xl font-bold text-white flex items-center gap-2 mb-4"><i data-lucide="sparkles" class="text-orange-500 w-5 h-5"></i> Penjana Soalan STPM AI</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div><label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Bab</label><select id="ai-gen-chapter" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs"><option value="0">Semua Soalan</option><option value="1">Bab 1</option><option value="2">Bab 2</option><option value="3">Bab 3</option><option value="4">Bab 4</option><option value="5">Bab 5</option></select></div>
-          <div><label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Destinasi</label><select id="ai-gen-destination" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs"><option value="sheet">Simpan ke Google Sheet</option><option value="csv">Muat Turun CSV</option></select></div>
-          <div class="flex flex-col justify-end"><button onclick="window.generateLiveQuestions()" id="btn-generate-batch" class="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-black font-bold rounded-xl text-xs flex justify-center gap-2"><i data-lucide="cloud-upload" class="w-4 h-4"></i> Jana Soalan</button></div>
+        <!-- Pemantauan Mesej Murid -->
+        <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between h-[380px]">
+          <div class="flex flex-col flex-grow overflow-hidden">
+            <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-2 shrink-0">
+              <i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Log Sembang Mesej Pelajar
+            </h3>
+            <div id="teacher-messages-container" class="flex-grow space-y-3 overflow-y-auto pr-1 custom-scrollbar pb-2 min-h-0">
+              <p class="text-zinc-500 text-xs italic">Belum ada mesej di kelas ini.</p>
+            </div>
+            
+            <form id="teacher-message-form" class="flex gap-2 pt-3 border-t border-white/5 mt-2 shrink-0">
+              <input required id="teacher-message-input" type="text" placeholder="Taip balasan mesej..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-white text-xs sm:text-sm focus:ring-1 focus:ring-amber-500 outline-none transition-all" />
+              <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-bold px-4 py-2 rounded-xl transition-all shrink-0 text-xs flex items-center justify-center gap-1.5">
+                <i data-lucide="send" class="w-4 h-4"></i> Balas
+              </button>
+            </form>
+          </div>
         </div>
-        <div id="ai-batch-loader" class="hidden flex-col items-center py-6 bg-zinc-950 mt-4 rounded-2xl"><div class="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div><p id="loader-status-text" class="text-sm font-bold text-amber-500 mt-2">Memproses...</p></div>
       </div>
 
-      <!-- Student Table -->
-      <div class="bg-zinc-950 border border-white/5 rounded-3xl overflow-hidden mt-8">
-        <div class="p-4 border-b border-white/5"><h2 class="text-base font-bold text-white flex items-center gap-2"><i data-lucide="users" class="text-orange-400 w-5 h-5"></i> Senarai Pelajar</h2></div>
-        <div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-zinc-900 text-zinc-400"><tr><th class="p-3">Nama</th><th class="p-3">Tahap</th><th class="p-3">XP</th><th class="p-3">Ketepatan</th><th class="p-3 text-center">Tindakan</th></tr></thead><tbody id="students-table-body" class="divide-y divide-white/5"><tr><td colspan="5" class="p-4 text-center text-zinc-500">Tiada pelajar ditemui.</td></tr></tbody></table></div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        <div class="glass-panel p-5 rounded-3xl h-[380px] flex flex-col"><h3 class="text-sm font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-4"><i data-lucide="megaphone" class="text-orange-500 w-4 h-4"></i> Pengumuman</h3><form id="teacher-announcement-form" class="space-y-3"><textarea required id="teacher-announcement-input" class="w-full h-20 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs"></textarea><button type="submit" class="w-full py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 text-black font-bold rounded-xl text-xs">Siarkan</button></form><div class="mt-4 border-t border-white/5 pt-2"><div id="teacher-announcements-list" class="overflow-y-auto max-h-[100px] text-xs text-zinc-400"></div></div></div>
-        <div class="glass-panel p-5 rounded-3xl h-[380px] flex flex-col"><h3 class="text-sm font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-2"><i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Sembang Kelas</h3><div id="teacher-messages-container" class="flex-grow overflow-y-auto space-y-2 custom-scrollbar"></div></div>
-      </div>
     </div>
 
     <!-- VIEW 4: STUDENT DASHBOARD -->
@@ -762,13 +763,71 @@
     };
 
     window.exitQuiz = function() {
-        if (confirm("Adakah anda pasti ingin membatalkan sesi latihan ini? Sebarang markah semasa tidak akan disimpan.")) { if (window.state.quizState.timerInterval) clearInterval(window.state.quizState.timerInterval); window.backToDashboard(); }
+        if (confirm("Adakah anda pasti ingin membatalkan sesi latihan ini? Sebarang markah semasa tidak akan disimpan.")) {
+          if (window.state.quizState.timerInterval) clearInterval(window.state.quizState.timerInterval);
+          window.backToDashboard();
+        }
     };
 
-    window.backToDashboard = function() { window.syncDatabaseWithBackend(); };
-  </script>
+    window.backToDashboard = function() {
+        window.syncDatabaseWithBackend();
+    };
 
-  <script>
+    window.listenAnnouncements = function() {
+        const targetCode = window.state.user ? (window.state.user.classCode || window.state.activeClassCode) : null;
+        if(!window.db || !targetCode) return;
+        const q = window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'announcements'));
+        window.onSnapshot(q, (snapshot) => {
+            const ls1 = document.getElementById('teacher-announcements-list'); 
+            const ls2 = document.getElementById('student-announcements-list'); 
+            let msgs = [];
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                if(d.classCode === targetCode) msgs.push(d);
+            });
+            msgs.sort((a, b) => {
+                const tA = a.timestamp ? (typeof a.timestamp.toMillis === 'function' ? a.timestamp.toMillis() : a.timestamp) : Date.now();
+                const tB = b.timestamp ? (typeof b.timestamp.toMillis === 'function' ? b.timestamp.toMillis() : b.timestamp) : Date.now();
+                return tB - tA; // menurun (terkini di atas)
+            });
+            let html = '';
+            msgs.forEach(d => {
+                html += `<div class="p-3 bg-zinc-900 border border-zinc-800 rounded-lg mb-2"><div class="flex justify-between items-center mb-1"><span class="font-bold text-orange-400 text-[10px]">${window.escapeHtml(d.senderName)}</span></div><p class="text-zinc-300">${window.escapeHtml(d.text)}</p></div>`;
+            });
+            if(html === '') html = '<p class="text-zinc-600 italic">Belum ada pengumuman.</p>';
+            if(ls1) ls1.innerHTML = html; 
+            if(ls2) ls2.innerHTML = html;
+        }, (err) => console.log(err));
+    };
+
+    window.listenMessages = function() {
+        const targetCode = window.state.user ? (window.state.user.classCode || window.state.activeClassCode) : null;
+        if(!window.db || !targetCode) return;
+        const q = window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'messages'));
+        window.onSnapshot(q, (snapshot) => {
+            const ls1 = document.getElementById('teacher-messages-container'); 
+            const ls2 = document.getElementById('student-messages-container'); 
+            let msgs = [];
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                if(d.classCode === targetCode) msgs.push(d);
+            });
+            msgs.sort((a, b) => {
+                const tA = a.timestamp ? (typeof a.timestamp.toMillis === 'function' ? a.timestamp.toMillis() : a.timestamp) : Date.now();
+                const tB = b.timestamp ? (typeof b.timestamp.toMillis === 'function' ? b.timestamp.toMillis() : b.timestamp) : Date.now();
+                return tA - tB; // menaik (terlama di atas)
+            });
+            let html = '';
+            msgs.forEach(d => {
+                const isSelf = window.auth && window.auth.currentUser && d.senderId === window.auth.currentUser.uid;
+                html += `<div class="p-2.5 rounded-lg mb-2 ${isSelf ? 'bg-amber-500/10 border border-amber-500/20 ml-4' : 'bg-zinc-900 border border-zinc-800 mr-4'}"><span class="font-bold text-[10px] block mb-0.5 ${isSelf ? 'text-amber-500 text-right' : 'text-zinc-400'}">${window.escapeHtml(d.senderName)}</span><p class="${isSelf ? 'text-amber-100 text-right' : 'text-zinc-300'}">${window.escapeHtml(d.text)}</p></div>`;
+            });
+            if(html === '') html = '<p class="text-zinc-600 italic">Belum ada mesej.</p>';
+            if(ls1) { ls1.innerHTML = html; ls1.scrollTop = ls1.scrollHeight; } 
+            if(ls2) { ls2.innerHTML = html; ls2.scrollTop = ls2.scrollHeight; }
+        }, (err) => console.log(err));
+    };
+
     window.initApp = function() {
       if (window.appInitialized) return;
       window.appInitialized = true;
@@ -877,26 +936,55 @@
       const teacherAnnouncementForm = document.getElementById('teacher-announcement-form');
       if (teacherAnnouncementForm) {
         teacherAnnouncementForm.addEventListener('submit', async (e) => {
-           e.preventDefault(); if (!window.state.activeClassCode) return;
-           const input = document.getElementById('teacher-announcement-input'); const text = input.value.trim(); if (!text) return;
+           e.preventDefault();
+           if (!window.state.activeClassCode) return;
+           const input = document.getElementById('teacher-announcement-input');
+           const text = input.value.trim();
+           if (!text) return;
+
            try {
-               if (window.db) { await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'announcements'), { classCode: window.state.activeClassCode, text: text, timestamp: window.serverTimestamp(), senderName: window.state.user.name || "Guru", senderId: window.auth.currentUser ? window.auth.currentUser.uid : 'offline' }); }
-               input.value = ''; window.showCustomModal("Siaran Berjaya! 📣", "Pengumuman berjaya dihantar.", "check-circle", true);
-           } catch(err) { window.showCustomModal("Ralat", "Gagal menyiarkan pengumuman.", "alert-triangle"); }
+               if (window.db) {
+                   await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'announcements'), {
+                       classCode: window.state.activeClassCode, text: text, timestamp: window.serverTimestamp(),
+                       senderName: window.state.user.name || "Guru", senderId: window.auth.currentUser ? window.auth.currentUser.uid : 'offline'
+                   });
+               }
+               input.value = '';
+               window.showCustomModal("Siaran Berjaya! 📣", "Pengumuman berjaya dihantar.", "check-circle", true);
+           } catch(err) {
+               window.showCustomModal("Ralat", "Gagal menyiarkan pengumuman.", "alert-triangle");
+           }
         });
       }
 
-      const studentMsgForm = document.getElementById('student-message-form');
-      if (studentMsgForm) {
-        studentMsgForm.addEventListener('submit', async (e) => {
-           e.preventDefault(); if (!window.state.user.classCode) return;
-           const input = document.getElementById('student-message-input'); const text = input.value.trim(); if (!text) return;
-           try {
-               if (window.db) { await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'messages'), { classCode: window.state.user.classCode, text: text, timestamp: window.serverTimestamp(), senderName: window.state.user.name, senderId: window.auth.currentUser ? window.auth.currentUser.uid : 'offline' }); }
-               input.value = '';
-           } catch(err) { window.showCustomModal("Ralat", "Gagal menghantar mesej.", "alert-triangle"); }
-        });
-      }
+      const attachChatHandler = (formId, inputId) => {
+        const form = document.getElementById(formId);
+        if (form) {
+          form.addEventListener('submit', async (e) => {
+             e.preventDefault();
+             const cCode = window.state.user ? (window.state.user.classCode || window.state.activeClassCode) : null;
+             if (!cCode) return;
+             const input = document.getElementById(inputId);
+             const text = input.value.trim();
+             if (!text) return;
+
+             try {
+                 if (window.db) {
+                     await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'messages'), {
+                         classCode: cCode, text: text, timestamp: window.serverTimestamp(),
+                         senderName: window.state.user.name, senderId: window.auth.currentUser ? window.auth.currentUser.uid : 'offline'
+                     });
+                 }
+                 input.value = '';
+             } catch(err) {
+                 window.showCustomModal("Ralat", "Gagal menghantar mesej.", "alert-triangle");
+             }
+          });
+        }
+      };
+
+      attachChatHandler('student-message-form', 'student-message-input');
+      attachChatHandler('teacher-message-form', 'teacher-message-input');
 
       const createClassForm = document.getElementById('create-class-form');
       if (createClassForm) {
