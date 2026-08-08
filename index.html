@@ -318,18 +318,99 @@
         <div class="glass-panel p-4 sm:p-6 rounded-3xl relative overflow-hidden"><div class="absolute top-0 right-0 w-20 h-20 bg-yellow-500/10 rounded-bl-full"></div><div class="w-10 h-10 rounded-xl bg-yellow-500/10 text-yellow-500 mb-3 flex items-center justify-center"><i data-lucide="bar-chart-3"></i></div><div id="stat-teacher-accuracy" class="text-2xl font-black text-white">0%</div><div class="text-[10px] text-zinc-500 font-bold uppercase">Ketepatan Kelas</div></div>
       </div>
 
-      <!-- AI Generator -->
+      <!-- AI Generator Widget -->
       <div class="glass-panel p-4 sm:p-6 rounded-3xl border border-orange-500/10 mt-8">
-        <!-- Pemantauan Mesej Murid -->
+        <h2 class="text-base sm:text-xl font-bold text-white flex items-center gap-2 mb-4 leading-tight">
+          <i data-lucide="sparkles" class="text-orange-500 w-5 h-5 shrink-0"></i> Penjana Soalan STPM AI
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Liputan Bab</label>
+            <select id="ai-gen-chapter" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
+              <option value="0" selected>Semua Soalan (100 Soalan Campuran)</option>
+              <option value="1">Bab 1: Pengenalan Makroekonomi</option>
+              <option value="2">Bab 2: Perakaunan Pendapatan Negara</option>
+              <option value="3">Bab 3: Keseimbangan Pendapatan Negara</option>
+              <option value="4">Bab 4: Wang, Bank dan Dasar Kewangan</option>
+              <option value="5">Bab 5: Perdagangan Antarabangsa</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Target Penyimpanan AI</label>
+            <select id="ai-gen-destination" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500">
+              <option value="sheet" selected>Simpan Terus ke Google Sheet Baru</option>
+              <option value="csv">Jana & Muat Turun Fail CSV</option>
+            </select>
+          </div>
+          <div class="flex flex-col justify-end md:col-span-1 sm:col-span-2">
+            <button onclick="window.generateLiveQuestions()" id="btn-generate-batch" class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 text-xs sm:text-sm min-h-[3rem] leading-tight text-center disabled:opacity-50 whitespace-normal break-words">
+              <i data-lucide="cloud-upload" class="w-4 h-4 shrink-0"></i> <span>Jana & Proses Soalan</span>
+            </button>
+          </div>
+        </div>
+        <div id="ai-batch-loader" class="hidden flex-col items-center py-6 bg-zinc-950 rounded-2xl border border-orange-500/10 mt-4 px-4 text-center">
+          <div class="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+          <p id="loader-status-text" class="text-sm font-bold text-amber-500 leading-tight">Berkomunikasi dengan Gemini AI...</p>
+        </div>
+      </div>
+
+      <!-- Student List Table -->
+      <div class="bg-zinc-950 border border-white/5 rounded-3xl overflow-hidden shadow-xl mt-8">
+        <div class="p-4 sm:p-6 border-b border-white/5">
+          <h2 class="text-base sm:text-xl font-bold text-white flex items-center gap-2 leading-tight">
+            <i data-lucide="users" class="text-orange-400 w-5 h-5 font-bold"></i> Senarai Pelajar
+          </h2>
+        </div>
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left border-collapse min-w-[500px]">
+            <thead>
+              <tr class="bg-zinc-900 text-zinc-400 text-[10px] sm:text-xs">
+                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Nama Pelajar</th>
+                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Tahap</th>
+                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">XP</th>
+                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider">Ketepatan</th>
+                <th class="p-3 sm:p-4 font-bold uppercase tracking-wider text-center">Tindakan</th>
+              </tr>
+            </thead>
+            <tbody id="students-table-body" class="divide-y divide-white/5 text-xs sm:text-sm">
+              <tr><td colspan="5" class="p-6 text-center text-zinc-500">Tiada pelajar ditemui.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Lajur Pengumuman & Sembang -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mt-8">
+        <!-- Pengumuman Kelas -->
+        <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between h-[380px]">
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-4">
+              <i data-lucide="megaphone" class="text-orange-500 w-4 h-4"></i> Siarkan Pengumuman
+            </h3>
+            <form id="teacher-announcement-form" class="space-y-3">
+              <textarea required id="teacher-announcement-input" placeholder="Tuliskan pengumuman penting untuk semua pelajar di kelas ini..." class="w-full h-24 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500 resize-none"></textarea>
+              <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold rounded-xl transition-all shadow-lg text-xs sm:text-sm">
+                Siarkan
+              </button>
+            </form>
+          </div>
+          <div class="border-t border-white/5 pt-3 mt-3">
+            <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-2">Terkini:</h4>
+            <div id="teacher-announcements-list" class="overflow-y-auto max-h-[80px] custom-scrollbar space-y-1 text-xs text-zinc-400 font-sans">
+              <p class="text-zinc-600 italic">Belum ada pengumuman.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Log Sembang -->
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between h-[380px]">
           <div class="flex flex-col flex-grow overflow-hidden">
             <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-2 shrink-0">
-              <i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Log Sembang Mesej Pelajar
+              <i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Log Sembang Pelajar
             </h3>
             <div id="teacher-messages-container" class="flex-grow space-y-3 overflow-y-auto pr-1 custom-scrollbar pb-2 min-h-0">
               <p class="text-zinc-500 text-xs italic">Belum ada mesej di kelas ini.</p>
             </div>
-            
             <form id="teacher-message-form" class="flex gap-2 pt-3 border-t border-white/5 mt-2 shrink-0">
               <input required id="teacher-message-input" type="text" placeholder="Taip balasan mesej..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-white text-xs sm:text-sm focus:ring-1 focus:ring-amber-500 outline-none transition-all" />
               <button type="submit" class="bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-bold px-4 py-2 rounded-xl transition-all shrink-0 text-xs flex items-center justify-center gap-1.5">
