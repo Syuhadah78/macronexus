@@ -446,12 +446,23 @@
         return;
       }
       const provider = new GoogleAuthProvider();
+      
+      const loadingTimeout = setTimeout(() => {
+          if (document.getElementById('view-loading') && !document.getElementById('view-loading').classList.contains('hidden')) {
+              if (window.showView) window.showView('view-auth');
+              if (window.showCustomModal) {
+                  window.showCustomModal("Sesi Tamat (Timeout)", "Proses log masuk Google disekat oleh pelayar di dalam mod Previu (iFrame).<br><br>👉 <b>Sila gunakan borang Daftar & Masuk Manual</b> di bawah. Ia 100% berfungsi dan terus bersambung ke pangkalan data!", "clock", false);
+              }
+          }
+      }, 20000);
+
       try {
         if (window.showView) window.showView('view-loading');
         const loadingText = document.getElementById('loading-text');
         if (loadingText) loadingText.innerText = "Menghubungkan Google / DELIMa...";
 
         const result = await signInWithPopup(auth, provider);
+        clearTimeout(loadingTimeout);
         const firebaseUser = result.user;
         const email = firebaseUser.email || "";
         
@@ -517,7 +528,14 @@
           await window.fetchQuestionsFromCloud();
         }
 
+        if (window.syncDatabaseWithBackend) {
+            window.syncDatabaseWithBackend();
+        } else {
+            if (window.showView) window.showView(profile.role === 'teacher' ? 'view-teacher-dashboard' : 'view-student-dashboard');
+        }
+
       } catch (error) {
+        clearTimeout(loadingTimeout);
         if (error.code === 'auth/unauthorized-domain' || (error.message && error.message.includes('auth/unauthorized-domain'))) {
           const currentDomain = window.location.hostname;
           if (window.showCustomModal) {
@@ -1844,6 +1862,7 @@
 
               if (window.state.role === 'teacher') {
                 window.loadTeacherDashboardData();
+                window.showView('view-teacher-dashboard');
               } else {
                 window.updateStudentDashboardUI();
                 window.showView('view-student-dashboard');
