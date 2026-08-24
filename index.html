@@ -476,19 +476,21 @@
 
         const firebaseUser = result.user;
         const email = firebaseUser.email || "";
-        const emailLower = email.toLowerCase();
         
-        // PENGESANAN AUTOMATIK PERANAN (DELIMA / ADMIN)
         let detectedRole = 'student';
         let isAdmin = false;
-
+        const emailLower = email.toLowerCase();
+        
+        // PENGESANAN PERANAN AUTOMATIK DAN ADMIN UTAMA
         if (emailLower === 'g-18269504@moe-dl.edu.my') {
             detectedRole = 'teacher';
             isAdmin = true;
         } else if (emailLower.startsWith('g-')) {
-            detectedRole = 'teacher';
-        } else {
-            detectedRole = 'student';
+          detectedRole = 'teacher';
+        } else if (emailLower.startsWith('m-')) {
+          detectedRole = 'student';
+        } else if (window.state && window.state.role) {
+          detectedRole = window.state.role;
         }
         
         const profile = {
@@ -497,7 +499,7 @@
           email: email,
           role: detectedRole,
           isAdmin: isAdmin,
-          classCode: '',
+          classCode: (window.state && window.state.activeClassCode) ? window.state.activeClassCode : '',
           xp: 0,
           level: 1,
           attempts: 0,
@@ -1532,12 +1534,59 @@
         document.getElementById('new-class-name').focus();
     };
 
-    window.resumeExistingClass = async function() {
+    // FUNGSI BARU: Memproses Kelas Lama Tanpa Menghantar Borang
+    window.executeResumeClass = async function(classCodeInput) {
+        if (!classCodeInput) return;
+        
+        window.showView('view-loading');
+        document.getElementById('loading-text').innerText = "Menyemak rekod kelas...";
+
+        try {
+          let classData = { className: "Kelas Makroekonomi" };
+          if (window.db) {
+              const classDoc = await window.getDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', classCodeInput));
+              
+              if (!classDoc.exists()) {
+                window.showCustomModal("Tidak Ditemui", "Kod kelas yang lama tidak sah atau telah dipadam.", "alert-triangle");
+                // Membersihkan memori kod kelas yang rosak dari profil pengguna
+                if (window.state && window.state.user) {
+                    window.state.user.classCode = "";
+                    if (window.auth && window.auth.currentUser) {
+                        await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main'), { classCode: "" });
+                    }
+                    localStorage.setItem('macronexus_user_profile', JSON.stringify(window.state.user));
+                }
+                window.syncDatabaseWithBackend(); 
+                return;
+              }
+              classData = classDoc.data();
+          }
+          
+          const user = window.state.user;
+          user.classCode = classCodeInput;
+          user.className = classData.className;
+
+          if (window.db && window.auth.currentUser) {
+              await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main'), user);
+          }
+          window.state.activeClassCode = classCodeInput;
+          window.state.activeClassName = classData.className;
+          localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
+          window.showCustomModal("Berjaya!", "Anda masuk semula ke kelas sedia ada.", "check-circle", true);
+          window.syncDatabaseWithBackend();
+        } catch (err) {
+          console.error("Kesalahan Penyambungan:", err);
+          window.showCustomModal("Ralat", "Gagal menyambung kelas akibat ralat pelayan.", "alert-triangle");
+          window.syncDatabaseWithBackend();
+        }
+    };
+
+    window.resumeExistingClass = function() {
         const classCode = document.getElementById('resume-class-code').innerText;
         window.closeTeacherResumeModal();
         if (classCode) {
             document.getElementById('resume-class-input').value = classCode;
-            document.getElementById('resume-class-form').dispatchEvent(new Event('submit'));
+            window.executeResumeClass(classCode); // Memanggil secara terus tanpa sekatan UI
         }
     };
 
@@ -2178,41 +2227,10 @@
 
       const resumeClassForm = document.getElementById('resume-class-form');
       if (resumeClassForm) {
-        resumeClassForm.addEventListener('submit', async (e) => {
+        resumeClassForm.addEventListener('submit', (e) => {
           e.preventDefault();
           const classCodeInput = document.getElementById('resume-class-input').value.trim().toUpperCase();
-          if (!classCodeInput) return;
-
-          window.showView('view-loading');
-          document.getElementById('loading-text').innerText = "Menyemak kod...";
-
-          try {
-            let classData = { className: "Kelas Makroekonomi" };
-            if (window.db) {
-                const classDoc = await window.getDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', classCodeInput));
-                if (!classDoc.exists()) {
-                  window.showCustomModal("Tidak Ditemui", "Kod kelas tidak sah.", "alert-triangle");
-                  window.syncDatabaseWithBackend(); return;
-                }
-                classData = classDoc.data();
-            }
-            
-            const user = window.state.user;
-            user.classCode = classCodeInput;
-            user.className = classData.className;
-
-            if (window.db && window.auth.currentUser) {
-                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main'), user);
-            }
-            window.state.activeClassCode = classCodeInput;
-            window.state.activeClassName = classData.className;
-            localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
-            window.showCustomModal("Berjaya!", "Anda masuk semula ke kelas.", "check-circle", true);
-            window.syncDatabaseWithBackend();
-          } catch (err) {
-            window.showCustomModal("Ralat", "Gagal menyambung kelas.", "alert-triangle");
-            window.syncDatabaseWithBackend();
-          }
+          window.executeResumeClass(classCodeInput);
         });
       }
 
