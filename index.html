@@ -70,7 +70,6 @@
       return colors[Math.abs(hash) % colors.length];
     };
 
-    // Fungsi pembersihan JSON yang selamat dan ringkas (tidak merosakkan JSON sah)
     window.cleanJsonString = function(raw) {
       if (!raw) return "[]";
       let cleaned = raw.trim();
@@ -87,13 +86,16 @@
       if (window.lucide) window.lucide.createIcons(); 
     };
 
-    // FUNGSI AUTENTIKASI AWAL FIREBASE
     window.initialAuth = async function() {
       if (!window.auth) return;
       try {
           if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
               await window.signInWithCustomToken(window.auth, __initial_auth_token);
           } else {
+              if (localStorage.getItem('macronexus_logged_out') === 'true') {
+                  if (window.showView) window.showView('view-auth');
+                  return;
+              }
               await window.signInAnonymously(window.auth);
           }
       } catch (err) {
@@ -238,7 +240,7 @@
               method: 'POST',
               body: JSON.stringify({ action: action, ...payload })
           });
-          return { success: response.ok || response.status === 0 || response.status === 200 };
+          return { success: response.ok || response.status === 200 || response.status === 0 };
       } catch (error) {
           return { success: false };
       }
@@ -359,6 +361,15 @@
       if (success) window.showCustomModal("Penyegerakan Berjaya! 🔄", "Materi set soalan terkini telah dimuat turun dari awan!", "check-circle", true);
       else window.showCustomModal("Gagal Menyegerak", "Pangkalan data awan gagal dihubungi.", "alert-triangle", false);
     };
+
+    window.syncDatabaseWithBackend = function() {
+        if(window.state && window.state.role === 'teacher') {
+            window.loadTeacherDashboardData();
+        } else if (window.state && window.state.role === 'student') {
+            window.updateStudentDashboardUI();
+            window.showView('view-student-dashboard');
+        }
+    };
   </script>
 
   <!-- Pasang Tailwind CSS melalui CDN -->
@@ -398,7 +409,6 @@
     import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getFirestore, doc, setDoc, getDoc, collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, serverTimestamp, orderBy } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-    // Konfigurasi Firebase web app MacroNexus rasmi
     const firebaseConfig = {
       apiKey: "AIzaSyCDAGpmffFqw0ImEjmQmpmcRsoZ-v3UMqw",
       authDomain: "macronexus-7805.firebaseapp.com",
@@ -420,7 +430,6 @@
     
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'macronexus-7805';
 
-    // Mengeksport ke objek global Window untuk digunakan oleh skrip logik aplikasi
     window.db = db;
     window.auth = auth;
     window.appId = appId;
@@ -447,50 +456,48 @@
         return;
       }
       const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+
       try {
+        localStorage.removeItem('macronexus_logged_out');
         if (window.showView) window.showView('view-loading');
         const loadingText = document.getElementById('loading-text');
         if (loadingText) loadingText.innerText = "Menghubungkan Google / DELIMa...";
 
-        // PEMASA AUTOMATIK - 20 Saat (Sekiranya Tetingkap Preview Disekat)
-        const authTimeout = setTimeout(() => {
-          if (window.showCustomModal) {
-            window.showCustomModal(
-              "Sambungan Tergendala", 
-              "Sistem sekuriti pelayar/iFrame anda menyekat tetingkap log masuk Google.<br><br>👉 Sila guna kaedah <b>Daftar & Masuk Manual</b> di bawah.", 
-              "clock"
-            );
-          }
-          if (window.showView) window.showView('view-auth');
-        }, 20000); 
+        let loginTimeout = setTimeout(() => {
+             if (window.showCustomModal) {
+                 window.showCustomModal("Sambungan Tergendala", "Log masuk Google tersekat (berkemungkinan ditapis oleh pelayar web atau polisi Workspace). Sila gunakan 'Daftar & Masuk Manual'.", "alert-triangle");
+             }
+             if (window.showView) window.showView('view-auth');
+        }, 20000);
 
         const result = await signInWithPopup(auth, provider);
-        clearTimeout(authTimeout); // Hentikan pemasa jika log masuk berjaya
-        
+        clearTimeout(loginTimeout);
+
         const firebaseUser = result.user;
         const email = firebaseUser.email || "";
-        
-        let detectedRole = 'student';
         const emailLower = email.toLowerCase();
+        
+        // PENGESANAN AUTOMATIK PERANAN (DELIMA / ADMIN)
+        let detectedRole = 'student';
         let isAdmin = false;
 
-        // Auto-kesan peranan berdasarkan email DELIMa (Abaikan pilihan manual)
         if (emailLower === 'g-18269504@moe-dl.edu.my') {
-          detectedRole = 'teacher';
-          isAdmin = true;
+            detectedRole = 'teacher';
+            isAdmin = true;
         } else if (emailLower.startsWith('g-')) {
-          detectedRole = 'teacher';
-        } else if (emailLower.startsWith('m-')) {
-          detectedRole = 'student';
+            detectedRole = 'teacher';
+        } else {
+            detectedRole = 'student';
         }
         
         const profile = {
           id: firebaseUser.uid,
-          name: isAdmin ? "Admin Utama (Guru)" : (firebaseUser.displayName || "Pengguna MacroNexus"),
+          name: firebaseUser.displayName || "Pengguna MacroNexus",
           email: email,
           role: detectedRole,
           isAdmin: isAdmin,
-          classCode: (window.state && window.state.activeClassCode) ? window.state.activeClassCode : '',
+          classCode: '',
           xp: 0,
           level: 1,
           attempts: 0,
@@ -531,40 +538,29 @@
         if (window.state) {
           window.state.user = profile;
           window.state.role = profile.role;
+          window.state.activeClassCode = profile.classCode || null;
         }
 
         if (window.fetchQuestionsFromCloud) {
           await window.fetchQuestionsFromCloud();
         }
         
-        // Memaksa sistem untuk pergi ke papan pemuka segera selepas log masuk berjaya
-        if (window.syncDatabaseWithBackend) {
-          window.syncDatabaseWithBackend();
-        }
+        window.syncDatabaseWithBackend();
 
       } catch (error) {
-        if (error.code === 'auth/unauthorized-domain' || (error.message && error.message.includes('auth/unauthorized-domain'))) {
+        if (error.code === 'auth/unauthorized-domain' || error.code === 'auth/admin-restricted-operation' || (error.message && error.message.includes('domain'))) {
           const currentDomain = window.location.hostname;
           if (window.showCustomModal) {
             window.showCustomModal(
-              "Domain Pratinjau Belum Diizinkan", 
-              `Domain pratinjau saat ini (<b>${currentDomain}</b>) belum terdaftar di Firebase Console projek Anda.<br><br><b>Solusi Cepat & Mudah:</b><br>Silakan gunakan metode <b>Daftar & Masuk Manual</b> di bawah. Fitur ini berfungsi 100% dengan normal dan menyimpan semua data Anda ke database secara langsung!`, 
-              "shield-alert"
-            );
-          }
-        } else if (error.code === 'auth/admin-restricted-operation' || error.message.includes('admin restricted')) {
-           // Sekatan khas Google Workspace KPM
-           if (window.showCustomModal) {
-            window.showCustomModal(
-              "Log Masuk DELIMa Disekat", 
-              `Sistem sekuriti Google Workspace KPM menyekat akses aplikasi pihak ketiga. Sila isi nama penuh pada <b>Daftar & Masuk Manual</b> untuk memintas sekatan ini.`, 
+              "Akaun DELIMa Disekat Oauth", 
+              `Domain / Aplikasi ini masih belum disahkan sepenuhnya dalam senarai putih Google Workspace MOE.<br><br><b>Sila gunakan bahagian 'Daftar & Masuk Manual' di bawah.</b> Sistem akan terus menyimpan rekod anda dengan selamat.`, 
               "shield-alert"
             );
           }
         } else {
           console.error("Kesalahan log masuk Google:", error);
           if (window.showCustomModal) {
-            window.showCustomModal("Kesalahan Log Masuk", "Gagal masuk menggunakan Google/DELIMa. Sila guna log masuk manual.", "alert-triangle");
+            window.showCustomModal("Kesalahan Log Masuk", "Gagal masuk menggunakan Google/DELIMa. Silakan cuba lagi atau guna daftar manual.", "alert-triangle");
           }
         }
         if (window.showView) window.showView('view-auth');
@@ -651,10 +647,10 @@
       </div>
       <h3 class="text-xl sm:text-2xl font-bold text-white mb-2">Keluarkan Pelajar?</h3>
       <p class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-6 break-words">
-        Adakah anda pasti ingin mengeluarkan <strong id="delete-student-name" class="text-red-400"></strong> daripada kelas anda? Tindakan ini akan mengosongkan rekod kod kelas mereka.
+        Adakah anda pasti ingin mengeluarkan <strong id="delete-student-name" class="text-red-400"></strong> daripada kelas anda? Tindakan ini akan memadam data kelas mereka.
       </p>
       <div class="flex flex-col gap-3">
-        <button onclick="window.executeDeleteStudent()" id="btn-confirm-delete-execute" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center leading-tight bg-gradient-to-r from-red-600 to-orange-600 text-white font-extrabold rounded-xl transition-all shadow-lg hover:scale-[1.02] text-xs sm:text-sm">
+        <button id="btn-confirm-delete-execute" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center leading-tight bg-gradient-to-r from-red-600 to-orange-600 text-white font-extrabold rounded-xl transition-all shadow-lg hover:scale-[1.02] text-xs sm:text-sm">
           Ya, Keluarkan
         </button>
         <button onclick="window.closeConfirmDeleteModal()" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center leading-tight bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl transition-all border border-white/5 text-xs sm:text-sm">
@@ -755,43 +751,29 @@
           <p class="text-zinc-400 text-xs sm:text-sm px-2">Sistem Pembelajaran Pintar STPM Makroekonomi</p>
         </div>
 
+        <!-- GOOGLE / DELIMA LOGIN BUTTON (Berdiri Sendiri) -->
+        <div class="mb-5">
+          <button type="button" onclick="window.loginWithGoogle()" class="w-full bg-white text-black font-bold py-3.5 px-4 rounded-xl shadow-lg hover:bg-gray-100 transition-all flex items-center justify-center gap-3 text-xs sm:text-sm transform hover:scale-[1.02]">
+            <svg class="w-5 h-5" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Masuk dengan Google / DELIMa
+          </button>
+          <p class="text-center text-[10px] text-zinc-500 mt-2 font-medium">Sistem mengesan Peranan (Guru/Pelajar) secara automatik.</p>
+        </div>
+
+        <div class="flex items-center gap-3 my-5">
+          <div class="flex-grow h-px bg-white/10"></div>
+          <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">ATAU DAFTAR MANUAL</span>
+          <div class="flex-grow h-px bg-white/10"></div>
+        </div>
+
         <form id="auth-form" class="space-y-5 sm:space-y-6">
-          
-          <!-- GOOGLE / DELIMA LOGIN BUTTON (Dialihkan ke atas) -->
-          <div class="mb-4">
-            <button type="button" onclick="window.loginWithGoogle()" class="w-full bg-white text-black font-bold py-3.5 px-4 rounded-xl shadow-lg hover:bg-gray-100 transition-all flex items-center justify-center gap-3 text-xs sm:text-sm transform hover:scale-[1.02]">
-              <svg class="w-5 h-5" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-              Masuk dengan Google / DELIMa
-            </button>
-
-            <!-- MAKLUMAN KHAS PENGGUNA DELIMa -->
-            <div class="mt-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-left">
-              <div class="flex gap-2 items-start text-amber-500 font-bold text-xs mb-1">
-                <i data-lucide="info" class="w-4 h-4 shrink-0 mt-0.5 animate-pulse"></i>
-                <span>Makluman Pengguna Sistem DELIMa</span>
-              </div>
-              <p class="text-[10px] text-zinc-400 leading-relaxed font-medium">
-                Sistem akan membaca awalan emel anda secara automatik (<span class="text-amber-400 font-semibold">g- / m-</span>) untuk menetapkan status Guru atau Pelajar, serta Admin Khas. Tiada pemilihan peranan manual diperlukan untuk DELIMa.
-              </p>
-              <p class="text-[10px] text-zinc-300 leading-relaxed font-bold mt-1.5 border-t border-amber-500/10 pt-1.5">
-                👉 Jika tetingkap Google <span class="text-red-400">disekat/gagal</span> dipaparkan, sila guna pendaftaran manual di bawah.
-              </p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-3 my-5">
-            <div class="flex-grow h-px bg-white/10"></div>
-            <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">ATAU DAFTAR MANUAL</span>
-            <div class="flex-grow h-px bg-white/10"></div>
-          </div>
-
-          <!-- PILIHAN PERANAN DIALIHKAN KE SINI (KHAS UNTUK MANUAL) -->
-          <div class="grid grid-cols-2 gap-3 mb-4" id="role-selection">
+          <!-- Pilihan Peranan bagi Daftar Manual Sahaja -->
+          <div class="grid grid-cols-2 gap-3" id="role-selection">
             <button type="button" onclick="window.setAuthRole('student')" id="btn-role-student" class="p-3 sm:p-4 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-amber-500 flex flex-col items-center justify-center gap-2 transition-all min-h-[4rem] w-full">
               <i data-lucide="users" class="w-5 h-5 sm:w-6 sm:h-6 shrink-0"></i>
               <span class="font-bold text-xs sm:text-sm text-center break-words whitespace-normal leading-tight">Pelajar</span>
@@ -1002,7 +984,6 @@
             <h1 id="welcome-student-title" class="text-2xl sm:text-3xl font-black text-white mb-2 leading-tight break-words">Selamat Belajar! 📚</h1>
             <p id="student-live-cloud-text" class="text-zinc-400 max-w-lg text-xs sm:text-sm leading-relaxed break-words mb-3">Prestasi dan skor kuiz anda kini disimpan secara live ke Google Sheets!</p>
             
-            <!-- Elemen Spanduk Kelas Berlangsung Sesuai Permintaan -->
             <div id="student-active-class-info" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs sm:text-sm font-bold hidden">
               <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
               <span id="student-active-class-text"></span>
@@ -1011,7 +992,6 @@
         </div>
       </div>
 
-      <!-- Ruangan Sertai Kelas (Jika belum ada Kod Kelas) -->
       <div id="student-join-class-panel" class="hidden glass-panel p-5 sm:p-6 rounded-3xl border border-amber-500/30 animate-slide-in">
         <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 mb-3">
           <i data-lucide="key-round" class="text-amber-500 w-5 h-5 shrink-0"></i> Sertai Kelas Guru
@@ -1025,10 +1005,8 @@
         </form>
       </div>
 
-      <!-- Baris 1: Soalan Terjawab, Ketepatan & Tahap Masteri Sebaris Melintang -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
         
-        <!-- Soalan Terjawab (Kiri) -->
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col items-center justify-center text-center min-h-[160px]">
           <div class="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500 mb-3">
             <i data-lucide="target" class="w-5 h-5"></i>
@@ -1037,7 +1015,6 @@
           <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider mt-1 leading-tight break-words">Soalan Terjawab</div>
         </div>
 
-        <!-- Ketepatan (Tengah) -->
         <div class="glass-panel p-5 sm:p-6 rounded-3xl text-center flex flex-col items-center justify-center min-h-[160px]">
           <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 mb-3">
             <i data-lucide="trophy" class="w-5 h-5"></i>
@@ -1046,7 +1023,6 @@
           <div class="text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-wider mt-1 leading-tight break-words">Ketepatan</div>
         </div>
 
-        <!-- Tahap Masteri (Kanan) -->
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-center min-h-[160px]">
           <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-end mb-3 gap-2">
             <div>
@@ -1069,7 +1045,6 @@
 
       </div>
 
-      <!-- Baris 2: Tetapan Pilihan Latihan (Teratur) -->
       <div class="glass-panel p-5 sm:p-6 rounded-3xl space-y-4 border border-orange-500/20">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-3 gap-3">
           <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
@@ -1085,7 +1060,6 @@
           </div>
         </div>
         
-        <!-- Pilihan Dropdown Disusun Semula: Set, Bab, Mod Latihan -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label class="block text-[10px] sm:text-xs font-bold text-zinc-400 uppercase mb-1.5">Pilih Set Soalan</label>
@@ -1119,7 +1093,6 @@
         </div>
       </div>
 
-      <!-- Baris 3: Pengumuman Kelas & Mesej Murid (Sebaris) -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
         <!-- Pengumuman Kelas -->
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col h-[380px]">
@@ -1262,173 +1235,10 @@
 
   <!-- SISTEM UTAMA SKRIPTING -->
   <script>
-    // 1. Variabel Global
-    window.db = null;
-    window.auth = null;
-    window.appId = 'macronexus-7805';
-
     let unsubscribeStudents = null;
     let unsubscribeAnnouncements = null;
     let unsubscribeMessages = null;
-
-    // Kumpulan Bank Soalan Cadangan STPM (Fallback)
-    const localFallbackQuestions = [
-      {
-        id: "LOCAL_B1_Q01",
-        chapter: "1",
-        sheetName: "Set 1",
-        text: "Antara yang berikut, yang manakah merupakan bidang kajian makroekonomi?",
-        options: [
-          "Kajian tentang gelagat pengguna dalam pasaran barang",
-          "Kajian tentang penentuan harga faktor pengeluaran",
-          "Kajian tentang tingkat harga umum and inflasi negara",
-          "Kajian tentang kos pengeluaran firma individu"
-        ],
-        answer: 2,
-        explanation: "Makroekonomi mengkaji petunjuk ekonomi agregat (menyeluruh) seperti tingkat harga umum, inflasi, guna tenaga, dan pendapatan negara."
-      },
-      {
-        id: "LOCAL_B1_Q02",
-        chapter: "1",
-        sheetName: "Set 1",
-        text: "Dasar fiskal mengawal ekonomi negara melalui instrumen...",
-        options: [
-          "Kadar bunga dan rizab tunai bank",
-          "Perbelanjaan kerajaan dan cukai",
-          "Kadar pertukaran wang asing",
-          "Pemberian pinjaman mikro"
-        ],
-        answer: 1,
-        explanation: "Dasar fiskal dikawal oleh kerajaan menggunakan instrumen cukai ($T$) and perbelanjaan kerajaan ($G$)."
-      },
-      {
-        id: "LOCAL_B2_Q01",
-        chapter: "2",
-        sheetName: "Set 1",
-        text: "Pendapatan negara dihitung dengan menggunakan tiga kaedah utama, kecuali...",
-        options: [
-          "Kaedah perbelanjaan",
-          "Kaedah keluaran",
-          "Kaedah pendapatan",
-          "Kaedah pembiayaan"
-        ],
-        answer: 3,
-        explanation: "Tiga kaedah pengiraan pendapatan negara yang sah ialah kaedah keluaran, kaedah perbelanjaan, dan kaedah pendapatan."
-      },
-      {
-        id: "LOCAL_B3_Q01",
-        chapter: "3",
-        sheetName: "Set 1",
-        text: "Dalam analisis ekonomi 2 sektor, keseimbangan pendapatan negara tercapai apabila...",
-        options: [
-          "$Y = C + I$",
-          "$Y = C + S$",
-          "$S = Y - I$",
-          "$Y = C + I + G$"
-        ],
-        answer: 0,
-        explanation: "Keseimbangan pendapatan negara bagi ekonomi 2 sektor (isi rumah dan firma) tercapai apabila penawaran agregat ($Y$) sama dengan permintaan agregat ($AD = C + I$)."
-      },
-      {
-        id: "LOCAL_B4_Q01",
-        chapter: "4",
-        sheetName: "Set 1",
-        text: "Fungsi utama wang dalam ekonomi moden adalah sebagai...",
-        options: [
-          "Alat pengukur kekayaan peribadi sahaja",
-          "Alat perantaraan pertukaran yang sah",
-          "Alat kawalan inflasi langsung",
-          "Jaminan kestabilan politik"
-        ],
-        answer: 1,
-        explanation: "Wang berfungsi sebagai alat perantaraan pertukaran yang menyelesaikan masalah kehendak serentak yang bertindih dalam sistem barter."
-      }
-    ];
-
-    // 2. Deklarasi Fungsi Global Standard (Terhindar dari Isu Hoisting)
-    function initLucide() { 
-      if (window.lucide) {
-        window.lucide.createIcons(); 
-      }
-    }
-    window.initLucide = initLucide;
-
-    async function initialAuth() {
-      if (!window.auth) return;
-      try {
-          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-              await window.signInWithCustomToken(window.auth, __initial_auth_token);
-          } else {
-              await window.signInAnonymously(window.auth);
-          }
-      } catch (err) {
-          console.warn("Autentikasi senyap gagal, sedia untuk pengesahan manual.");
-          window.showView('view-auth');
-      }
-    }
-    window.initialAuth = initialAuth;
-
-    function loadLocalSettings() {
-      try {
-        const config = localStorage.getItem('makroverse_api_config');
-        if (config) {
-          const parsed = JSON.parse(config);
-          window.state.apiConfig.gasUrl = parsed.gasUrl || window.state.apiConfig.gasUrl;
-          if (parsed.geminiKey !== undefined && parsed.geminiKey !== '') {
-             window.state.apiConfig.geminiKey = parsed.geminiKey;
-          }
-        }
-      } catch (e) { 
-        console.error("Ralat membaca tetapan konfigurasi.", e); 
-      }
-    }
-    window.loadLocalSettings = loadLocalSettings;
-
-    async function makeCloudCall(action, payload = {}) {
-      if (!window.state || !window.state.apiConfig || !window.state.apiConfig.gasUrl) return { success: false };
-      try {
-          // Selaraskan kiriman menggunakan JSON murni agar kompatibel dengan Apps Script Anda
-          const response = await fetch(window.state.apiConfig.gasUrl, {
-              method: 'POST',
-              body: JSON.stringify({ action: action, ...payload })
-          });
-          
-          if (response.ok) {
-              return { success: true };
-          }
-          // Jika status adalah 200 atau 0 (disebabkan oleh redirection CORS pelayar), anggap berjaya
-          return { success: response.status === 200 || response.status === 0 };
-      } catch (error) {
-          console.error("Ralat semasa melakukan makeCloudCall:", error);
-          return { success: false };
-      }
-    }
-    window.makeCloudCall = makeCloudCall;
-
-    window.syncDatabaseWithBackend = function() {
-        if (!window.state.user) {
-            window.showView('view-auth');
-            return;
-        }
-        
-        if (document.getElementById('nav-user-name')) {
-            document.getElementById('nav-user-name').innerText = window.state.user.name || "Pengguna";
-            document.getElementById('nav-user-role').innerText = window.state.user.role === 'teacher' ? 'Cikgu' : 'Pelajar';
-            document.getElementById('nav-avatar').innerText = (window.state.user.name || "U").charAt(0).toUpperCase();
-            document.getElementById('navbar').classList.remove('hidden');
-        }
-
-        if (window.state.role === 'teacher') {
-            if (window.loadTeacherDashboardData) {
-                window.loadTeacherDashboardData();
-            } else {
-                window.showView('view-teacher-dashboard');
-            }
-        } else {
-            window.updateStudentDashboardUI();
-            window.showView('view-student-dashboard');
-        }
-    };
+    let pendingDeleteStudentId = null;
 
     window.fetchStudentWelcomeMessage = function() {
       const quotes = ["Teruskan menjawab untuk mengumpul lebih banyak XP hari ini!", "Cemerlang STPM adalah sasaran utama kita!", "Wang & Bank adalah bab paling menarik untuk dikuasai!"];
@@ -1470,6 +1280,275 @@
         }
       }
       window.fetchStudentWelcomeMessage();
+    };
+
+    window.loadTeacherDashboardData = function() {
+        if (!window.state.user) return;
+
+        if (document.getElementById('nav-settings-btn')) {
+            document.getElementById('nav-settings-btn').classList.remove('hidden');
+        }
+        
+        if (!window.state.user.classCode) {
+            window.showView('view-teacher-dashboard');
+            document.getElementById('active-class-banner').classList.add('hidden');
+            
+            if (window.db && window.auth.currentUser) {
+                const classQuery = window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'classes'));
+                window.getDoc(window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main')).then(userDoc => {
+                    if (userDoc.exists() && userDoc.data().classCode) {
+                        const classCode = userDoc.data().classCode;
+                        document.getElementById('resume-class-code').innerText = classCode;
+                        const modal = document.getElementById('teacher-resume-modal');
+                        modal.classList.remove('hidden');
+                        setTimeout(() => {
+                            modal.classList.add('opacity-100');
+                            document.getElementById('teacher-resume-content').classList.remove('scale-95');
+                            document.getElementById('teacher-resume-content').classList.add('scale-100');
+                        }, 50);
+                    }
+                });
+            }
+            return;
+        }
+
+        document.getElementById('display-class-name').innerText = window.state.user.className || "Kelas Makroekonomi";
+        document.getElementById('display-class-code').innerText = window.state.activeClassCode;
+        document.getElementById('active-class-banner').classList.remove('hidden');
+        
+        window.showView('view-teacher-dashboard');
+        
+        window.listenStudents();
+        window.listenAnnouncements();
+        window.listenMessages();
+    };
+
+    window.listenStudents = function() {
+        if (!window.db || !window.state.activeClassCode) return;
+        if (unsubscribeStudents) unsubscribeStudents();
+        
+        const q = window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'students'));
+        
+        unsubscribeStudents = window.onSnapshot(q, (snapshot) => {
+            const tableBody = document.getElementById('students-table-body');
+            let totalStudents = 0, totalAttempts = 0, totalCorrect = 0;
+            
+            window.state.students = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.classCode === window.state.activeClassCode) {
+                    window.state.students.push({ id: doc.id, ...data });
+                    totalStudents++;
+                    totalAttempts += (data.attempts || 0);
+                    totalCorrect += (data.correct || 0);
+                }
+            });
+            
+            window.state.students.sort((a, b) => (b.xp || 0) - (a.xp || 0));
+            
+            document.getElementById('stat-teacher-students').innerText = totalStudents;
+            document.getElementById('stat-teacher-attempts').innerText = totalAttempts;
+            document.getElementById('stat-teacher-accuracy').innerText = totalAttempts > 0 ? Math.round((totalCorrect/totalAttempts)*100) + "%" : "0%";
+            
+            if (window.state.students.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-zinc-500 text-xs sm:text-sm">Tiada pelajar berdaftar dalam kelas ini.</td></tr>';
+            } else {
+                tableBody.innerHTML = window.state.students.map(s => {
+                    const accuracy = s.attempts > 0 ? Math.round((s.correct / s.attempts) * 100) : 0;
+                    return `
+                    <tr class="hover:bg-white/5 transition-colors group">
+                        <td class="p-3 sm:p-4 font-bold text-white flex items-center gap-2">
+                            <div class="w-6 h-6 rounded bg-zinc-800 text-[10px] flex items-center justify-center shrink-0 uppercase">${(s.name||"P").charAt(0)}</div>
+                            <span class="truncate max-w-[100px] sm:max-w-[200px]">${window.escapeHtml(s.name)}</span>
+                        </td>
+                        <td class="p-3 sm:p-4 text-zinc-400 font-mono text-[10px] sm:text-xs uppercase">${window.escapeHtml(s.classCode)}</td>
+                        <td class="p-3 sm:p-4 text-orange-400 font-bold">L${s.level || 1}</td>
+                        <td class="p-3 sm:p-4 text-amber-500 font-mono">${s.xp || 0}</td>
+                        <td class="p-3 sm:p-4 text-emerald-400 font-bold">${accuracy}%</td>
+                        <td class="p-3 sm:p-4 text-center">
+                            <button onclick="window.confirmDeleteStudent('${s.id}', '${window.escapeHtml(s.name).replace(/'/g, "\\'")}')" class="text-red-500/50 hover:text-red-500 p-1.5 sm:p-2 rounded-lg hover:bg-red-500/10 transition-all opacity-100 sm:opacity-0 group-hover:opacity-100 focus:opacity-100">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+                }).join('');
+                window.initLucide();
+            }
+        });
+    };
+
+    window.listenAnnouncements = function() {
+        if (!window.db || (!window.state.activeClassCode && (!window.state.user || !window.state.user.classCode))) return;
+        if (unsubscribeAnnouncements) unsubscribeAnnouncements();
+        
+        const targetClassCode = window.state.role === 'teacher' ? window.state.activeClassCode : window.state.user.classCode;
+        const q = window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'announcements'));
+        
+        unsubscribeAnnouncements = window.onSnapshot(q, (snapshot) => {
+            const listId = window.state.role === 'teacher' ? 'teacher-announcements-list' : 'student-announcements-list';
+            const listEl = document.getElementById(listId);
+            if (!listEl) return;
+            
+            let html = '';
+            let announcements = [];
+            
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.classCode === targetClassCode) {
+                    announcements.push(data);
+                }
+            });
+            
+            announcements.sort((a, b) => {
+                const timeA = a.timestamp ? (a.timestamp.toMillis ? a.timestamp.toMillis() : Date.parse(a.timestamp)) : 0;
+                const timeB = b.timestamp ? (b.timestamp.toMillis ? b.timestamp.toMillis() : Date.parse(b.timestamp)) : 0;
+                return timeB - timeA;
+            });
+            
+            if (announcements.length === 0) {
+                html = '<p class="text-zinc-600 italic text-xs">Belum ada pengumuman.</p>';
+            } else {
+                html = announcements.map(a => `
+                    <div class="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 mb-2 animate-slide-in">
+                        <div class="flex items-center justify-between gap-2 mb-1.5 border-b border-orange-500/10 pb-1.5">
+                           <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider">${window.escapeHtml(a.senderName)}</span>
+                           <span class="text-[9px] text-zinc-500">${a.timestamp && a.timestamp.toDate ? a.timestamp.toDate().toLocaleDateString('ms-MY', { day: 'numeric', month: 'short' }) : ''}</span>
+                        </div>
+                        <p class="text-zinc-300 text-[11px] sm:text-xs leading-relaxed font-medium break-words">${window.escapeHtml(a.text)}</p>
+                    </div>
+                `).join('');
+            }
+            listEl.innerHTML = html;
+        });
+    };
+
+    window.listenMessages = function() {
+        if (!window.db || (!window.state.activeClassCode && (!window.state.user || !window.state.user.classCode))) return;
+        if (unsubscribeMessages) unsubscribeMessages();
+        
+        const targetClassCode = window.state.role === 'teacher' ? window.state.activeClassCode : window.state.user.classCode;
+        const q = window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'messages'));
+        
+        unsubscribeMessages = window.onSnapshot(q, (snapshot) => {
+            const containerId = window.state.role === 'teacher' ? 'teacher-messages-container' : 'student-messages-container';
+            const containerEl = document.getElementById(containerId);
+            if (!containerEl) return;
+            
+            let messages = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.classCode === targetClassCode) {
+                    messages.push(data);
+                }
+            });
+            
+            messages.sort((a, b) => {
+                const timeA = a.timestamp ? (a.timestamp.toMillis ? a.timestamp.toMillis() : Date.parse(a.timestamp)) : 0;
+                const timeB = b.timestamp ? (b.timestamp.toMillis ? b.timestamp.toMillis() : Date.parse(b.timestamp)) : 0;
+                return timeA - timeB; 
+            });
+            
+            if (messages.length === 0) {
+                containerEl.innerHTML = '<p class="text-zinc-600 italic text-xs">Kongsikan mesej pertama anda di sini.</p>';
+            } else {
+                containerEl.innerHTML = messages.map(m => {
+                    const isMe = window.auth && window.auth.currentUser && m.senderId === window.auth.currentUser.uid;
+                    const colorClass = window.getColorClassForString(m.senderName);
+                    
+                    return `
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-1 animate-slide-in">
+                        <span class="text-[9px] font-bold ${colorClass} mb-0.5 px-1">${window.escapeHtml(m.senderName)}</span>
+                        <div class="px-3 py-2 rounded-2xl max-w-[85%] text-xs sm:text-sm font-sans font-medium break-words leading-relaxed shadow-sm ${isMe ? 'bg-amber-500 text-black rounded-tr-none' : 'bg-zinc-800 text-zinc-200 rounded-tl-none border border-white/5'}">
+                            ${window.escapeHtml(m.text)}
+                        </div>
+                    </div>`;
+                }).join('');
+                containerEl.scrollTop = containerEl.scrollHeight;
+            }
+        });
+    };
+
+    window.copyClassCode = function() {
+        const code = window.state.activeClassCode;
+        if (!code) return;
+        navigator.clipboard.writeText(code).then(() => {
+            window.showCustomModal("Kod Disalin!", `Kod kelas <b>${code}</b> telah disalin ke papan keratan.`, "check-circle", true);
+        }).catch(() => {
+            let tempInput = document.createElement("input");
+            tempInput.value = code;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            window.showCustomModal("Kod Disalin!", `Kod kelas <b>${code}</b> sedia untuk ditampal.`, "check-circle", true);
+        });
+    };
+
+    window.confirmDeleteStudent = function(studentId, studentName) {
+        pendingDeleteStudentId = studentId;
+        document.getElementById('delete-student-name').innerText = studentName;
+        const modal = document.getElementById('confirm-delete-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.add('opacity-100');
+            document.getElementById('confirm-delete-content').classList.remove('scale-95');
+            document.getElementById('confirm-delete-content').classList.add('scale-100');
+        }, 50);
+    };
+
+    window.closeConfirmDeleteModal = function() {
+        pendingDeleteStudentId = null;
+        const modal = document.getElementById('confirm-delete-modal');
+        modal.classList.remove('opacity-100');
+        document.getElementById('confirm-delete-content').classList.add('scale-95');
+        document.getElementById('confirm-delete-content').classList.remove('scale-100');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    };
+
+    window.executeDeleteStudent = async function() {
+        if (!pendingDeleteStudentId || !window.db) return;
+        const studentId = pendingDeleteStudentId;
+        window.closeConfirmDeleteModal();
+        
+        try {
+            const studentRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', studentId);
+            await window.updateDoc(studentRef, {
+                classCode: ''
+            });
+            window.showCustomModal("Berjaya", "Pelajar telah dikeluarkan dari kelas ini.", "check-circle", true);
+        } catch (err) {
+            console.error(err);
+            window.showCustomModal("Ralat", "Gagal mengeluarkan pelajar. Sila cuba sebentar lagi.", "alert-triangle");
+        }
+    };
+
+    const confirmDeleteBtn = document.getElementById('btn-confirm-delete-execute');
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', window.executeDeleteStudent);
+    }
+
+    window.startNewClassFlow = function() {
+        window.closeTeacherResumeModal();
+        document.getElementById('new-class-name').focus();
+    };
+
+    window.resumeExistingClass = async function() {
+        const classCode = document.getElementById('resume-class-code').innerText;
+        window.closeTeacherResumeModal();
+        if (classCode) {
+            document.getElementById('resume-class-input').value = classCode;
+            document.getElementById('resume-class-form').dispatchEvent(new Event('submit'));
+        }
+    };
+
+    window.closeTeacherResumeModal = function() {
+        const modal = document.getElementById('teacher-resume-modal');
+        if (modal) {
+            modal.classList.remove('opacity-100');
+            document.getElementById('teacher-resume-content').classList.add('scale-95');
+            document.getElementById('teacher-resume-content').classList.remove('scale-100');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
     };
 
     window.generateLiveQuestions = async function() {
@@ -1794,265 +1873,9 @@
         window.syncDatabaseWithBackend();
     };
 
-    // Logik Papan Pemuka Pendidik (Senarai Pelajar, Sembang & Pengumuman)
-    window.loadTeacherDashboardData = function() {
-      if (!window.state.user || window.state.role !== 'teacher') return;
-      window.showView('view-teacher-dashboard');
-      
-      const banner = document.getElementById('active-class-banner');
-      const createForm = document.getElementById('create-class-form');
-      const resumeForm = document.getElementById('resume-class-form');
-      const activeClassCode = window.state.activeClassCode || window.state.user.classCode;
-      
-      if (activeClassCode) {
-        banner.classList.remove('hidden');
-        createForm.classList.add('hidden');
-        resumeForm.classList.add('hidden');
-        
-        const divider = document.querySelector('.w-px.bg-white\\/10');
-        if (divider) divider.classList.add('hidden');
-
-        document.getElementById('display-class-name').innerText = window.state.activeClassName || window.state.user.className || "Kelas Anda";
-        document.getElementById('display-class-code').innerText = activeClassCode;
-
-        if (window.db) {
-          // Listen to Students
-          if (unsubscribeStudents) unsubscribeStudents();
-          unsubscribeStudents = window.onSnapshot(
-            window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'students')),
-            (snapshot) => {
-              const students = [];
-              snapshot.forEach(doc => {
-                const data = doc.data();
-                if (data.classCode && data.classCode.toUpperCase() === activeClassCode.toUpperCase()) {
-                  students.push(data);
-                }
-              });
-              window.state.students = students;
-              window.renderTeacherStudents(students);
-            }
-          );
-          
-          window.listenAnnouncements();
-          window.listenMessages();
-        }
-      } else {
-        banner.classList.add('hidden');
-        createForm.classList.remove('hidden');
-        resumeForm.classList.remove('hidden');
-        const divider = document.querySelector('.w-px.bg-white\\/10');
-        if (divider) divider.classList.remove('hidden');
-      }
-    };
-
-    window.renderTeacherStudents = function(students) {
-      const tbody = document.getElementById('students-table-body');
-      if (!tbody) return;
-      tbody.innerHTML = '';
-      
-      let totalAttempts = 0;
-      let totalCorrect = 0;
-
-      if (students.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-zinc-500">Tiada pelajar di kelas ini.</td></tr>';
-      } else {
-        students.forEach((s) => {
-          totalAttempts += (s.attempts || 0);
-          totalCorrect += (s.correct || 0);
-
-          const acc = s.attempts > 0 ? Math.round((s.correct / s.attempts) * 100) : 0;
-          const tr = document.createElement('tr');
-          tr.className = "hover:bg-white/5 transition-colors group";
-          tr.innerHTML = `
-            <td class="p-3 sm:p-4 whitespace-nowrap">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-orange-500/10 text-orange-400 flex items-center justify-center font-bold text-xs uppercase shrink-0">${s.name.charAt(0)}</div>
-                <span class="font-bold text-white text-xs sm:text-sm">${window.escapeHtml(s.name)}</span>
-              </div>
-            </td>
-            <td class="p-3 sm:p-4 whitespace-nowrap text-xs sm:text-sm text-zinc-400 font-mono">${window.escapeHtml(s.classCode)}</td>
-            <td class="p-3 sm:p-4 whitespace-nowrap">
-              <span class="px-2.5 py-1 rounded-lg bg-orange-500/10 text-orange-400 text-[10px] font-bold border border-orange-500/20">Tahap ${s.level || 1}</span>
-            </td>
-            <td class="p-3 sm:p-4 whitespace-nowrap font-bold text-amber-500 text-xs sm:text-sm">${s.xp || 0} XP</td>
-            <td class="p-3 sm:p-4 whitespace-nowrap font-bold text-zinc-300 text-xs sm:text-sm">${acc}%</td>
-            <td class="p-3 sm:p-4 whitespace-nowrap text-center">
-              <button onclick="window.confirmDeleteStudent('${s.id}', '${window.escapeHtml(s.name.replace(/'/g, "\\'"))}')" class="p-2 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="Keluarkan Pelajar">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-              </button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-        window.initLucide();
-      }
-
-      document.getElementById('stat-teacher-students').innerText = students.length;
-      document.getElementById('stat-teacher-attempts').innerText = totalAttempts;
-      document.getElementById('stat-teacher-accuracy').innerText = totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) + '%' : '0%';
-    };
-
-    window.listenAnnouncements = function() {
-       if (unsubscribeAnnouncements) unsubscribeAnnouncements();
-       const cls = window.state.role === 'teacher' ? (window.state.activeClassCode || window.state.user.classCode) : window.state.user.classCode;
-       if (!cls || !window.db) return;
-
-       unsubscribeAnnouncements = window.onSnapshot(
-         window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'announcements')),
-         (snapshot) => {
-            const list = [];
-            snapshot.forEach(doc => {
-              const data = doc.data();
-              if (data.classCode && data.classCode.toUpperCase() === cls.toUpperCase()) {
-                list.push(data);
-              }
-            });
-            list.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-            
-            const teacherList = document.getElementById('teacher-announcements-list');
-            const studentList = document.getElementById('student-announcements-list');
-            
-            const html = list.length === 0 ? '<p class="text-zinc-500 text-xs italic">Tiada pengumuman.</p>' : list.map(a => `
-              <div class="bg-zinc-900/50 p-3 rounded-xl border border-white/5 mb-2">
-                <div class="text-[10px] text-zinc-500 mb-1 flex items-center justify-between">
-                  <span>${window.escapeHtml(a.senderName)}</span>
-                  <span>${a.timestamp ? new Date(a.timestamp.seconds * 1000).toLocaleDateString('ms-MY') : 'Baru sahaja'}</span>
-                </div>
-                <p class="text-xs sm:text-sm text-zinc-300 leading-relaxed">${window.escapeHtml(a.text)}</p>
-              </div>
-            `).join('');
-
-            if(teacherList) teacherList.innerHTML = html;
-            if(studentList) studentList.innerHTML = html;
-         }
-       );
-    };
-
-    window.listenMessages = function() {
-       if (unsubscribeMessages) unsubscribeMessages();
-       const cls = window.state.role === 'teacher' ? (window.state.activeClassCode || window.state.user.classCode) : window.state.user.classCode;
-       if (!cls || !window.db) return;
-
-       unsubscribeMessages = window.onSnapshot(
-         window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'messages')),
-         (snapshot) => {
-            const list = [];
-            snapshot.forEach(doc => {
-              const data = doc.data();
-              if (data.classCode && data.classCode.toUpperCase() === cls.toUpperCase()) {
-                list.push(data);
-              }
-            });
-            list.sort((a,b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0)); // Ascending
-
-            const teacherContainer = document.getElementById('teacher-messages-container');
-            const studentContainer = document.getElementById('student-messages-container');
-            
-            const html = list.length === 0 ? '<p class="text-zinc-500 text-xs italic">Belum ada mesej di kelas ini.</p>' : list.map(m => {
-               const isMe = window.auth && window.auth.currentUser && m.senderId === window.auth.currentUser.uid;
-               const align = isMe ? 'justify-end' : 'justify-start';
-               const bg = isMe ? 'bg-amber-500/10 border-amber-500/20 text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-300';
-               const nameColor = isMe ? 'text-amber-500' : window.getColorClassForString(m.senderId);
-               
-               return `
-                 <div class="flex ${align} w-full mb-3">
-                   <div class="max-w-[85%]">
-                     <div class="text-[9px] sm:text-[10px] font-bold ${nameColor} mb-0.5 ml-1 flex items-center gap-2">
-                       <span>${window.escapeHtml(m.senderName)}</span>
-                       <span class="text-zinc-600 font-normal">${m.timestamp ? new Date(m.timestamp.seconds * 1000).toLocaleTimeString('ms-MY', {hour: '2-digit', minute:'2-digit'}) : ''}</span>
-                     </div>
-                     <div class="p-2.5 sm:p-3 rounded-2xl border ${bg} text-xs sm:text-sm leading-relaxed inline-block break-words">
-                       ${window.escapeHtml(m.text)}
-                     </div>
-                   </div>
-                 </div>
-               `;
-            }).join('');
-
-            if (teacherContainer) {
-              teacherContainer.innerHTML = html;
-              teacherContainer.scrollTop = teacherContainer.scrollHeight;
-            }
-            if (studentContainer) {
-              studentContainer.innerHTML = html;
-              studentContainer.scrollTop = studentContainer.scrollHeight;
-            }
-         }
-       );
-    };
-
-    window.confirmDeleteStudent = function(studentId, studentName) {
-      window.studentToDelete = studentId;
-      document.getElementById('delete-student-name').innerText = studentName;
-      
-      const modal = document.getElementById('confirm-delete-modal');
-      const modalContent = document.getElementById('confirm-delete-content');
-      modal.classList.remove('hidden');
-      setTimeout(() => {
-        modal.classList.add('opacity-100');
-        modalContent.classList.remove('scale-95');
-        modalContent.classList.add('scale-100');
-      }, 50);
-    };
-
-    window.closeConfirmDeleteModal = function() {
-      const modal = document.getElementById('confirm-delete-modal');
-      const modalContent = document.getElementById('confirm-delete-content');
-      modal.classList.remove('opacity-100');
-      modalContent.classList.add('scale-95');
-      modalContent.classList.remove('scale-100');
-      setTimeout(() => {
-        modal.classList.add('hidden');
-        window.studentToDelete = null;
-        document.getElementById('btn-confirm-delete-execute').innerText = "Ya, Keluarkan";
-        document.getElementById('btn-confirm-delete-execute').disabled = false;
-      }, 300);
-    };
-
-    window.executeDeleteStudent = async function() {
-      if (!window.studentToDelete || !window.db) return;
-      try {
-        const btnConfirm = document.getElementById('btn-confirm-delete-execute');
-        btnConfirm.innerText = "Memadam...";
-        btnConfirm.disabled = true;
-
-        await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', window.studentToDelete));
-        await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'users', window.studentToDelete, 'profile', 'main'), { classCode: "" });
-        
-        window.closeConfirmDeleteModal();
-        window.showCustomModal("Berjaya!", "Pelajar telah dikeluarkan daripada kelas.", "check-circle", true);
-        
-        if (window.loadTeacherDashboardData) {
-          window.loadTeacherDashboardData();
-        }
-      } catch (err) {
-        console.error(err);
-        window.closeConfirmDeleteModal();
-        window.showCustomModal("Ralat", "Gagal mengeluarkan pelajar.", "alert-triangle");
-      }
-    };
-
-    window.copyClassCode = function() {
-      const activeCode = window.state.activeClassCode || window.state.user.classCode;
-      if (!activeCode) return;
-      
-      navigator.clipboard.writeText(activeCode).then(() => {
-        window.showCustomModal("Disalin!", `Kod Kelas <b>${activeCode}</b> berjaya disalin ke papan keratan.`, "copy", true);
-      }).catch(err => {
-        try {
-          const textArea = document.createElement("textarea");
-          textArea.value = activeCode;
-          document.body.appendChild(textArea);
-          textArea.select();
-          document.execCommand("copy");
-          document.body.removeChild(textArea);
-          window.showCustomModal("Disalin!", `Kod Kelas <b>${activeCode}</b> berjaya disalin.`, "copy", true);
-        } catch(e) { console.error("Gagal menyalin", e); }
-      });
-    };
-
     window.handleLogout = function() {
        if (confirm("Adakah anda pasti mahu keluar dari sistem?")) {
+           localStorage.setItem('macronexus_logged_out', 'true');
            if (window.auth) window.auth.signOut();
            localStorage.removeItem('macronexus_user_profile');
            window.state.user = null;
@@ -2075,37 +1898,24 @@
               let savedProfile = localStorage.getItem('macronexus_user_profile');
               let userProfile = savedProfile ? JSON.parse(savedProfile) : null;
               
-              const email = firebaseUser.email || "";
-              const emailLower = email.toLowerCase();
-              
-              let resolvedRole = 'student';
-              let isAdmin = false;
-
-              // Tentukan peranan berdasarkan e-mel secara dominan
-              if (emailLower === 'g-18269504@moe-dl.edu.my') {
-                  resolvedRole = 'teacher';
-                  isAdmin = true;
-              } else if (emailLower.startsWith('g-')) {
-                  resolvedRole = 'teacher';
-              } else if (emailLower.startsWith('m-')) {
-                  resolvedRole = 'student';
-              } else if (userProfile && userProfile.role) {
-                  resolvedRole = userProfile.role;
-              } else if (window.state && window.state.selectedRole) {
-                  resolvedRole = window.state.selectedRole;
-              }
-
               if (!userProfile || userProfile.id !== firebaseUser.uid) {
-                userProfile = {
-                  id: firebaseUser.uid,
-                  name: isAdmin ? "Admin Utama (Guru)" : (firebaseUser.displayName || (resolvedRole === 'teacher' ? "Cikgu MacroNexus" : "Pelajar MacroNexus")),
-                  email: email, role: resolvedRole, isAdmin: isAdmin, classCode: '', xp: 0, level: 1, attempts: 0, correct: 0
-                };
-              } else if (userProfile.role !== resolvedRole) {
-                userProfile.role = resolvedRole;
-                userProfile.isAdmin = isAdmin;
+                  // Fallback jika profile tidak wujud dalam storan tempatan (cth: auto login senyap)
+                  let resolvedRole = 'student';
+                  const email = firebaseUser.email || "";
+                  const emailLower = email.toLowerCase();
+                  if (emailLower === 'g-18269504@moe-dl.edu.my') {
+                      resolvedRole = 'teacher';
+                  } else if (emailLower.startsWith('g-')) {
+                      resolvedRole = 'teacher';
+                  }
+
+                  userProfile = {
+                    id: firebaseUser.uid,
+                    name: firebaseUser.displayName || (resolvedRole === 'teacher' ? "Cikgu MacroNexus" : "Pelajar MacroNexus"),
+                    email: email, role: resolvedRole, classCode: '', xp: 0, level: 1, attempts: 0, correct: 0
+                  };
+                  localStorage.setItem('macronexus_user_profile', JSON.stringify(userProfile));
               }
-              localStorage.setItem('macronexus_user_profile', JSON.stringify(userProfile));
 
               window.state.user = userProfile;
               window.state.role = userProfile.role;
@@ -2119,19 +1929,13 @@
 
               window.setAuthRole(window.state.role);
 
-              if (window.state.user.classCode) {
-                window.listenAnnouncements();
-                window.listenMessages();
-              }
-
-              // MENYELESAIKAN ISU GURU TERSEKAT DI LOADING
               if (window.state.role === 'teacher') {
-                if (window.loadTeacherDashboardData) {
-                   window.loadTeacherDashboardData();
-                } else {
-                   window.showView('view-teacher-dashboard');
-                }
+                window.loadTeacherDashboardData();
               } else {
+                if (window.state.user.classCode) {
+                    window.listenAnnouncements();
+                    window.listenMessages();
+                }
                 window.updateStudentDashboardUI();
                 window.showView('view-student-dashboard');
                 window.fetchQuestionsFromCloud().then((success) => {
@@ -2249,6 +2053,8 @@
 
           try {
               window.state.role = window.state.selectedRole || 'student';
+              localStorage.removeItem('macronexus_logged_out');
+              
               if (window.auth && !window.auth.currentUser) await window.signInAnonymously(window.auth);
               const currentRole = window.state.role;
 
