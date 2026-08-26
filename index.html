@@ -964,9 +964,14 @@
         <!-- Pemantauan Mesej Murid -->
         <div class="glass-panel p-5 sm:p-6 rounded-3xl flex flex-col justify-between h-[380px]">
           <div class="flex flex-col flex-grow overflow-hidden">
-            <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2 mb-2 shrink-0">
-              <i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Log Sembang Mesej Pelajar
-            </h3>
+            <div class="flex items-center justify-between border-b border-white/5 pb-2 mb-2 shrink-0">
+              <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                <i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Log Sembang Mesej Pelajar
+              </h3>
+              <button onclick="window.clearClassMessages()" class="text-red-500 hover:text-red-400 p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-all text-[10px] flex items-center gap-1 font-bold">
+                <i data-lucide="trash-2" class="w-3 h-3"></i> Padam Semua
+              </button>
+            </div>
             <div id="teacher-messages-container" class="flex-grow space-y-3 overflow-y-auto pr-1 custom-scrollbar pb-2 min-h-0">
               <p class="text-zinc-500 text-xs italic">Belum ada mesej di kelas ini.</p>
             </div>
@@ -1238,7 +1243,7 @@
     let unsubscribeStudents = null;
     let unsubscribeAnnouncements = null;
     let unsubscribeMessages = null;
-    let pendingDeleteStudentId = null;
+    window.state.currentMessageIds = [];
 
     window.loadTeacherDashboardData = function() {
         if (!window.state.user) return;
@@ -1394,10 +1399,13 @@
             if (!containerEl) return;
             
             let messages = [];
+            window.state.currentMessageIds = []; // Jejak ID mesej untuk fungsi padam
+            
             snapshot.forEach(doc => {
                 const data = doc.data();
                 if (data.classCode === targetClassCode) {
                     messages.push(data);
+                    window.state.currentMessageIds.push(doc.id);
                 }
             });
             
@@ -1425,6 +1433,25 @@
                 containerEl.scrollTop = containerEl.scrollHeight;
             }
         });
+    };
+
+    window.clearClassMessages = function() {
+        if (!confirm("Adakah cikgu pasti mahu memadam KESEMUA log sembang pelajar di kelas ini? Mesej yang dipadam tidak boleh dikembalikan.")) return;
+        
+        const idsToDelete = window.state.currentMessageIds || [];
+        if (idsToDelete.length === 0) {
+            window.showCustomModal("Sembang Kosong", "Tiada mesej untuk dipadamkan.", "info");
+            return;
+        }
+        
+        // Memadam semua rekod ID mesej di Firestore secara senyap di latar belakang
+        idsToDelete.forEach(msgId => {
+            if (window.db) {
+                window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'messages', msgId)).catch(e=>console.warn("Gagal padam: ", e));
+            }
+        });
+        
+        window.showCustomModal("Log Sembang Dikosongkan", "Semua mesej telah berjaya dipadam dari rekod kelas ini.", "check-circle", true);
     };
 
     window.copyClassCode = function() {
