@@ -14,6 +14,7 @@
       activeClassCode: null,
       activeClassName: null,
       currentMessageIds: [],
+      editingAnnouncementId: null,
       students: [],
       apiConfig: {
         gasUrl: 'https://script.google.com/macros/s/AKfycbwxSgGU7BPgztXWyu82Te740FxUyfSSYt1WvQMWvhdX_AlAsayB4iGFAm0uDrtPedQ/exec',
@@ -450,7 +451,7 @@
           <div class="mt-4"><h4 class="text-xs font-bold text-zinc-400 uppercase mb-2">Terkini:</h4><div id="teacher-announcements-list" class="overflow-y-auto max-h-[80px] custom-scrollbar text-xs text-zinc-400"><p class="italic">Tiada.</p></div></div>
         </div>
         <div class="glass-panel p-6 rounded-3xl flex flex-col h-[380px]">
-          <div class="flex items-center justify-between border-b border-white/5 pb-2 mb-2"><h3 class="text-sm font-bold text-white flex gap-2"><i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Sembang Pelajar</h3><button onclick="window.clearClassMessages()" class="text-red-500 text-xs font-bold flex gap-1 bg-red-500/10 px-2 py-1 rounded"><i data-lucide="trash-2" class="w-3 h-3"></i> Padam Semua</button></div>
+          <div class="flex items-center justify-between border-b border-white/5 pb-2 mb-2"><h3 class="text-sm font-bold text-white flex gap-2"><i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Sembang Pelajar</h3><button onclick="window.clearClassMessages()" class="text-red-500 hover:text-red-400 text-xs font-bold flex items-center gap-1.5 bg-red-500/10 px-3 py-1.5 rounded-lg transition-colors"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Padam Semua</button></div>
           <div id="teacher-messages-container" class="flex-grow space-y-3 overflow-y-auto custom-scrollbar"><p class="text-zinc-500 text-xs italic">Tiada mesej.</p></div>
         </div>
       </div>
@@ -476,7 +477,7 @@
         <div class="glass-panel p-5 rounded-3xl text-center"><div class="w-10 h-10 bg-orange-500/10 text-orange-500 mx-auto rounded-xl flex items-center justify-center mb-2"><i data-lucide="target" class="w-5 h-5"></i></div><div id="stat-student-questions" class="text-2xl font-black text-white font-mono">0</div><div class="text-[10px] text-zinc-500 font-bold uppercase mt-1">Soalan Terjawab</div></div>
         <div class="glass-panel p-5 rounded-3xl text-center"><div class="w-10 h-10 bg-amber-500/10 text-amber-400 mx-auto rounded-xl flex items-center justify-center mb-2"><i data-lucide="percent" class="w-5 h-5"></i></div><div id="stat-student-accuracy" class="text-2xl font-black text-white font-mono">0%</div><div class="text-[10px] text-zinc-500 font-bold uppercase mt-1">Ketepatan</div></div>
         <div class="glass-panel p-5 rounded-3xl"><div class="text-xs text-zinc-500 font-bold uppercase mb-1">Penguasaan</div><div class="text-xl font-black text-white flex items-center gap-2 mb-3"><span id="student-level-badge" class="px-2 py-1 bg-orange-500/10 text-orange-400 rounded-lg text-xs">L1</span> <span id="student-level-num">Tahap 1</span></div><div class="text-right text-[10px] text-amber-500 font-bold mb-1"><span id="student-current-xp">0</span>/<span id="student-next-xp">200</span> XP</div><div class="w-full bg-zinc-950 rounded-full h-1.5"><div id="student-xp-bar" class="bg-amber-500 h-1.5 rounded-full w-0 transition-all"></div></div></div>
-        <div class="glass-panel p-5 rounded-3xl text-center border border-blue-500/20 bg-blue-500/5"><div class="text-[10px] text-blue-400 font-bold uppercase mb-2"><i data-lucide="brain-circuit" class="w-3.5 h-3.5 inline"></i> AI Ramalan Gred</div><div id="stat-student-grade" class="text-3xl font-black text-amber-400 font-mono">C+</div><div id="stat-student-grade-desc" class="text-[9px] text-zinc-400 mt-2">Berdasarkan ketepatan latihan semasa.</div></div>
+        <div class="glass-panel p-5 rounded-3xl text-center border border-blue-500/20 bg-blue-500/5"><div class="text-[10px] text-blue-400 font-bold uppercase mb-2"><i data-lucide="brain-circuit" class="w-3.5 h-3.5 inline"></i> AI Ramalan Gred</div><div id="stat-student-grade" class="text-3xl font-black text-amber-400 font-mono">?</div><div id="stat-student-grade-desc" class="text-[9px] text-zinc-400 mt-2">Jawab min 5 soalan.</div></div>
       </div>
 
       <div class="glass-panel p-6 rounded-3xl border border-orange-500/20">
@@ -529,7 +530,7 @@
 
     window.syncDatabaseWithBackend = function() {
         if(window.state && window.state.role === 'teacher') window.loadTeacherDashboardData();
-        else if (window.state && window.state.role === 'student') window.updateStudentDashboardUI();
+        else if (window.state && window.state.role === 'student') { window.updateStudentDashboardUI(); window.showView('view-student-dashboard'); }
         else window.showView('view-auth');
     };
 
@@ -567,7 +568,7 @@
             if(data.classCode === window.state.user.classCode) {
                stdCount++; totalA += (data.attempts||0); totalC += (data.correct||0);
                const acc = data.attempts > 0 ? Math.round((data.correct/data.attempts)*100) : 0;
-               html += `<tr><td class="p-4 font-bold text-white">${window.escapeHtml(data.name)}</td><td class="p-4 text-amber-500">${window.escapeHtml(data.classCode)}</td><td class="p-4"><span class="px-2 py-1 bg-orange-500/10 text-orange-400 rounded text-xs">L${data.level||1}</span></td><td class="p-4">${data.xp||0}</td><td class="p-4">${acc}%</td><td class="p-4 text-center"><button onclick="window.confirmDeleteStudent('${doc.id}', '${window.escapeHtml(data.name)}')" class="text-red-500 hover:text-red-400 bg-red-500/10 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">Keluarkan</button></td></tr>`;
+               html += `<tr><td class="p-4 font-bold text-white">${window.escapeHtml(data.name)}</td><td class="p-4 text-amber-500">${window.escapeHtml(data.classCode)}</td><td class="p-4"><span class="px-2 py-1 bg-orange-500/10 text-orange-400 rounded text-xs">L${data.level||1}</span></td><td class="p-4">${data.xp||0}</td><td class="p-4">${acc}%</td><td class="p-4 text-center"><button onclick="window.confirmDeleteStudent('${doc.id}', '${window.escapeHtml(data.name).replace(/'/g, "\\'")}')" class="text-red-500 hover:text-red-400 bg-red-500/10 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">Keluarkan</button></td></tr>`;
             }
           });
           document.getElementById('students-table-body').innerHTML = html || '<tr><td colspan="6" class="p-6 text-center text-zinc-500">Tiada pelajar berdaftar.</td></tr>';
@@ -631,7 +632,7 @@
     window.cancelEditAnnouncement = function() {
         window.state.editingAnnouncementId = null;
         document.getElementById('teacher-announcement-input').value = '';
-        document.getElementById('btn-submit-announcement').innerText = "Siarkan Pengumuman";
+        document.getElementById('btn-submit-announcement').innerText = "Siarkan";
         document.getElementById('btn-cancel-edit-announcement').classList.add('hidden');
     };
 
@@ -710,9 +711,7 @@
           const response = await fetch(window.state.apiConfig.gasUrl, { method: 'POST', body: JSON.stringify({ action: 'fetch_all' }) });
           const text = await response.text();
           let data;
-          try {
-             data = JSON.parse(text);
-          } catch (jsonErr) {
+          try { data = JSON.parse(text); } catch (jsonErr) {
              window.globalQuestions = window.localFallbackQuestions;
              window.updateSelectorsFromQuestions();
              return false;
@@ -783,10 +782,7 @@
       const list = document.getElementById('leaderboard-list');
       
       modal.classList.remove('hidden');
-      setTimeout(() => {
-        modal.classList.add('opacity-100');
-        document.getElementById('leaderboard-content').classList.replace('scale-95', 'scale-100');
-      }, 10);
+      setTimeout(() => { modal.classList.add('opacity-100'); document.getElementById('leaderboard-content').classList.replace('scale-95', 'scale-100'); }, 10);
 
       loader.classList.remove('hidden');
       list.innerHTML = '';
@@ -1015,6 +1011,7 @@
                 }
               }
 
+              // UI Optimistik - tiada await untuk writes!
               if (window.db) {
                   window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', profile.id, 'profile', 'main'), profile).catch(()=>{});
                   if (profile.role === 'student') window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', profile.id), profile).catch(()=>{});
@@ -1030,7 +1027,167 @@
           }
         });
       }
+
+      // UI Optimistik: Pengumuman Guru
+      const teacherAnnouncementForm = document.getElementById('teacher-announcement-form');
+      if (teacherAnnouncementForm) {
+        teacherAnnouncementForm.addEventListener('submit', (e) => {
+           e.preventDefault();
+           if (!window.state.activeClassCode) return;
+           const input = document.getElementById('teacher-announcement-input');
+           const text = input.value.trim();
+           if (!text) return;
+
+           if (window.state.editingAnnouncementId) {
+               if (window.db) {
+                   window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'announcements', window.state.editingAnnouncementId), {
+                       text: text, timestamp: window.serverTimestamp()
+                   }).catch(()=>{});
+               }
+               window.cancelEditAnnouncement();
+               window.showCustomModal("Berjaya", "Pengumuman telah dikemaskini.", "check-circle", true);
+           } else {
+               if (window.db) {
+                   window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'announcements'), {
+                       classCode: window.state.activeClassCode, text: text, timestamp: window.serverTimestamp(),
+                       senderName: window.state.user.name || "Guru", senderId: window.auth.currentUser ? window.auth.currentUser.uid : 'offline'
+                   }).catch(()=>{});
+               }
+               input.value = '';
+               window.showCustomModal("Siaran Berjaya! 📣", "Pengumuman berjaya dihantar.", "check-circle", true);
+           }
+        });
+      }
+
+      // UI Optimistik: Sembang Pelajar
+      const studentMsgForm = document.getElementById('student-message-form');
+      if (studentMsgForm) {
+        studentMsgForm.addEventListener('submit', (e) => {
+           e.preventDefault();
+           if (!window.state.user.classCode) return;
+           const input = document.getElementById('student-message-input');
+           const text = input.value.trim();
+           if (!text) return;
+
+           if (window.db) {
+               window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'messages'), {
+                   classCode: window.state.user.classCode, text: text, timestamp: window.serverTimestamp(),
+                   senderName: window.state.user.name, senderId: window.auth.currentUser ? window.auth.currentUser.uid : 'offline'
+               }).catch(()=>{});
+           }
+           input.value = '';
+        });
+      }
+
+      // UI Optimistik: Cipta Kelas Baru
+      const createClassForm = document.getElementById('create-class-form');
+      if (createClassForm) {
+        createClassForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const className = document.getElementById('new-class-name').value.trim();
+          if (!className) return;
+
+          const classCode = "MKR" + Math.floor(1000 + Math.random() * 9000);
+          const user = window.state.user;
+          user.classCode = classCode;
+          user.className = className;
+
+          if (window.db && window.auth.currentUser) {
+              window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main'), user).catch(()=>{});
+              window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', classCode), {
+                classCode: classCode, className: className, teacherId: window.auth.currentUser.uid, teacherName: user.name, timestamp: window.serverTimestamp ? window.serverTimestamp() : new Date()
+              }).catch(()=>{});
+          }
+
+          window.state.activeClassCode = classCode;
+          window.state.activeClassName = className;
+          localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
+          window.showCustomModal("Kelas Berjaya Dibina!", `Kod kelas: <b>${classCode}</b>`, "check-circle", true);
+          window.syncDatabaseWithBackend();
+        });
+      }
+
+      // UI Optimistik: Sertai Kelas Pelajar
+      const studentJoinClassForm = document.getElementById('student-join-class-form');
+      if (studentJoinClassForm) {
+        studentJoinClassForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const classCodeInput = document.getElementById('student-join-class-input').value.trim().toUpperCase();
+          if (!classCodeInput) return;
+
+          window.showView('view-loading');
+          
+          try {
+            let classData = { className: "Kelas Luar Talian", teacherName: "Cikgu" };
+            if (window.db) {
+                const classDocPromise = window.getDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', classCodeInput));
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), 6000));
+                const classDoc = await Promise.race([classDocPromise, timeoutPromise]);
+                
+                if (!classDoc.exists()) {
+                  window.showCustomModal("Tidak Ditemui", "Kod kelas tidak sah.", "alert-triangle");
+                  window.syncDatabaseWithBackend(); return;
+                }
+                classData = classDoc.data();
+            }
+            
+            const user = window.state.user;
+            user.classCode = classCodeInput;
+            user.className = classData.className || "";
+            user.teacherName = classData.teacherName || "";
+
+            if (window.db && window.auth.currentUser) {
+                window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main'), user).catch(()=>{});
+                window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', window.auth.currentUser.uid), user).catch(()=>{});
+            }
+            localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
+            window.showCustomModal("Berjaya!", "Telah menyertai kelas.", "check-circle", true);
+            window.syncDatabaseWithBackend();
+          } catch (err) {
+            window.showCustomModal("Luar Talian", "Meneruskan mode offline.", "info");
+            window.syncDatabaseWithBackend();
+          }
+        });
+      }
     });
+
+    // Menghantar Jawapan Kuiz secara Optimistik (Tanpa Await!)
+    window.concludeQuiz = function() {
+        if (window.state.quizState.timerInterval) clearInterval(window.state.quizState.timerInterval);
+
+        const user = window.state.user;
+        user.attempts = (user.attempts || 0) + window.state.quizState.questions.length;
+        user.correct = (user.correct || 0) + window.state.quizState.score;
+        user.xp = (user.xp || 0) + window.state.quizState.xpEarned;
+        
+        const calculatedLevel = Math.floor(user.xp / 200) + 1;
+        if (calculatedLevel > (user.level || 1)) {
+          setTimeout(() => {
+            window.showCustomModal("Tahniah! Level Up 🎉", `Anda berjaya naik ke Tahap ${calculatedLevel}! Teruskan usaha murni anda.`, "award", true);
+          }, 800);
+        }
+        user.level = calculatedLevel;
+
+        localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
+
+        if (window.auth && window.auth.currentUser && user.role === 'student') {
+             try {
+                window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'profile', 'main'), { xp: user.xp, level: user.level, attempts: user.attempts, correct: user.correct }).catch(()=>{});
+                window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', window.auth.currentUser.uid), { xp: user.xp, level: user.level, attempts: user.attempts, correct: user.correct }).catch(()=>{});
+                const sessionId = 'SESSION_' + Date.now();
+                window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', window.auth.currentUser.uid, 'quiz_sessions', sessionId), {
+                    timestamp: window.serverTimestamp(), score: window.state.quizState.score, totalQuestions: window.state.quizState.questions.length, xpEarned: window.state.quizState.xpEarned, chapter: window.state.quizState.chapter, set: window.state.quizState.set, mode: window.state.quizState.mode, timeTakenSeconds: window.state.quizState.secondsTaken
+                }).catch(()=>{});
+             } catch(e) { console.warn("Penyegerakan skor Firestore tertunda"); }
+        }
+
+        const accuracy = Math.round((window.state.quizState.score / window.state.quizState.questions.length) * 100);
+        document.getElementById('results-xp-gained').innerText = `+${window.state.quizState.xpEarned} XP`;
+        document.getElementById('results-accuracy').innerText = `${accuracy}%`;
+
+        window.showView('view-results');
+    };
   </script>
+
 </body>
 </html>
