@@ -660,6 +660,27 @@
     </div>
   </div>
 
+  <!-- MODAL PENGESAHAN PADAM PENGUMUMAN -->
+  <div id="confirm-delete-announcement-modal" class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
+    <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-red-500/20 text-center transform scale-95 transition-transform duration-300" id="confirm-delete-announcement-content">
+      <div class="inline-flex p-4 rounded-full bg-red-500/10 text-red-500 mb-4 shadow-lg shadow-red-500/10">
+        <i data-lucide="trash-2" class="w-8 h-8 sm:w-10 sm:h-10"></i>
+      </div>
+      <h3 class="text-xl sm:text-2xl font-bold text-white mb-2">Padam Pengumuman?</h3>
+      <p class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-6 break-words">
+        Adakah anda pasti ingin memadam pengumuman ini? Tindakan ini tidak boleh dikembalikan.
+      </p>
+      <div class="flex flex-col gap-3">
+        <button id="btn-confirm-delete-announcement" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center leading-tight bg-gradient-to-r from-red-600 to-orange-600 text-white font-extrabold rounded-xl transition-all shadow-lg hover:scale-[1.02] text-xs sm:text-sm">
+          Ya, Padam
+        </button>
+        <button onclick="window.closeConfirmDeleteAnnouncement()" class="w-full py-3 px-4 min-h-[3.25rem] flex items-center justify-center text-center leading-tight bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl transition-all border border-white/5 text-xs sm:text-sm">
+          Batal
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- API URL & AI Config Modal -->
   <div id="api-config-modal" class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
     <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-blue-500/20 transform scale-95 transition-transform duration-300" id="api-config-content">
@@ -948,9 +969,14 @@
             </h3>
             <form id="teacher-announcement-form" class="space-y-3">
               <textarea required id="teacher-announcement-input" placeholder="Tuliskan pengumuman penting untuk semua pelajar di kelas ini..." class="w-full h-24 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-xs sm:text-sm outline-none focus:ring-1 focus:ring-orange-500 resize-none"></textarea>
-              <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold rounded-xl transition-all shadow-lg text-xs sm:text-sm">
-                Siarkan Pengumuman
-              </button>
+              <div class="flex gap-2">
+                <button type="submit" id="btn-submit-announcement" class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold rounded-xl transition-all shadow-lg text-xs sm:text-sm">
+                  Siarkan Pengumuman
+                </button>
+                <button type="button" id="btn-cancel-edit-announcement" onclick="window.cancelEditAnnouncement()" class="hidden py-3 px-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold rounded-xl transition-all border border-white/5 text-xs sm:text-sm shrink-0">
+                  Batal
+                </button>
+              </div>
             </form>
           </div>
           <div class="border-t border-white/5 pt-3 mt-3">
@@ -1359,7 +1385,7 @@
             snapshot.forEach(doc => {
                 const data = doc.data();
                 if (data.classCode === targetClassCode) {
-                    announcements.push(data);
+                    announcements.push({ id: doc.id, ...data });
                 }
             });
             
@@ -1372,17 +1398,34 @@
             if (announcements.length === 0) {
                 html = '<p class="text-zinc-600 italic text-xs">Belum ada pengumuman.</p>';
             } else {
-                html = announcements.map(a => `
-                    <div class="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 mb-2 animate-slide-in">
+                html = announcements.map(a => {
+                    const isTeacher = window.state.role === 'teacher';
+                    const actionButtons = isTeacher ? `
+                        <div class="flex gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity ml-2">
+                            <button onclick="window.editAnnouncement('${a.id}', '${window.escapeHtml(a.text).replace(/'/g, "\\'")}')" class="text-blue-400 hover:text-blue-300 p-1 bg-blue-500/10 rounded transition-colors" title="Kemaskini">
+                                <i data-lucide="edit-2" class="w-3 h-3"></i>
+                            </button>
+                            <button onclick="window.confirmDeleteAnnouncement('${a.id}')" class="text-red-400 hover:text-red-300 p-1 bg-red-500/10 rounded transition-colors" title="Padam">
+                                <i data-lucide="trash-2" class="w-3 h-3"></i>
+                            </button>
+                        </div>
+                    ` : '';
+
+                    return `
+                    <div class="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 mb-2 animate-slide-in group">
                         <div class="flex items-center justify-between gap-2 mb-1.5 border-b border-orange-500/10 pb-1.5">
-                           <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider">${window.escapeHtml(a.senderName)}</span>
-                           <span class="text-[9px] text-zinc-500">${a.timestamp && a.timestamp.toDate ? a.timestamp.toDate().toLocaleDateString('ms-MY', { day: 'numeric', month: 'short' }) : ''}</span>
+                           <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider flex-grow">${window.escapeHtml(a.senderName)}</span>
+                           <span class="text-[9px] text-zinc-500 flex items-center">
+                               ${a.timestamp && a.timestamp.toDate ? a.timestamp.toDate().toLocaleDateString('ms-MY', { day: 'numeric', month: 'short' }) : ''}
+                               ${actionButtons}
+                           </span>
                         </div>
                         <p class="text-zinc-300 text-[11px] sm:text-xs leading-relaxed font-medium break-words">${window.escapeHtml(a.text)}</p>
                     </div>
-                `).join('');
+                `}).join('');
             }
             listEl.innerHTML = html;
+            setTimeout(() => window.initLucide(), 50);
         });
     };
 
@@ -1452,6 +1495,57 @@
         });
         
         window.showCustomModal("Log Sembang Dikosongkan", "Semua mesej telah berjaya dipadam dari rekod kelas ini.", "check-circle", true);
+    };
+
+    window.state.editingAnnouncementId = null;
+    window.pendingDeleteAnnouncementId = null;
+
+    window.editAnnouncement = function(id, text) {
+        window.state.editingAnnouncementId = id;
+        document.getElementById('teacher-announcement-input').value = text;
+        document.getElementById('btn-submit-announcement').innerText = "Kemaskini";
+        document.getElementById('btn-cancel-edit-announcement').classList.remove('hidden');
+        document.getElementById('teacher-announcement-input').focus();
+    };
+
+    window.cancelEditAnnouncement = function() {
+        window.state.editingAnnouncementId = null;
+        document.getElementById('teacher-announcement-input').value = "";
+        document.getElementById('btn-submit-announcement').innerText = "Siarkan Pengumuman";
+        document.getElementById('btn-cancel-edit-announcement').classList.add('hidden');
+    };
+
+    window.confirmDeleteAnnouncement = function(id) {
+        window.pendingDeleteAnnouncementId = id;
+        const modal = document.getElementById('confirm-delete-announcement-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.add('opacity-100');
+            document.getElementById('confirm-delete-announcement-content').classList.remove('scale-95');
+            document.getElementById('confirm-delete-announcement-content').classList.add('scale-100');
+        }, 50);
+    };
+
+    window.closeConfirmDeleteAnnouncement = function() {
+        window.pendingDeleteAnnouncementId = null;
+        const modal = document.getElementById('confirm-delete-announcement-modal');
+        modal.classList.remove('opacity-100');
+        document.getElementById('confirm-delete-announcement-content').classList.add('scale-95');
+        document.getElementById('confirm-delete-announcement-content').classList.remove('scale-100');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    };
+
+    window.executeDeleteAnnouncement = function() {
+        if (!window.pendingDeleteAnnouncementId || !window.db) return;
+        const id = window.pendingDeleteAnnouncementId;
+        window.closeConfirmDeleteAnnouncement();
+        
+        try {
+            window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'announcements', id)).catch(e=>console.warn(e));
+            window.showCustomModal("Berjaya", "Pengumuman telah dipadam.", "check-circle", true);
+        } catch (err) {
+            console.warn(err);
+        }
     };
 
     window.copyClassCode = function() {
@@ -2129,6 +2223,9 @@
           };
       }
 
+      const confirmDeleteAnnounceBtn = document.getElementById('btn-confirm-delete-announcement');
+      if (confirmDeleteAnnounceBtn) confirmDeleteAnnounceBtn.addEventListener('click', window.executeDeleteAnnouncement);
+
       const authForm = document.getElementById('auth-form');
       if(authForm) {
         authForm.addEventListener('submit', async (e) => {
@@ -2187,7 +2284,7 @@
 
       const teacherAnnouncementForm = document.getElementById('teacher-announcement-form');
       if (teacherAnnouncementForm) {
-        teacherAnnouncementForm.addEventListener('submit', (e) => {
+        teacherAnnouncementForm.addEventListener('submit', async (e) => {
            e.preventDefault();
            if (!window.state.activeClassCode) return;
            const input = document.getElementById('teacher-announcement-input');
@@ -2196,14 +2293,26 @@
 
            try {
                if (window.db) {
-                   window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'announcements'), {
-                       classCode: window.state.activeClassCode, text: text, timestamp: window.serverTimestamp(),
-                       senderName: window.state.user.name || "Guru", senderId: window.auth.currentUser ? window.auth.currentUser.uid : 'offline'
-                   }).catch(e=>console.warn(e));
+                   if (window.state.editingAnnouncementId) {
+                       // Mod Kemaskini
+                       window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'announcements', window.state.editingAnnouncementId), {
+                           text: text
+                       }).catch(e=>console.warn(e));
+                       window.showCustomModal("Berjaya", "Pengumuman telah dikemaskini.", "check-circle", true);
+                       window.cancelEditAnnouncement();
+                   } else {
+                       // Mod Tambah Baru
+                       window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'announcements'), {
+                           classCode: window.state.activeClassCode, text: text, timestamp: window.serverTimestamp(),
+                           senderName: window.state.user.name || "Guru", senderId: window.auth.currentUser ? window.auth.currentUser.uid : 'offline'
+                       }).catch(e=>console.warn(e));
+                       window.showCustomModal("Siaran Berjaya! 📣", "Pengumuman berjaya dihantar.", "check-circle", true);
+                       input.value = '';
+                   }
                }
-               input.value = '';
-               window.showCustomModal("Siaran Berjaya! 📣", "Pengumuman berjaya dihantar.", "check-circle", true);
-           } catch(err) { console.warn(err); }
+           } catch(err) {
+               window.showCustomModal("Ralat", "Gagal menguruskan pengumuman.", "alert-triangle");
+           }
         });
       }
 
