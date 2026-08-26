@@ -541,6 +541,215 @@
   </footer>
 
   <script>
+    // ==========================================
+    // FUNGSI UTAMA UI & KITARAN HAYAT (LIFECYCLE)
+    // ==========================================
+    window.initApp = function() {
+        if (!window.auth) { window.showView('view-auth'); return; }
+        
+        window.onAuthStateChanged(window.auth, async (user) => {
+            if (user) {
+                if (user.isAnonymous && !localStorage.getItem('macronexus_user_profile')) {
+                     window.showView('view-auth');
+                     return;
+                }
+                const cached = localStorage.getItem('macronexus_user_profile');
+                if (cached) {
+                    try {
+                        window.state.user = JSON.parse(cached);
+                        window.state.role = window.state.user.role;
+                        window.state.activeClassCode = window.state.user.classCode || null;
+                        window.syncDatabaseWithBackend();
+                        return;
+                    } catch(e) { console.error(e); }
+                }
+                window.showView('view-auth');
+            } else {
+                window.showView('view-auth');
+            }
+        });
+    };
+
+    window.showView = function(viewId) {
+        const views = ['view-loading', 'view-auth', 'view-teacher-dashboard', 'view-student-dashboard', 'view-quiz', 'view-results'];
+        views.forEach(v => {
+            const el = document.getElementById(v);
+            if(el) el.classList.add('hidden');
+        });
+        const active = document.getElementById(viewId);
+        if(active) active.classList.remove('hidden');
+
+        const nav = document.getElementById('navbar');
+        if (viewId === 'view-teacher-dashboard' || viewId === 'view-student-dashboard') {
+            if(nav) nav.classList.remove('hidden');
+            if(window.state && window.state.user) {
+                const nameEl = document.getElementById('nav-user-name');
+                const roleEl = document.getElementById('nav-user-role');
+                const avatarEl = document.getElementById('nav-avatar');
+                if(nameEl) nameEl.innerText = window.state.user.name || "Pengguna";
+                if(roleEl) roleEl.innerText = window.state.user.role === 'teacher' ? 'Guru' : 'Pelajar';
+                if(avatarEl) avatarEl.innerText = (window.state.user.name || "M").charAt(0).toUpperCase();
+            }
+        } else {
+            if(nav) nav.classList.add('hidden');
+        }
+    };
+
+    window.setAuthRole = function(role) {
+        window.state.selectedRole = role;
+        const btnS = document.getElementById('btn-role-student');
+        const btnT = document.getElementById('btn-role-teacher');
+        const fieldCode = document.getElementById('field-class-code');
+        const classCodeInput = document.getElementById('auth-classcode');
+        
+        if (role === 'student') {
+            if(btnS) { btnS.classList.replace('border-zinc-800', 'border-orange-500'); btnS.classList.replace('text-zinc-400', 'text-amber-500'); btnS.classList.add('bg-orange-500/10'); }
+            if(btnT) { btnT.classList.replace('border-orange-500', 'border-zinc-800'); btnT.classList.replace('text-amber-500', 'text-zinc-400'); btnT.classList.remove('bg-orange-500/10'); }
+            if(fieldCode) fieldCode.classList.remove('hidden');
+            if(classCodeInput) classCodeInput.required = true;
+        } else {
+            if(btnT) { btnT.classList.replace('border-zinc-800', 'border-orange-500'); btnT.classList.replace('text-zinc-400', 'text-amber-500'); btnT.classList.add('bg-orange-500/10'); }
+            if(btnS) { btnS.classList.replace('border-orange-500', 'border-zinc-800'); btnS.classList.replace('text-amber-500', 'text-zinc-400'); btnS.classList.remove('bg-orange-500/10'); }
+            if(fieldCode) fieldCode.classList.add('hidden');
+            if(classCodeInput) classCodeInput.required = false;
+        }
+    };
+
+    window.showCustomModal = function(title, message, icon="alert-triangle", autoClose=false) {
+        const modal = document.getElementById('custom-modal');
+        if(!modal) return;
+        document.getElementById('modal-title').innerText = title;
+        document.getElementById('modal-message').innerHTML = message;
+        const iconEl = document.getElementById('modal-icon');
+        if(iconEl) { iconEl.setAttribute('data-lucide', icon); window.initLucide(); }
+        
+        modal.classList.remove('hidden');
+        setTimeout(() => { modal.classList.add('opacity-100'); document.getElementById('custom-modal-content').classList.replace('scale-95', 'scale-100'); }, 10);
+        if (autoClose) setTimeout(() => window.closeCustomModal(), 3000);
+    };
+    
+    window.closeCustomModal = function() {
+        const modal = document.getElementById('custom-modal');
+        if(!modal) return;
+        modal.classList.remove('opacity-100');
+        document.getElementById('custom-modal-content').classList.replace('scale-100', 'scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    };
+
+    window.openLeaderboard = function() {
+        const modal = document.getElementById('leaderboard-modal');
+        if(modal) {
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.add('opacity-100'); document.getElementById('leaderboard-content').classList.replace('scale-95', 'scale-100'); }, 10);
+        }
+        if(!window.db) return;
+        document.getElementById('leaderboard-loading').classList.remove('hidden');
+        const q = window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'students'), window.orderBy('xp', 'desc'), window.limit(50));
+        window.onSnapshot(q, (snapshot) => {
+            let html = '';
+            let rank = 1;
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                let rankStyle = "bg-zinc-900 text-zinc-400";
+                if(rank === 1) rankStyle = "bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 shadow-lg shadow-yellow-500/20";
+                else if(rank === 2) rankStyle = "bg-slate-300/20 text-slate-300 border border-slate-300/30";
+                else if(rank === 3) rankStyle = "bg-amber-700/20 text-amber-600 border border-amber-700/30";
+                
+                html += `<div class="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-zinc-950 transition-all hover:bg-zinc-900">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm ${rankStyle}">${rank}</div>
+                        <div><div class="text-sm font-bold text-white">${window.escapeHtml(data.name)}</div><div class="text-[10px] text-zinc-500">L${data.level||1} • ${window.escapeHtml(data.className||"Tiada Kelas")}</div></div>
+                    </div>
+                    <div class="text-right"><div class="text-amber-500 font-mono font-bold text-sm">${data.xp||0} XP</div><div class="text-[10px] text-zinc-500">${data.attempts > 0 ? Math.round((data.correct/data.attempts)*100) : 0}% Tepat</div></div>
+                </div>`;
+                rank++;
+            });
+            const listEl = document.getElementById('leaderboard-list');
+            if(listEl) listEl.innerHTML = html || '<p class="text-center text-zinc-500 text-sm mt-4">Tiada rekod.</p>';
+            document.getElementById('leaderboard-loading').classList.add('hidden');
+        });
+    };
+    
+    window.closeLeaderboard = function() {
+        const modal = document.getElementById('leaderboard-modal');
+        if(!modal) return;
+        modal.classList.remove('opacity-100');
+        document.getElementById('leaderboard-content').classList.replace('scale-100', 'scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    };
+
+    window.openSimulation = function() {
+        const modal = document.getElementById('simulation-modal');
+        if(!modal) return;
+        modal.classList.remove('hidden');
+        setTimeout(() => { modal.classList.add('opacity-100'); document.getElementById('simulation-content').classList.replace('scale-95', 'scale-100'); }, 10);
+    };
+    
+    window.closeSimulation = function() {
+        const modal = document.getElementById('simulation-modal');
+        if(!modal) return;
+        modal.classList.remove('opacity-100');
+        document.getElementById('simulation-content').classList.replace('scale-100', 'scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    };
+
+    window.updateMacroGraph = function(val) {
+        document.getElementById('g-value-text').innerText = `RM ${val} Bilion`;
+        const diff = val - 50;
+        const offset = diff * 1.5;
+        const adCurve = document.getElementById('ad-curve-group');
+        if(adCurve) adCurve.style.transform = `translate(${offset}px, ${-offset}px)`;
+        
+        const eqX = 150 + (offset/2);
+        const eqY = 150 - (offset/2);
+        
+        document.getElementById('eq-dot').setAttribute('cx', eqX);
+        document.getElementById('eq-dot').setAttribute('cy', eqY);
+        document.getElementById('eq-line-y').setAttribute('x1', eqX);
+        document.getElementById('eq-line-y').setAttribute('x2', eqX);
+        document.getElementById('eq-line-p').setAttribute('y1', eqY);
+        document.getElementById('eq-line-p').setAttribute('y2', eqY);
+        
+        const status = diff > 0 ? "Pengembangan ekonomi (Inflasi Tarikan Permintaan)" : (diff < 0 ? "Penguncupan ekonomi (Deflasi/Pengangguran)" : "Keseimbangan asal ekonomi STPM.");
+        document.getElementById('sim-analysis').innerText = status;
+        document.getElementById('sim-p').innerText = diff > 0 ? "P1 (Naik)" : (diff < 0 ? "P2 (Turun)" : "P0");
+        document.getElementById('sim-y').innerText = diff > 0 ? "Y1 (Naik)" : (diff < 0 ? "Y2 (Turun)" : "Y0");
+    };
+
+    window.openApiConfigModal = function() {
+        const modal = document.getElementById('api-config-modal');
+        if(!modal) return;
+        modal.classList.remove('hidden');
+        document.getElementById('api-config-url-input').value = window.state.apiConfig.gasUrl || '';
+        document.getElementById('api-config-gemini-input').value = window.state.apiConfig.geminiKey || '';
+        setTimeout(() => { modal.classList.add('opacity-100'); document.getElementById('api-config-content').classList.replace('scale-95', 'scale-100'); }, 10);
+    };
+    
+    window.closeApiConfigModal = function() {
+        const modal = document.getElementById('api-config-modal');
+        if(!modal) return;
+        modal.classList.remove('opacity-100');
+        document.getElementById('api-config-content').classList.replace('scale-100', 'scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    };
+    
+    window.saveApiUrlConfig = function() {
+        window.state.apiConfig.gasUrl = document.getElementById('api-config-url-input').value;
+        window.state.apiConfig.geminiKey = document.getElementById('api-config-gemini-input').value;
+        window.closeApiConfigModal();
+        window.showCustomModal("Disimpan", "Konfigurasi API telah disahkan.", "check-circle", true);
+    };
+
+    window.triggerManualSync = function() {
+        window.syncDatabaseWithBackend();
+        window.showCustomModal("Segerak Data", "Papan pemuka dikemaskini.", "refresh-cw", true);
+    };
+
+    // Perlindungan Kalis-Ralat: Memaksa initApp dipanggil walaupun proses import lambat
+    if (window.firebaseReady && typeof window.initApp === 'function') {
+        window.initApp();
+    }
+
     let unsubscribeStudents = null;
     let unsubscribeAnnouncements = null;
     let unsubscribeMessages = null;
