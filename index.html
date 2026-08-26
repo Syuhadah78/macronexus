@@ -17,7 +17,7 @@
       students: [],
       apiConfig: {
         gasUrl: 'https://script.google.com/macros/s/AKfycbxYlwPXJmlVIM1MY444XC-A56IVRkhnXSS48CKWQGVbk6S_KdqrDutXUSdJAywEISM/exec',
-        geminiKey: 'AQ.Ab8RN6JTIbGRAEFrBvlF3_8vxi7zFMOScHOrPo_m9dTdQ6kr1g' // Sila tukar dengan API yang sah jika ini tamat tempoh
+        geminiKey: 'AQ.Ab8RN6LSzjxNk57loJ9ceNw1Z7n4IH0kxM0ORwdJP4V_uUjNwA'
       },
       quizState: {
         questions: [], chapter: '0', set: '0', mode: 'onebyone',
@@ -72,7 +72,6 @@
     }
   </script>
 
-  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
     import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
@@ -144,7 +143,6 @@
           xp: 0, level: 1, attempts: 0, correct: 0
         };
 
-        // UI Optimistik - tiada await untuk penulisan (write)
         if (profile.role === 'student' && db) {
             window.setDoc(doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'profile', 'main'), profile).catch(()=>{});
             window.setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', firebaseUser.uid), profile).catch(()=>{});
@@ -186,7 +184,6 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between overflow-x-hidden">
 
-  <!-- A. SISTEM MODAL PEMBERITAHUAN -->
   <div id="custom-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
     <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-orange-500/20 text-center transform scale-95 transition-transform duration-300" id="custom-modal-content">
       <div id="modal-icon-container" class="inline-flex p-4 rounded-full bg-orange-500/10 text-orange-500 mb-4 shadow-lg shadow-orange-500/10">
@@ -213,7 +210,6 @@
     </div>
   </div>
 
-  <!-- MODAL PENGESAHAN UMUM (GENERIC CONFIRM) MENGGANTIKAN CONFIRM() -->
   <div id="generic-confirm-modal" class="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
     <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-red-500/20 text-center transform scale-95 transition-transform duration-300" id="generic-confirm-content">
       <div class="inline-flex p-4 rounded-full bg-red-500/10 text-red-500 mb-4"><i id="generic-confirm-icon" data-lucide="help-circle" class="w-8 h-8"></i></div>
@@ -238,7 +234,6 @@
     </div>
   </div>
 
-  <!-- LEADERBOARD & SIMULATION MODALS -->
   <div id="leaderboard-modal" class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
     <div class="glass-panel max-w-lg w-full rounded-3xl p-5 sm:p-6 border border-amber-500/30 transform scale-95 transition-transform flex flex-col max-h-[85vh]" id="leaderboard-content">
       <div class="flex justify-between items-center mb-4 border-b border-white/5 pb-4">
@@ -292,7 +287,6 @@
     </div>
   </div>
 
-  <!-- NAVBAR -->
   <nav id="navbar" class="bg-zinc-950/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-40 hidden">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
@@ -313,7 +307,6 @@
     </div>
   </nav>
 
-  <!-- MAIN VIEWS -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-grow w-full relative">
 
     <div id="view-loading" class="flex flex-col items-center justify-center py-32">
@@ -492,16 +485,13 @@
   </footer>
 
   <script>
-    // ==========================================
-    // FUNGSI API (Fetch Questions & Generate AI)
-    // ==========================================
     window.fetchQuestionsFromCloud = async function() {
         if (!window.state.apiConfig.gasUrl) return;
         try {
             const response = await fetch(window.state.apiConfig.gasUrl, {
                 method: 'POST',
                 body: JSON.stringify({ action: "fetch_all" }),
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' } // 'text/plain' elak isu CORS preflight
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
             });
             const textResponse = await response.text();
             try {
@@ -509,7 +499,7 @@
                 if (data && data.data && data.data.questions) {
                     window.globalQuestions = data.data.questions;
                     window.populateFilterDropdowns();
-                } else if (data && data.questions) { // fallback
+                } else if (data && data.questions) {
                     window.globalQuestions = data.questions;
                     window.populateFilterDropdowns();
                 }
@@ -548,13 +538,13 @@
         const geminiKey = window.state.apiConfig.geminiKey;
 
         if (!gasUrl || !geminiKey) {
-            window.showCustomModal("Konfigurasi Diperlukan", "Sila masukkan URL GAS dan Gemini API Key di ruangan tetapan (Ikon Gear) terlebih dahulu.", "settings");
+            window.showCustomModal("Konfigurasi Diperlukan", "Sila masukkan URL GAS dan Gemini API Key terlebih dahulu.", "settings");
             return;
         }
 
         btn.disabled = true;
         loader.classList.remove('hidden');
-        document.getElementById('loader-status-text').innerText = "Berkomunikasi dengan AI (Sila tunggu 1-2 minit)...";
+        document.getElementById('loader-status-text').innerText = "Berkomunikasi dengan Gemini AI (Sila tunggu 1-2 minit)...";
 
         try {
             const response = await fetch(gasUrl, {
@@ -567,13 +557,13 @@
             try {
                 const data = JSON.parse(textResponse);
                 if (data.status === "success") {
-                    window.showCustomModal("Penjanaan Berjaya! 🎉", data.data.message || "100 soalan AI telah disimpan ke pangkalan data Google Sheet anda.", "check-circle", true);
-                    window.fetchQuestionsFromCloud(); // Tarik soalan baru yang dijanakan
+                    window.showCustomModal("Penjanaan Berjaya! 🎉", data.data.message || "Soalan AI telah disimpan ke pangkalan data Google Sheet anda.", "check-circle", true);
+                    window.fetchQuestionsFromCloud();
                 } else {
                     window.showCustomModal("Ralat AI", data.message || "Gagal menjana soalan.", "alert-triangle");
                 }
             } catch(e) {
-                window.showCustomModal("Ralat Format", "GAS tidak memulangkan JSON. Sila pastikan Web App GAS dikonfigurasi dengan betul.", "alert-triangle");
+                window.showCustomModal("Ralat Format", "GAS tidak memulangkan JSON. Sila semak deployment Web App.", "alert-triangle");
             }
         } catch (error) {
             window.showCustomModal("Ralat Rangkaian", "Terputus sambungan dengan pelayan Google Apps Script.", "alert-triangle");
@@ -583,9 +573,6 @@
         }
     };
 
-    // ==========================================
-    // FUNGSI UTAMA UI & KITARAN HAYAT (LIFECYCLE)
-    // ==========================================
     window.initApp = function() {
         if (!window.auth) { window.showView('view-auth'); return; }
         
@@ -780,7 +767,7 @@
         window.state.apiConfig.geminiKey = document.getElementById('api-config-gemini-input').value;
         window.closeApiConfigModal();
         window.showCustomModal("Disimpan", "Konfigurasi API telah disahkan.", "check-circle", true);
-        window.fetchQuestionsFromCloud(); // Cuba tarik data sejurus disahkan
+        window.fetchQuestionsFromCloud();
     };
 
     window.triggerManualSync = function() {
@@ -871,7 +858,6 @@
             localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
             window.syncDatabaseWithBackend();
         } catch (err) {
-            window.showCustomModal("Luar Talian", "Meneruskan dengan data sandaran.", "info", true);
             window.state.activeClassCode = classCodeInput;
             window.syncDatabaseWithBackend();
         }
@@ -1104,7 +1090,6 @@
       if(document.getElementById('stat-student-questions')) document.getElementById('stat-student-questions').innerText = totalAttempts;
       if(document.getElementById('stat-student-accuracy')) document.getElementById('stat-student-accuracy').innerText = accuracy + "%";
 
-      // AI Predictive Grade Logic
       const gradeEl = document.getElementById('stat-student-grade');
       const gradeDescEl = document.getElementById('stat-student-grade-desc');
       if (gradeEl && gradeDescEl) {
