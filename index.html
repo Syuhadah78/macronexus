@@ -16,7 +16,7 @@
       editingAnnouncementId: null,
       students: [],
       apiConfig: {
-        gasUrl: 'https://script.google.com/macros/s/AKfycbzpRvB4f0z5D-UoW0AJaH4awp9GNHbozjjZJ2VCULdIqshy-TkJEgS3G08zI7nBQnw/exec',
+        gasUrl: 'https://script.google.com/macros/s/AKfycbxlJk-H9V9m9cqXF0eKwP7lhc9GB9jJFl1XvtpmcYGLPcX2-z5oPgDPNaGdPRA3b34/exec',
         geminiKey: 'AQ.Ab8RN6LSzjxNk57loJ9ceNw1Z7n4IH0kxM0ORwdJP4V_uUjNwA'
       },
       quizState: {
@@ -533,6 +533,7 @@
     window.generateLiveQuestions = async function() {
         const btn = document.getElementById('btn-generate-batch');
         const loader = document.getElementById('ai-batch-loader');
+        const statusText = document.getElementById('loader-status-text');
         const gasUrl = window.state.apiConfig.gasUrl;
         const geminiKey = window.state.apiConfig.geminiKey;
 
@@ -541,35 +542,81 @@
             return;
         }
 
+        const chaptersDef = [
+            { id: "1", name: "Pengenalan Makroekonomi" },
+            { id: "2", name: "Perakaunan Pendapatan Negara" },
+            { id: "3", name: "Keseimbangan Pendapatan Negara dan Dasar Fiskal" },
+            { id: "4", name: "Wang, Bank dan Dasar Kewangan" },
+            { id: "5", name: "Perdagangan dan Kewangan Antarabangsa" }
+        ];
+
+        const selectedVal = document.getElementById('ai-gen-chapter').value;
+        const chaptersToRun = selectedVal === "0" ? chaptersDef : chaptersDef.filter(c => c.id === selectedVal);
+
         btn.disabled = true;
         loader.classList.remove('hidden');
-        document.getElementById('loader-status-text').innerText = "Berkomunikasi dengan Gemini AI (Sila tunggu 1-2 minit untuk 100 soalan)...";
+        
+        let allQuestions = [];
+        let hasError = false;
 
-        try {
-            const response = await fetch(gasUrl, {
-                method: 'POST',
-                body: JSON.stringify({ action: "generate", apiKey: geminiKey }),
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-            });
-            const textResponse = await response.text();
+        // Loop melalui setiap bab SATU PERSATU untuk mengelakkan ralat masa
+        for (let i = 0; i < chaptersToRun.length; i++) {
+            const chap = chaptersToRun[i];
+            statusText.innerText = `Menjana Bab ${i + 1} dari ${chaptersToRun.length}: ${chap.name} (Sila tunggu)...`;
             
             try {
-                const data = JSON.parse(textResponse);
-                if (data.status === "success") {
-                    window.showCustomModal("Penjanaan Berjaya! 🎉", data.data.message || "100 Soalan AI telah disimpan ke tab baharu Google Sheet anda.", "check-circle", true);
+                const response = await fetch(gasUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: "generate_chapter", apiKey: geminiKey, chapterId: chap.id, chapterName: chap.name }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                });
+                
+                const textResponse = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(textResponse);
+                } catch (parseErr) {
+                    throw new Error("Pelayan gagal memulangkan JSON. Sila semak pautan Google Apps Script.");
+                }
+                
+                if (data.status === "success" && data.data) {
+                    allQuestions = allQuestions.concat(data.data);
+                } else {
+                    throw new Error(data.message || "Gagal menyusun format.");
+                }
+            } catch (error) {
+                console.warn(error);
+                window.showCustomModal("Ralat Penjanaan", `Tergendala pada Bab ${chap.id}. Punca: <b>${error.message}</b>`, "alert-triangle");
+                hasError = true;
+                break; // Hentikan proses jika ada 1 bab yang gagal
+            }
+        }
+
+        // Selepas semua blok bab selesai, baru simpan ke Sheet
+        if (!hasError && allQuestions.length > 0) {
+            statusText.innerText = `Menyimpan keseluruhan ${allQuestions.length} soalan ke pangkalan data...`;
+            try {
+                const saveResponse = await fetch(gasUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: "upload", questionsData: allQuestions }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                });
+                const saveText = await saveResponse.text();
+                const saveData = JSON.parse(saveText);
+                
+                if (saveData.status === "success") {
+                    window.showCustomModal("Penjanaan Berjaya! 🎉", `Berjaya menjana dan menyimpan ${allQuestions.length} soalan ke Google Sheet.`, "check-circle", true);
                     window.fetchQuestionsFromCloud();
                 } else {
-                    window.showCustomModal("Ralat AI", data.message || "Gagal menjana soalan.", "alert-triangle");
+                    window.showCustomModal("Ralat Penyimpanan", saveData.message || "Gagal menyimpan soalan.", "alert-triangle");
                 }
-            } catch(e) {
-                window.showCustomModal("Ralat Format", "GAS tidak memulangkan JSON. Sila semak deployment Web App.", "alert-triangle");
+            } catch (err) {
+                 window.showCustomModal("Ralat Penyimpanan", "Terputus sambungan ketika menyimpan soalan.", "alert-triangle");
             }
-        } catch (error) {
-            window.showCustomModal("Ralat Rangkaian", "Terputus sambungan dengan pelayan Google Apps Script.", "alert-triangle");
-        } finally {
-            loader.classList.add('hidden');
-            btn.disabled = false;
         }
+
+        loader.classList.add('hidden');
+        btn.disabled = false;
     };
 
     window.initApp = function() {
