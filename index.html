@@ -408,7 +408,10 @@
         if (window.showView) window.showView('view-loading');
         document.getElementById('loading-text').innerText = "Menghubungkan Google / DELIMa...";
 
-        const result = await signInWithPopup(auth, provider);
+        // Tambah pengesan masa tamat (timeout) untuk elak skrin tergantung di dalam Iframe
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout_popup')), 45000));
+        const result = await Promise.race([signInWithPopup(auth, provider), timeoutPromise]);
+        
         const firebaseUser = result.user;
         const email = firebaseUser.email || "";
         
@@ -446,12 +449,26 @@
         if (window.state) { window.state.user = profile; window.state.role = profile.role; }
         if (window.fetchQuestionsFromCloud) await window.fetchQuestionsFromCloud();
 
-      } catch (error) {
-        if (error.code === 'auth/unauthorized-domain' || (error.message && error.message.includes('auth/unauthorized-domain'))) {
-          window.showCustomModal("Domain Pratinjau Belum Diizinkan", `Sila gunakan kaedah <b>Daftar & Masuk Manual</b> untuk akses serta merta.`, "shield-alert");
+        // PENTING: Arahkan paparan (Routing) secara manual selepas profil dimuatkan
+        if (profile.role === 'teacher') {
+          window.loadTeacherDashboardData();
         } else {
-          window.showCustomModal("Ralat", "Gagal log masuk Google.", "alert-triangle");
+          window.updateStudentDashboardUI();
+          window.showView('view-student-dashboard');
+          if (profile.classCode) { window.listenAnnouncements(); window.listenMessages(); }
         }
+
+      } catch (error) {
+        if (error.message === 'timeout_popup') {
+          window.showCustomModal("Sambungan Disekat", "Pop-up log masuk Google disekat oleh persekitaran pelayar ini (Iframe). Sila gunakan kaedah Daftar & Masuk Manual di bawah.", "alert-triangle");
+        } else if (error.code === 'auth/unauthorized-domain' || (error.message && error.message.includes('auth/unauthorized-domain'))) {
+          window.showCustomModal("Domain Pratinjau Belum Diizinkan", `Sila gunakan kaedah <b>Daftar & Masuk Manual</b> untuk akses serta merta.`, "shield-alert");
+        } else if (error.code === 'auth/popup-closed-by-user') {
+          // Abaikan jika pengguna sengaja menutup tetingkap popup
+        } else {
+          window.showCustomModal("Ralat", "Gagal log masuk Google. " + (error.message || ""), "alert-triangle");
+        }
+        // Kembalikan paparan ke skrin login jika ralat berlaku
         if (window.showView) window.showView('view-auth');
       }
     };
