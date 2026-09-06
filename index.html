@@ -1,1656 +1,232 @@
-<!DOCTYPE html>
-<html lang="ms" class="h-full">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MacroNexus - Menghubung Ilmu, Membina Kecemerlangan</title>
-  
-  <script>
-    window.state = {
-      user: null,
-      role: 'student',
-      selectedRole: 'student',
-      activeClassCode: null,
-      activeClassName: null,
-      students: [],
-      apiConfig: {
-        gasUrl: 'https://script.google.com/macros/s/AKfycbxIlpInh7lqGvVOqzgAQOw92HrT11HzSFWDtaxxho4OKpNIz6M1tzEznFmduggSCTo/exec',
-        geminiKey: 'AQ.Ab8RN6JTIbGRAEFrBvlF3_8vxi7zFMOScHOrPo_m9dTdQ6kr1g'
-      },
-      quizState: {
-        questions: [], chapter: '0', set: '0', mode: 'onebyone',
-        currentIndex: 0, answers: {}, score: 0, xpEarned: 0,
-        hasSubmitted: false, secondsTaken: 0, timerInterval: null
-      }
-    };
+/**
+ * =========================================================================
+ * MACRONEXUS STPM - GOOGLE APPS SCRIPT BACKEND
+ * =========================================================================
+ */
 
-    window.globalQuestions = null;
+/**
+ * LANGKAH PENYELESAIAN RALAT "UrlFetchApp":
+ * Sila pilih fungsi `setup_WAJIB_LARI_SEKALI` di menu atas (sebelah butang Debug)
+ * dan tekan "Run". Luluskan kebenaran (Review Permissions -> Advanced -> Go to).
+ */
+function setup_WAJIB_LARI_SEKALI() {
+  try {
+    // Kod ini hanya bertindak memanggil API luar secara kosong untuk memaksa 
+    // Google mendaftarkan kebenaran (scope) 'script.external_request' kepada akaun anda.
+    UrlFetchApp.fetch("https://www.google.com");
+    Logger.log("Kebenaran API luar telah berjaya disahkan!");
+  } catch (e) {
+    Logger.log("Ralat Pengesahan: " + e.toString());
+  }
+}
 
-    window.localFallbackQuestions = [
-      {
-        id: "LOCAL_B1_Q01", chapter: "1", sheetName: "Set 1",
-        text: "Antara yang berikut, yang manakah merupakan bidang kajian makroekonomi?",
-        options: ["Kajian tentang gelagat pengguna", "Kajian penentuan harga faktor", "Kajian tentang tingkat harga umum", "Kajian kos pengeluaran firma"],
-        answer: 2, explanation: "Makroekonomi mengkaji petunjuk ekonomi agregat seperti tingkat harga umum dan inflasi."
-      },
-      {
-        id: "LOCAL_B1_Q02", chapter: "1", sheetName: "Set 1",
-        text: "Dasar fiskal mengawal ekonomi negara melalui instrumen...",
-        options: ["Kadar bunga bank", "Perbelanjaan kerajaan dan cukai", "Kadar pertukaran wang", "Pemberian pinjaman mikro"],
-        answer: 1, explanation: "Dasar fiskal dikawal menggunakan instrumen cukai (T) dan perbelanjaan kerajaan (G)."
-      }
-    ];
+/**
+ * Fungsi utama untuk menerima request POST dari web (Frontend)
+ */
+function doPost(e) {
+  // Tetapan asal untuk sebarang ralat (fallback)
+  let responseObj = { status: "error", message: "Tindakan tidak dikenali." };
 
-    window.normalizeSetName = function(sheetName) {
-      if (!sheetName) return "Set 1";
-      let match = sheetName.trim().match(/\d+/);
-      return match ? "Set " + match[0] : sheetName.trim();
-    };
+  try {
+    // Parse data JSON yang dihantar oleh frontend
+    const payload = JSON.parse(e.postData.contents);
+    const action = payload.action;
 
-    window.escapeHtml = function(str) {
-      if (!str) return '';
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-    };
-
-    window.initLucide = function() { 
-      if (window.lucide) window.lucide.createIcons(); 
-    };
-  </script>
-
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
-  <script>
-    tailwind.config = {
-      theme: { extend: { colors: { brand: { black: '#000000', zincDark: '#09090b', orange: '#f97316', amber: '#f59e0b', gold: '#fbbf24' } } } }
+    if (action === "fetch_all") {
+      responseObj = handleFetchAll();
+    } 
+    else if (action === "generate_chapter") {
+      responseObj = handleGenerateChapter(payload);
+    } 
+    else if (action === "upload" || action === "saveQuestions") {
+      responseObj = handleUpload(payload);
     }
-  </script>
-
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-    import { getFirestore, doc, setDoc, getDoc, collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, serverTimestamp, orderBy, limit } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyCDAGpmffFqw0ImEjmQmpmcRsoZ-v3UMqw",
-      authDomain: "macronexus-7805.firebaseapp.com",
-      databaseURL: "https://macronexus-7805-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "macronexus-7805",
-      storageBucket: "macronexus-7805.firebasestorage.app",
-      messagingSenderId: "1048525857157",
-      appId: "1:1048525857157:web:df15601fd73ccb2cdae4ec"
-    };
-    
-    let app, auth, db;
-    try {
-      app = initializeApp(firebaseConfig);
-      auth = getAuth(app);
-      db = getFirestore(app);
-    } catch(e) {
-      console.warn("Mod Luar Talian diaktifkan.");
-    }
-    
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'macronexus-7805';
-
-    window.db = db; window.auth = auth; window.appId = appId;
-    window.collection = collection; window.doc = doc; window.setDoc = setDoc; window.getDoc = getDoc;
-    window.onSnapshot = onSnapshot; window.query = query; window.addDoc = addDoc; window.updateDoc = updateDoc;
-    window.deleteDoc = deleteDoc; window.serverTimestamp = serverTimestamp; window.orderBy = orderBy; window.limit = limit;
-    window.signInWithCustomToken = signInWithCustomToken; window.signInAnonymously = signInAnonymously;
-    window.onAuthStateChanged = onAuthStateChanged; window.GoogleAuthProvider = GoogleAuthProvider; window.signInWithPopup = signInWithPopup;
-
-    window.loginWithGoogle = async function() {
-      if (!auth) {
-        if(window.showCustomModal) window.showCustomModal("Ralat", "Sistem autentikasi Firebase belum sedia.", "alert-triangle");
-        return;
-      }
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-
-      try {
-        localStorage.removeItem('macronexus_logged_out');
-        if (window.showView) window.showView('view-loading');
-        if (document.getElementById('loading-text')) document.getElementById('loading-text').innerText = "Menghubungkan Google / DELIMa...";
-
-        let loginTimeout = setTimeout(() => {
-             if (window.showCustomModal) window.showCustomModal("Sambungan Tergendala", "Log masuk Google tersekat. Sila gunakan 'Daftar & Masuk Manual'.", "alert-triangle");
-             if (window.showView) window.showView('view-auth');
-        }, 20000);
-
-        const result = await signInWithPopup(auth, provider);
-        clearTimeout(loginTimeout); 
-
-        const firebaseUser = result.user;
-        const email = firebaseUser.email || "";
-        
-        let detectedRole = 'student';
-        let isAdmin = false;
-        const emailLower = email.toLowerCase();
-        
-        if (emailLower === 'g-18269504@moe-dl.edu.my') { detectedRole = 'teacher'; isAdmin = true; } 
-        else if (emailLower.startsWith('g-')) detectedRole = 'teacher';
-        else if (emailLower.startsWith('m-')) detectedRole = 'student';
-        
-        const profile = {
-          id: firebaseUser.uid, name: firebaseUser.displayName || "Pengguna MacroNexus", email: email,
-          role: detectedRole, isAdmin: isAdmin, classCode: (window.state && window.state.activeClassCode) ? window.state.activeClassCode : '',
-          xp: 0, level: 1, attempts: 0, correct: 0
-        };
-
-        if (profile.role === 'student' && db) {
-            window.setDoc(doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'profile', 'main'), profile).catch(()=>{});
-            window.setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', firebaseUser.uid), profile).catch(()=>{});
-        } else if (profile.role === 'teacher' && db) {
-            window.setDoc(doc(db, 'artifacts', appId, 'users', firebaseUser.uid, 'profile', 'main'), profile).catch(()=>{});
-        }
-
-        localStorage.setItem('macronexus_user_profile', JSON.stringify(profile));
-        window.state.user = profile; window.state.role = profile.role;
-        window.state.activeClassCode = profile.classCode || null;
-
-        if (window.fetchQuestionsFromCloud) window.fetchQuestionsFromCloud().catch(()=>{});
-        window.syncDatabaseWithBackend();
-
-      } catch (error) {
-        if (error.code === 'auth/unauthorized-domain' || error.message?.includes('domain')) {
-            window.showCustomModal("Akaun DELIMa Disekat Oauth", "Domain ini belum disahkan dalam senarai putih Google Workspace. Sila gunakan <b>Daftar & Masuk Manual</b>.", "shield-alert");
-        } else {
-            window.showCustomModal("Ralat", "Gagal log masuk Google.", "alert-triangle");
-        }
-        window.showView('view-auth');
-      }
-    };
-    window.firebaseReady = true;
-    if(typeof window.initApp === 'function') window.initApp();
-  </script>
-
-  <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #000000; color: #f4f4f5; }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #09090b; }
-    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #f97316; }
-    .glass-panel { background: rgba(15, 15, 15, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
-    .custom-scrollbar::-webkit-scrollbar { height: 4px; width: 4px; }
-    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .animate-slide-in { animation: slideIn 0.3s ease-out forwards; }
-  </style>
-</head>
-<body class="min-h-screen flex flex-col justify-between overflow-x-hidden">
-
-  <div id="custom-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
-    <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-orange-500/20 text-center transform scale-95 transition-transform duration-300" id="custom-modal-content">
-      <div id="modal-icon-container" class="inline-flex p-4 rounded-full bg-orange-500/10 text-orange-500 mb-4 shadow-lg shadow-orange-500/10">
-        <i id="modal-icon" data-lucide="alert-triangle" class="w-8 h-8 sm:w-10 sm:h-10"></i>
-      </div>
-      <h3 id="modal-title" class="text-xl sm:text-2xl font-bold text-white mb-2 break-words">Pemberitahuan</h3>
-      <div id="modal-message" class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-6 break-words text-left overflow-y-auto max-h-60 custom-scrollbar pr-1 text-center font-medium font-sans"></div>
-      <button onclick="window.closeCustomModal()" class="w-full py-3 px-4 min-h-[3rem] flex items-center justify-center text-center bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold rounded-xl transition-all shadow-lg text-xs sm:text-sm">
-        Faham & Teruskan
-      </button>
-    </div>
-  </div>
-
-  <div id="teacher-resume-modal" class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
-    <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-amber-500/20 text-center transform scale-95 transition-transform duration-300" id="teacher-resume-content">
-      <div class="inline-flex p-4 rounded-full bg-amber-500/10 text-amber-500 mb-4"><i data-lucide="history" class="w-8 h-8"></i></div>
-      <h3 class="text-xl font-bold text-white mb-2">Akaun Kelas Ditemui!</h3>
-      <p class="text-zinc-400 text-xs sm:text-sm mb-6">Kod kelas dikesan: <strong id="resume-class-code" class="text-amber-400"></strong>.</p>
-      <div class="flex flex-col gap-3">
-        <button onclick="window.resumeExistingClass()" class="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold rounded-xl text-xs sm:text-sm">Teruskan ke Kelas Sedia Ada</button>
-        <button onclick="window.startNewClassFlow()" class="w-full py-3 bg-zinc-800 text-white font-bold rounded-xl border border-white/5 text-xs sm:text-sm">Bina Kelas Baharu</button>
-        <button onclick="window.closeTeacherResumeModal()" class="w-full py-2 text-zinc-500 text-xs font-bold">Batal Sesi</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="generic-confirm-modal" class="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
-    <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-red-500/20 text-center transform scale-95 transition-transform duration-300" id="generic-confirm-content">
-      <div class="inline-flex p-4 rounded-full bg-red-500/10 text-red-500 mb-4"><i id="generic-confirm-icon" data-lucide="help-circle" class="w-8 h-8"></i></div>
-      <h3 id="generic-confirm-title" class="text-xl font-bold text-white mb-2">Sahkan Tindakan</h3>
-      <p id="generic-confirm-message" class="text-zinc-400 text-xs sm:text-sm mb-6">Adakah anda pasti?</p>
-      <div class="flex flex-col gap-3">
-        <button onclick="window.executeGenericConfirm()" class="w-full py-3 bg-gradient-to-r from-red-600 to-orange-600 text-white font-extrabold rounded-xl text-xs sm:text-sm">Ya</button>
-        <button onclick="window.closeGenericConfirm()" class="w-full py-3 bg-zinc-800 text-white font-bold rounded-xl text-xs sm:text-sm">Batal</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="api-config-modal" class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
-    <div class="glass-panel max-w-md w-full rounded-3xl p-6 border border-blue-500/20 transform scale-95 transition-transform duration-300" id="api-config-content">
-      <h3 class="text-xl font-bold text-white mb-4">Konfigurasi Sistem & AI</h3>
-      <div class="flex flex-col gap-3 text-left">
-        <input id="api-config-url-input" type="url" placeholder="GAS URL" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs outline-none" />
-        <input id="api-config-gemini-input" type="password" placeholder="Gemini API Key" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs outline-none" />
-        <button onclick="window.saveApiUrlConfig()" class="w-full py-3 mt-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-black font-extrabold rounded-xl text-xs">Simpan Konfigurasi</button>
-        <button onclick="window.closeApiConfigModal()" class="w-full py-2 text-zinc-500 text-xs font-bold">Batal</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="leaderboard-modal" class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
-    <div class="glass-panel max-w-lg w-full rounded-3xl p-5 sm:p-6 border border-amber-500/30 transform scale-95 transition-transform flex flex-col max-h-[85vh]" id="leaderboard-content">
-      <div class="flex justify-between items-center mb-4 border-b border-white/5 pb-4">
-        <div class="flex items-center gap-3">
-          <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-500"><i data-lucide="globe-2" class="w-6 h-6"></i></div>
-          <div><h3 class="text-lg font-black text-white">Ranking Kebangsaan</h3></div>
-        </div>
-        <button onclick="window.closeLeaderboard()" class="p-2 text-zinc-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-      </div>
-      <div class="flex-grow overflow-y-auto custom-scrollbar relative min-h-[250px]">
-        <div id="leaderboard-loading" class="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/80 z-10"><div class="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div></div>
-        <div id="leaderboard-list" class="space-y-2"></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="simulation-modal" class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
-    <div class="glass-panel max-w-2xl w-full rounded-3xl p-5 border border-blue-500/30 transform scale-95 flex flex-col" id="simulation-content">
-      <div class="flex justify-between items-center mb-4 border-b border-white/5 pb-4">
-        <h3 class="text-lg font-black text-white flex gap-2"><i data-lucide="line-chart" class="text-blue-500 w-6 h-6"></i> Makmal Simulasi: Model AS-AD</h3>
-        <button onclick="window.closeSimulation()" class="text-zinc-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-      </div>
-      <div class="flex flex-col md:flex-row gap-6 items-center">
-        <div class="relative w-full max-w-[300px] aspect-square bg-zinc-950 rounded-2xl border border-zinc-800 p-4">
-          <svg viewBox="0 0 300 300" class="w-full h-full overflow-visible">
-            <line x1="20" y1="280" x2="280" y2="280" stroke="#52525b" stroke-width="2" />
-            <line x1="20" y1="280" x2="20" y2="20" stroke="#52525b" stroke-width="2" />
-            <text x="270" y="295" fill="#a1a1aa" font-size="12">Y</text>
-            <text x="5" y="30" fill="#a1a1aa" font-size="12">P</text>
-            <line x1="60" y1="240" x2="240" y2="60" stroke="#f97316" stroke-width="4" />
-            <g id="ad-curve-group" class="transition-transform duration-200">
-              <line x1="60" y1="60" x2="240" y2="240" stroke="#3b82f6" stroke-width="4" />
-            </g>
-            <circle id="eq-dot" cx="150" cy="150" r="6" fill="#10b981" class="transition-all" />
-            <line id="eq-line-y" x1="150" y1="150" x2="150" y2="280" stroke="#10b981" stroke-dasharray="4,4" />
-            <line id="eq-line-p" x1="20" y1="150" x2="150" y2="150" stroke="#10b981" stroke-dasharray="4,4" />
-          </svg>
-        </div>
-        <div class="w-full flex-grow space-y-5">
-          <div class="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl">
-            <label class="block text-xs font-bold text-blue-400 mb-3">Tarik Peluncur (G): <span id="g-value-text" class="text-white">RM 50 Bilion</span></label>
-            <input type="range" id="macro-slider" min="0" max="100" value="50" oninput="window.updateMacroGraph(this.value)" class="w-full accent-blue-500 h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer">
-          </div>
-          <div class="p-4 bg-zinc-950 rounded-xl text-xs space-y-2">
-            <div class="text-zinc-400">Harga (P): <strong id="sim-p" class="text-white">P0</strong></div>
-            <div class="text-zinc-400">Pendapatan (Y): <strong id="sim-y" class="text-white">Y0</strong></div>
-            <p id="sim-analysis" class="text-[11px] text-zinc-500 mt-2 border-t border-white/5 pt-2">Keseimbangan asal ekonomi STPM.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <nav id="navbar" class="bg-zinc-950/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-40 hidden">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
-        <div class="flex items-center gap-2">
-          <div class="bg-gradient-to-tr from-orange-500 to-amber-500 p-2 rounded-xl shadow-lg shrink-0"><i data-lucide="graduation-cap" class="h-5 w-5 md:h-6 md:w-6 text-white"></i></div>
-          <span class="font-bold text-base md:text-xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-300">MacroNexus</span>
-        </div>
-        <div class="flex items-center gap-2 sm:gap-4">
-          <button id="nav-settings-btn" onclick="window.openApiConfigModal()" class="p-2 text-zinc-400 hover:text-white rounded-xl hidden"><i data-lucide="settings" class="w-5 h-5"></i></button>
-          <div class="text-right hidden md:block">
-            <div id="nav-user-name" class="text-sm font-semibold text-white">Memuat...</div>
-            <div id="nav-user-role" class="text-xs text-amber-500 font-bold">Pelajar</div>
-          </div>
-          <div id="nav-avatar" class="h-8 w-8 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-extrabold shadow-lg shrink-0 text-sm">M</div>
-          <button onclick="window.handleLogout()" title="Log Keluar" class="p-2 text-zinc-400 hover:text-red-400 rounded-xl transition-colors bg-zinc-900 border border-white/5 flex items-center gap-1.5"><i data-lucide="log-out" class="w-5 h-5 text-red-500"></i><span class="text-xs font-bold text-zinc-300 hidden sm:inline">Keluar</span></button>
-        </div>
-      </div>
-    </div>
-  </nav>
-
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-grow w-full relative">
-
-    <div id="view-loading" class="flex flex-col items-center justify-center py-32">
-      <div class="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-      <p id="loading-text" class="text-zinc-400 text-sm font-medium">Menghubungkan Portal MacroNexus...</p>
-    </div>
-
-    <!-- AUTH VIEW -->
-    <div id="view-auth" class="hidden max-w-md mx-auto py-10">
-      <div class="glass-panel p-6 sm:p-8 rounded-3xl shadow-2xl">
-        <div class="text-center mb-6">
-          <div class="inline-flex bg-gradient-to-tr from-orange-500 to-amber-500 p-3 rounded-2xl mb-4"><i data-lucide="globe-2" class="h-8 w-8 text-white"></i></div>
-          <h2 class="text-2xl font-black text-white mb-1">MacroNexus</h2>
-          <p class="text-brand-amber font-semibold text-xs mb-3">Menghubung Ilmu, Membina Kecemerlangan</p>
-        </div>
-
-        <button type="button" onclick="window.loginWithGoogle()" class="w-full bg-white text-black font-bold py-3.5 px-4 rounded-xl shadow-lg hover:bg-gray-100 flex items-center justify-center gap-3 text-sm transition-transform hover:scale-[1.02] mb-5">
-          <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-          Masuk dengan Google / DELIMa
-        </button>
-
-        <div class="flex items-center gap-3 my-4"><div class="flex-grow h-px bg-white/10"></div><span class="text-[10px] text-zinc-500 font-bold uppercase">ATAU DAFTAR MANUAL</span><div class="flex-grow h-px bg-white/10"></div></div>
-
-        <form id="auth-form" class="space-y-4">
-          <div class="grid grid-cols-2 gap-3">
-            <button type="button" onclick="window.setAuthRole('student')" id="btn-role-student" class="p-3 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-amber-500 font-bold text-xs"><i data-lucide="users" class="mx-auto mb-1 w-5 h-5"></i>Pelajar</button>
-            <button type="button" onclick="window.setAuthRole('teacher')" id="btn-role-teacher" class="p-3 rounded-xl border-2 border-zinc-800 text-zinc-400 font-bold text-xs"><i data-lucide="graduation-cap" class="mx-auto mb-1 w-5 h-5"></i>Guru</button>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-zinc-400 uppercase mb-1">Nama Penuh</label>
-            <input required id="auth-name" type="text" placeholder="Muhammad Alif" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm outline-none" />
-          </div>
-          <div id="field-class-code">
-            <label class="block text-xs font-bold text-zinc-400 mb-1">Kod Kelas (Wajib Untuk Pelajar)</label>
-            <input id="auth-classcode" type="text" placeholder="MKR8291" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm uppercase outline-none" />
-          </div>
-          <button type="submit" class="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-600 text-black font-extrabold rounded-xl text-sm">Daftar & Masuk Manual</button>
-        </form>
-      </div>
-    </div>
-
-    <!-- TEACHER DASHBOARD -->
-    <div id="view-teacher-dashboard" class="hidden space-y-6 sm:space-y-8 animate-slide-in">
-      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-white/5 pb-5">
-        <div>
-          <h1 class="text-2xl font-black text-white">Panel Pengajar</h1>
-          <p class="text-zinc-400 text-sm mt-1">Kelola kelas, buat soalan AI, dan pantau pelajar.</p>
-        </div>
-        <div class="flex gap-3 w-full lg:w-auto">
-          <form id="create-class-form" class="flex gap-2 w-full"><input required id="new-class-name" type="text" placeholder="Nama Kelas" class="bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2 text-sm w-full outline-none"/><button type="submit" class="bg-gradient-to-tr from-orange-500 to-amber-500 text-black px-4 py-2 rounded-lg font-bold text-sm shadow-lg whitespace-nowrap">Bina Kelas</button></form>
-          <div class="hidden sm:block w-px bg-white/10 mx-1"></div>
-          <form id="resume-class-form" class="flex gap-2 w-full"><input required id="resume-class-input" type="text" placeholder="Kod Lama" class="bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2 text-sm uppercase w-full outline-none"/><button type="submit" class="bg-zinc-800 text-white px-4 py-2 rounded-lg font-bold text-sm border border-white/5 whitespace-nowrap">Masuk Semula</button></form>
-        </div>
-      </div>
-
-      <div id="active-class-banner" class="hidden bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div>
-          <h3 class="text-orange-400 font-bold text-lg" id="display-class-name">Nama Kelas</h3>
-          <p class="text-xs text-zinc-400">Berikan kod ini kepada pelajar.</p>
-        </div>
-        <div class="bg-zinc-950 px-4 py-2 rounded-xl border border-zinc-800 flex items-center gap-4">
-          <span class="text-2xl font-black text-white" id="display-class-code">MKR000</span>
-          <button onclick="window.copyClassCode()" class="text-zinc-400 bg-zinc-900 p-2 rounded-lg"><i data-lucide="copy" class="w-4 h-4"></i></button>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="glass-panel p-5 rounded-3xl"><div class="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500 mb-3"><i data-lucide="users" class="w-5 h-5"></i></div><div id="stat-teacher-students" class="text-2xl font-black text-white">0</div><div class="text-xs text-zinc-500 font-bold uppercase">Pelajar Aktif</div></div>
-        <div class="glass-panel p-5 rounded-3xl"><div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 mb-3"><i data-lucide="target" class="w-5 h-5"></i></div><div id="stat-teacher-attempts" class="text-2xl font-black text-white">0</div><div class="text-xs text-zinc-500 font-bold uppercase">Latihan Selesai</div></div>
-        <div class="glass-panel p-5 rounded-3xl"><div class="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-500 mb-3"><i data-lucide="bar-chart-3" class="w-5 h-5"></i></div><div id="stat-teacher-accuracy" class="text-2xl font-black text-white">0%</div><div class="text-xs text-zinc-500 font-bold uppercase">Ketepatan Kelas</div></div>
-      </div>
-
-      <div class="glass-panel p-5 rounded-3xl border border-orange-500/10">
-        <h2 class="text-lg font-bold text-white flex items-center gap-2 mb-4"><i data-lucide="sparkles" class="text-orange-500 w-5 h-5"></i> Penjana Soalan AI</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <select id="ai-gen-chapter" class="bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-sm outline-none"><option value="0">Semua Soalan Campuran (100 Soalan)</option><option value="1">Bab 1</option><option value="2">Bab 2</option><option value="3">Bab 3</option><option value="4">Bab 4</option><option value="5">Bab 5</option></select>
-          <select id="ai-gen-destination" class="bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-sm outline-none"><option value="sheet">Simpan ke Google Sheet (Tab Baharu)</option></select>
-          <button onclick="window.generateLiveQuestions()" id="btn-generate-batch" class="py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold rounded-xl text-sm flex justify-center items-center gap-2"><i data-lucide="cloud-upload" class="w-4 h-4"></i> Jana & Simpan</button>
-        </div>
-        <div id="ai-batch-loader" class="hidden flex-col items-center py-4 text-center mt-4"><div class="w-6 h-6 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-2"></div><p id="loader-status-text" class="text-sm text-amber-500">Berkomunikasi dengan Gemini AI...</p></div>
-      </div>
-
-      <div class="bg-zinc-950 border border-white/5 rounded-3xl overflow-hidden shadow-xl">
-        <div class="p-5 border-b border-white/5"><h2 class="text-lg font-bold text-white flex gap-2"><i data-lucide="users" class="text-orange-400 w-5 h-5"></i> Senarai Pelajar</h2></div>
-        <div class="overflow-x-auto"><table class="w-full text-left border-collapse min-w-[500px]"><thead><tr class="bg-zinc-900 text-zinc-400 text-xs"><th class="p-4 uppercase">Nama Pelajar</th><th class="p-4 uppercase">Kod</th><th class="p-4 uppercase">Tahap</th><th class="p-4 uppercase">XP</th><th class="p-4 uppercase">Tepat</th><th class="p-4 uppercase text-center">Tindakan</th></tr></thead><tbody id="students-table-body" class="divide-y divide-white/5 text-sm"><tr><td colspan="6" class="p-6 text-center text-zinc-500">Tiada pelajar.</td></tr></tbody></table></div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="glass-panel p-6 rounded-3xl flex flex-col h-[380px]">
-          <h3 class="text-sm font-bold text-white flex gap-2 border-b border-white/5 pb-2 mb-4"><i data-lucide="megaphone" class="text-orange-500 w-4 h-4"></i> Siarkan Pengumuman</h3>
-          <form id="teacher-announcement-form" class="space-y-3">
-            <textarea required id="teacher-announcement-input" placeholder="Tulis pengumuman..." class="w-full h-20 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-sm outline-none resize-none"></textarea>
-            <div class="flex gap-2">
-              <button type="submit" id="btn-submit-announcement" class="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold rounded-xl text-sm">Siarkan</button>
-              <button type="button" id="btn-cancel-edit-announcement" onclick="window.cancelEditAnnouncement()" class="hidden py-3 px-4 bg-zinc-800 text-white font-bold rounded-xl text-sm">Batal</button>
-            </div>
-          </form>
-          <div class="mt-4"><h4 class="text-xs font-bold text-zinc-400 uppercase mb-2">Terkini:</h4><div id="teacher-announcements-list" class="overflow-y-auto max-h-[80px] custom-scrollbar text-xs text-zinc-400"><p class="italic">Tiada.</p></div></div>
-        </div>
-        <div class="glass-panel p-6 rounded-3xl flex flex-col h-[380px]">
-          <div class="flex items-center justify-between border-b border-white/5 pb-2 mb-2"><h3 class="text-sm font-bold text-white flex gap-2"><i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Sembang Pelajar</h3><button onclick="window.clearClassMessages()" class="text-red-500 hover:text-red-400 text-xs font-bold flex items-center gap-1.5 bg-red-500/10 px-3 py-1.5 rounded-lg transition-colors"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Padam Semua</button></div>
-          <div id="teacher-messages-container" class="flex-grow space-y-3 overflow-y-auto custom-scrollbar"><p class="text-zinc-500 text-xs italic">Tiada mesej.</p></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- STUDENT DASHBOARD -->
-    <div id="view-student-dashboard" class="hidden space-y-6 sm:space-y-8 animate-slide-in">
-      <div class="bg-gradient-to-r from-orange-600/10 via-amber-500/10 to-yellow-500/10 border border-orange-500/20 rounded-3xl p-6 relative overflow-hidden">
-        <h1 id="welcome-student-title" class="text-3xl font-black text-white mb-2 relative z-10">Selamat Belajar!</h1>
-        <p id="student-live-cloud-text" class="text-zinc-400 text-sm mb-4 relative z-10">Data disimpan secara live.</p>
-        <div class="flex gap-2 relative z-10">
-          <button onclick="window.openLeaderboard()" class="bg-amber-500 text-black font-extrabold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5"><i data-lucide="globe-2" class="w-3.5 h-3.5"></i> Ranking Nasional</button>
-          <button onclick="window.openSimulation()" class="bg-zinc-800 text-blue-400 font-extrabold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 border border-blue-500/30"><i data-lucide="line-chart" class="w-3.5 h-3.5"></i> Simulasi AS-AD</button>
-        </div>
-        <div id="student-active-class-banner" class="hidden mt-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl text-xs font-bold flex items-center gap-2 relative z-10">
-           <i data-lucide="check-circle" class="w-4 h-4"></i>
-           <span>Sedang mengikuti kelas: <strong id="student-active-class-code" class="text-white tracking-widest uppercase"></strong></span>
-        </div>
-      </div>
-
-      <div id="student-join-class-panel" class="hidden glass-panel p-6 rounded-3xl border border-amber-500/30">
-        <h3 class="text-base font-bold text-white flex gap-2 mb-3"><i data-lucide="key-round" class="text-amber-500 w-5 h-5"></i> Sertai Kelas</h3>
-        <form id="student-join-class-form" class="flex gap-3"><input required id="student-join-class-input" type="text" placeholder="Kod Kelas" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm uppercase outline-none" /><button type="submit" class="bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold px-6 rounded-xl text-sm whitespace-nowrap">Sertai</button></form>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="glass-panel p-5 rounded-3xl text-center"><div class="w-10 h-10 bg-orange-500/10 text-orange-500 mx-auto rounded-xl flex items-center justify-center mb-2"><i data-lucide="target" class="w-5 h-5"></i></div><div id="stat-student-questions" class="text-2xl font-black text-white font-mono">0</div><div class="text-[10px] text-zinc-500 font-bold uppercase mt-1">Soalan Terjawab</div></div>
-        <div class="glass-panel p-5 rounded-3xl text-center"><div class="w-10 h-10 bg-amber-500/10 text-amber-400 mx-auto rounded-xl flex items-center justify-center mb-2"><i data-lucide="percent" class="w-5 h-5"></i></div><div id="stat-student-accuracy" class="text-2xl font-black text-white font-mono">0%</div><div class="text-[10px] text-zinc-500 font-bold uppercase mt-1">Ketepatan</div></div>
-        <div class="glass-panel p-5 rounded-3xl"><div class="text-xs text-zinc-500 font-bold uppercase mb-1">Penguasaan</div><div class="text-xl font-black text-white flex items-center gap-2 mb-3"><span id="student-level-badge" class="px-2 py-1 bg-orange-500/10 text-orange-400 rounded-lg text-xs">L1</span> <span id="student-level-num">Tahap 1</span></div><div class="text-right text-[10px] text-amber-500 font-bold mb-1"><span id="student-current-xp">0</span>/<span id="student-next-xp">200</span> XP</div><div class="w-full bg-zinc-950 rounded-full h-1.5"><div id="student-xp-bar" class="bg-amber-500 h-1.5 rounded-full w-0 transition-all"></div></div></div>
-        <div class="glass-panel p-5 rounded-3xl text-center border border-blue-500/20 bg-blue-500/5"><div class="text-[10px] text-blue-400 font-bold uppercase mb-2"><i data-lucide="brain-circuit" class="w-3.5 h-3.5 inline"></i> AI Ramalan Gred</div><div id="stat-student-grade" class="text-3xl font-black text-amber-400 font-mono">?</div><div id="stat-student-grade-desc" class="text-[9px] text-zinc-400 mt-2">Jawab min 5 soalan.</div></div>
-      </div>
-
-      <div class="glass-panel p-6 rounded-3xl border border-orange-500/20">
-        <div class="flex flex-col sm:flex-row justify-between border-b border-white/5 pb-3 gap-3 mb-4">
-          <h3 class="text-sm font-bold text-white flex items-center gap-2"><i data-lucide="sliders" class="text-orange-500 w-4 h-4"></i> Latihan</h3>
-          <div class="flex gap-2">
-            <button onclick="window.triggerManualSync()" class="bg-zinc-900 text-amber-500 font-extrabold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Kemaskini</button>
-            <button onclick="window.startQuizFlow()" class="bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold text-xs px-5 py-2 rounded-xl flex items-center gap-1.5"><i data-lucide="play" class="w-3.5 h-3.5"></i> Mula</button>
-          </div>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <select id="student-set-selector" class="bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-sm outline-none"><option value="0">Semua Set</option></select>
-          <select id="student-chapter-selector" class="bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-sm outline-none"><option value="0">Semua Bab</option><option value="1">Bab 1</option><option value="2">Bab 2</option><option value="3">Bab 3</option><option value="4">Bab 4</option><option value="5">Bab 5</option></select>
-          <select id="student-mode-selector" class="bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-sm outline-none"><option value="onebyone">Satu Persatu</option><option value="exam">Mod Peperiksaan</option></select>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="glass-panel p-6 rounded-3xl h-[380px] flex flex-col"><h3 class="text-sm font-bold text-white flex gap-2 border-b border-white/5 pb-2 mb-3"><i data-lucide="megaphone" class="text-orange-500 w-4 h-4"></i> Pengumuman Kelas</h3><div id="student-announcements-list" class="flex-grow overflow-y-auto custom-scrollbar space-y-3"><p class="text-zinc-500 text-xs italic">Tiada pengumuman.</p></div></div>
-        <div class="glass-panel p-6 rounded-3xl h-[380px] flex flex-col"><h3 class="text-sm font-bold text-white flex gap-2 border-b border-white/5 pb-2 mb-2"><i data-lucide="message-square" class="text-amber-500 w-4 h-4"></i> Sembang</h3><div id="student-messages-container" class="flex-grow overflow-y-auto custom-scrollbar space-y-3 mb-2"><p class="text-zinc-500 text-xs italic">Tiada mesej.</p></div><form id="student-message-form" class="flex gap-2 border-t border-white/5 pt-3"><input required id="student-message-input" type="text" placeholder="Mesej..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-white text-sm outline-none" /><button type="submit" class="bg-zinc-800 text-amber-400 font-bold px-4 py-2 rounded-xl text-sm flex gap-1.5"><i data-lucide="send" class="w-4 h-4"></i> Hantar</button></form></div>
-      </div>
-    </div>
-
-    <!-- QUIZ VIEW -->
-    <div id="view-quiz" class="hidden max-w-3xl mx-auto space-y-6 animate-slide-in">
-      <div class="glass-panel p-5 rounded-2xl flex justify-between items-center"><div class="flex gap-3"><button onclick="window.exitQuiz()" class="text-zinc-400 hover:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><div><span class="text-[10px] text-zinc-500 uppercase font-bold" id="quiz-chapter-indicator">Bab</span><span class="text-sm font-bold text-white block" id="quiz-index-indicator">Soalan</span></div></div><div class="text-zinc-400 font-mono text-sm flex gap-1.5 bg-zinc-900 px-3 py-1.5 rounded-lg border border-white/5"><i data-lucide="clock" class="text-orange-500 w-4 h-4"></i> <span id="quiz-timer">00:00</span></div></div>
-      <div class="w-full bg-zinc-950 rounded-full h-1" id="quiz-progress-bar-wrapper"><div id="quiz-progress-bar" class="bg-orange-500 h-1 rounded-full transition-all w-0"></div></div>
-      <div class="glass-panel p-6 sm:p-8 rounded-3xl space-y-6">
-        <div id="quiz-single-view" class="space-y-6"><div id="quiz-question-text" class="text-sm sm:text-lg text-white font-medium"></div><div id="quiz-options-container" class="grid gap-3"></div><div id="quiz-explanation-box" class="hidden bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4"><div class="text-orange-400 font-bold text-xs mb-2 flex gap-2"><i data-lucide="info" class="w-4 h-4"></i> Penjelasan</div><div id="quiz-explanation-text" class="text-zinc-300 text-sm"></div></div></div>
-        <div id="quiz-multi-view" class="hidden space-y-8 max-h-[60vh] overflow-y-auto custom-scrollbar"></div>
-      </div>
-      <div class="flex justify-end gap-3" id="quiz-control-buttons"><button onclick="window.exitQuiz()" class="px-6 py-3 bg-red-500/10 text-red-400 font-bold rounded-xl text-sm border border-red-500/20">Batal</button><button id="btn-quiz-submit" onclick="window.submitSingleAnswer()" class="px-8 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold rounded-xl text-sm">Sahkan</button><button id="btn-quiz-next" onclick="window.nextSingleQuestion()" class="hidden px-8 py-3 bg-zinc-800 text-white font-extrabold rounded-xl border border-white/10 text-sm">Seterusnya</button></div>
-    </div>
-
-    <!-- RESULTS VIEW -->
-    <div id="view-results" class="hidden max-w-md mx-auto text-center space-y-6 py-6 animate-slide-in">
-      <div class="glass-panel p-8 rounded-3xl border border-white/5"><div class="inline-flex p-4 rounded-full bg-amber-500/10 text-amber-500 mb-4"><i data-lucide="trophy" class="w-12 h-12"></i></div><h2 class="text-2xl font-black text-white mb-2">Latihan Selesai!</h2><p class="text-zinc-400 text-sm mb-6">Hebat, anda menyelesaikannya.</p><div class="grid grid-cols-2 gap-3 pt-4 border-t border-white/5"><div class="p-3 bg-zinc-950 rounded-2xl"><span class="text-[10px] text-zinc-500 uppercase font-bold block mb-1">XP Diperoleh</span><span id="results-xp-gained" class="text-2xl font-black text-orange-500 font-mono">+0</span></div><div class="p-3 bg-zinc-950 rounded-2xl"><span class="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Ketepatan</span><span id="results-accuracy" class="text-2xl font-black text-amber-400 font-mono">0%</span></div></div></div>
-      <button onclick="window.backToDashboard()" class="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-black font-black rounded-xl text-sm">Kembali ke Papan Pemuka</button>
-    </div>
-  </main>
-
-  <footer class="bg-zinc-950 border-t border-white/5 py-6 mt-auto">
-    <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between gap-4 text-xs text-zinc-500"><p class="font-bold">© 2026 MacroNexus STPM.</p><div class="flex gap-2"><span class="px-2.5 py-1 bg-zinc-900 rounded-full border border-zinc-800 text-emerald-500 font-semibold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Cloud & AI Sedia</span></div></div>
-  </footer>
-
-  <script>
-    window.fetchQuestionsFromCloud = async function() {
-        if (!window.state.apiConfig.gasUrl) return;
-        try {
-            const response = await fetch(window.state.apiConfig.gasUrl, {
-                method: 'POST',
-                body: JSON.stringify({ action: "fetch_all" }),
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-            });
-            const textResponse = await response.text();
-            try {
-                const data = JSON.parse(textResponse);
-                if (data && data.data && data.data.questions) {
-                    window.globalQuestions = data.data.questions;
-                    window.populateFilterDropdowns();
-                } else if (data && data.questions) {
-                    window.globalQuestions = data.questions;
-                    window.populateFilterDropdowns();
-                }
-            } catch(jsonErr) {
-               console.warn("GAS tidak memulangkan JSON yang sah. Ralat:", jsonErr);
-            }
-        } catch (e) {
-            console.warn("Gagal menarik soalan dari Cloud:", e);
-        }
-    };
-
-    window.populateFilterDropdowns = function() {
-        if(!window.globalQuestions) return;
-        const sets = new Set();
-        window.globalQuestions.forEach(q => {
-            if(q.sheetName) sets.add(window.normalizeSetName(q.sheetName));
-            else if(q.set) sets.add(window.normalizeSetName(q.set));
-        });
-        
-        const setSelector = document.getElementById('student-set-selector');
-        if(setSelector && sets.size > 0) {
-            let html = '<option value="0">Semua Set</option>';
-            Array.from(sets).sort().forEach(s => {
-                const numMatch = s.match(/\d+/);
-                const val = numMatch ? numMatch[0] : s;
-                html += `<option value="${val}">${s}</option>`;
-            });
-            setSelector.innerHTML = html;
-        }
-    };
-
-    window.generateLiveQuestions = async function() {
-        const btn = document.getElementById('btn-generate-batch');
-        const loader = document.getElementById('ai-batch-loader');
-        const statusText = document.getElementById('loader-status-text');
-        const gasUrl = window.state.apiConfig.gasUrl;
-        const geminiKey = window.state.apiConfig.geminiKey;
-
-        if (!gasUrl || !geminiKey) {
-            window.showCustomModal("Konfigurasi Diperlukan", "Sila masukkan URL GAS dan Gemini API Key terlebih dahulu.", "settings");
-            return;
-        }
-
-        const chaptersDef = [
-            { id: "1", name: "Pengenalan Makroekonomi" },
-            { id: "2", name: "Perakaunan Pendapatan Negara" },
-            { id: "3", name: "Keseimbangan Pendapatan Negara dan Dasar Fiskal" },
-            { id: "4", name: "Wang, Bank dan Dasar Kewangan" },
-            { id: "5", name: "Perdagangan dan Kewangan Antarabangsa" }
-        ];
-
-        const selectedVal = document.getElementById('ai-gen-chapter').value;
-        const chaptersToRun = selectedVal === "0" ? chaptersDef : chaptersDef.filter(c => c.id === selectedVal);
-
-        btn.disabled = true;
-        loader.classList.remove('hidden');
-        
-        let allQuestions = [];
-        let hasError = false;
-
-        // Loop melalui setiap bab SATU PERSATU untuk mengelakkan ralat masa
-        for (let i = 0; i < chaptersToRun.length; i++) {
-            const chap = chaptersToRun[i];
-            statusText.innerText = `Menjana Bab ${i + 1} dari ${chaptersToRun.length}: ${chap.name} (Sila tunggu)...`;
-            
-            try {
-                const response = await fetch(gasUrl, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: "generate_chapter", apiKey: geminiKey, chapterId: chap.id, chapterName: chap.name }),
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-                });
-                
-                const textResponse = await response.text();
-                let data;
-                try {
-                    data = JSON.parse(textResponse);
-                } catch (parseErr) {
-                    throw new Error("Pelayan gagal memulangkan JSON. Sila semak pautan Google Apps Script.");
-                }
-                
-                if (data.status === "success" && data.data) {
-                    allQuestions = allQuestions.concat(data.data);
-                } else {
-                    throw new Error(data.message || "Gagal menyusun format.");
-                }
-            } catch (error) {
-                console.warn(error);
-                window.showCustomModal("Ralat Penjanaan", `Tergendala pada Bab ${chap.id}. Punca: <b>${error.message}</b>`, "alert-triangle");
-                hasError = true;
-                break; // Hentikan proses jika ada 1 bab yang gagal
-            }
-        }
-
-        // Selepas semua blok bab selesai, baru simpan ke Sheet
-        if (!hasError && allQuestions.length > 0) {
-            statusText.innerText = `Menyimpan keseluruhan ${allQuestions.length} soalan ke pangkalan data...`;
-            try {
-                const saveResponse = await fetch(gasUrl, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: "upload", questionsData: allQuestions }),
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-                });
-                const saveText = await saveResponse.text();
-                const saveData = JSON.parse(saveText);
-                
-                if (saveData.status === "success") {
-                    window.showCustomModal("Penjanaan Berjaya! 🎉", `Berjaya menjana dan menyimpan ${allQuestions.length} soalan ke Google Sheet.`, "check-circle", true);
-                    window.fetchQuestionsFromCloud();
-                } else {
-                    window.showCustomModal("Ralat Penyimpanan", saveData.message || "Gagal menyimpan soalan.", "alert-triangle");
-                }
-            } catch (err) {
-                 window.showCustomModal("Ralat Penyimpanan", "Terputus sambungan ketika menyimpan soalan.", "alert-triangle");
-            }
-        }
-
-        loader.classList.add('hidden');
-        btn.disabled = false;
-    };
-
-    window.initApp = function() {
-        if (!window.auth) { window.showView('view-auth'); return; }
-        
-        window.onAuthStateChanged(window.auth, async (user) => {
-            if (user) {
-                if (user.isAnonymous && !localStorage.getItem('macronexus_user_profile')) {
-                     window.showView('view-auth');
-                     return;
-                }
-                const cached = localStorage.getItem('macronexus_user_profile');
-                if (cached) {
-                    try {
-                        window.state.user = JSON.parse(cached);
-                        window.state.role = window.state.user.role;
-                        window.state.activeClassCode = window.state.user.classCode || null;
-                        window.syncDatabaseWithBackend();
-                        return;
-                    } catch(e) { console.error(e); }
-                }
-                window.showView('view-auth');
-            } else {
-                window.showView('view-auth');
-            }
-        });
-    };
-
-    window.showView = function(viewId) {
-        const views = ['view-loading', 'view-auth', 'view-teacher-dashboard', 'view-student-dashboard', 'view-quiz', 'view-results'];
-        views.forEach(v => {
-            const el = document.getElementById(v);
-            if(el) el.classList.add('hidden');
-        });
-        const active = document.getElementById(viewId);
-        if(active) active.classList.remove('hidden');
-
-        const nav = document.getElementById('navbar');
-        if (viewId === 'view-teacher-dashboard' || viewId === 'view-student-dashboard') {
-            if(nav) nav.classList.remove('hidden');
-            if(window.state && window.state.user) {
-                const nameEl = document.getElementById('nav-user-name');
-                const roleEl = document.getElementById('nav-user-role');
-                const avatarEl = document.getElementById('nav-avatar');
-                if(nameEl) nameEl.innerText = window.state.user.name || "Pengguna";
-                if(roleEl) roleEl.innerText = window.state.user.role === 'teacher' ? 'Guru' : 'Pelajar';
-                if(avatarEl) avatarEl.innerText = (window.state.user.name || "M").charAt(0).toUpperCase();
-            }
-        } else {
-            if(nav) nav.classList.add('hidden');
-        }
-        window.initLucide();
-    };
-
-    window.setAuthRole = function(role) {
-        window.state.selectedRole = role;
-        const btnS = document.getElementById('btn-role-student');
-        const btnT = document.getElementById('btn-role-teacher');
-        const fieldCode = document.getElementById('field-class-code');
-        const classCodeInput = document.getElementById('auth-classcode');
-        
-        if (role === 'student') {
-            if(btnS) { btnS.classList.replace('border-zinc-800', 'border-orange-500'); btnS.classList.replace('text-zinc-400', 'text-amber-500'); btnS.classList.add('bg-orange-500/10'); }
-            if(btnT) { btnT.classList.replace('border-orange-500', 'border-zinc-800'); btnT.classList.replace('text-amber-500', 'text-zinc-400'); btnT.classList.remove('bg-orange-500/10'); }
-            if(fieldCode) fieldCode.classList.remove('hidden');
-            if(classCodeInput) classCodeInput.required = true;
-        } else {
-            if(btnT) { btnT.classList.replace('border-zinc-800', 'border-orange-500'); btnT.classList.replace('text-zinc-400', 'text-amber-500'); btnT.classList.add('bg-orange-500/10'); }
-            if(btnS) { btnS.classList.replace('border-orange-500', 'border-zinc-800'); btnS.classList.replace('text-amber-500', 'text-zinc-400'); btnS.classList.remove('bg-orange-500/10'); }
-            if(fieldCode) fieldCode.classList.add('hidden');
-            if(classCodeInput) classCodeInput.required = false;
-        }
-    };
-
-    window.showCustomModal = function(title, message, icon="alert-triangle", autoClose=false) {
-        const modal = document.getElementById('custom-modal');
-        if(!modal) return;
-        document.getElementById('modal-title').innerText = title;
-        document.getElementById('modal-message').innerHTML = message;
-        const iconEl = document.getElementById('modal-icon');
-        if(iconEl) { iconEl.setAttribute('data-lucide', icon); window.initLucide(); }
-        
-        modal.classList.remove('hidden');
-        setTimeout(() => { modal.classList.add('opacity-100'); document.getElementById('custom-modal-content').classList.replace('scale-95', 'scale-100'); }, 10);
-        if (autoClose) setTimeout(() => window.closeCustomModal(), 3000);
-    };
-    
-    window.closeCustomModal = function() {
-        const modal = document.getElementById('custom-modal');
-        if(!modal) return;
-        modal.classList.remove('opacity-100');
-        document.getElementById('custom-modal-content').classList.replace('scale-100', 'scale-95');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-    };
-
-    window.openLeaderboard = function() {
-        const modal = document.getElementById('leaderboard-modal');
-        if(modal) {
-            modal.classList.remove('hidden');
-            setTimeout(() => { modal.classList.add('opacity-100'); document.getElementById('leaderboard-content').classList.replace('scale-95', 'scale-100'); }, 10);
-        }
-        if(!window.db) return;
-        document.getElementById('leaderboard-loading').classList.remove('hidden');
-        const q = window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'students'), window.orderBy('xp', 'desc'), window.limit(50));
-        window.onSnapshot(q, (snapshot) => {
-            let html = '';
-            let rank = 1;
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                let rankStyle = "bg-zinc-900 text-zinc-400";
-                if(rank === 1) rankStyle = "bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 shadow-lg shadow-yellow-500/20";
-                else if(rank === 2) rankStyle = "bg-slate-300/20 text-slate-300 border border-slate-300/30";
-                else if(rank === 3) rankStyle = "bg-amber-700/20 text-amber-600 border border-amber-700/30";
-                
-                html += `<div class="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-zinc-950 transition-all hover:bg-zinc-900">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm ${rankStyle}">${rank}</div>
-                        <div><div class="text-sm font-bold text-white">${window.escapeHtml(data.name)}</div><div class="text-[10px] text-zinc-500">L${data.level||1} • ${window.escapeHtml(data.className||"Tiada Kelas")}</div></div>
-                    </div>
-                    <div class="text-right"><div class="text-amber-500 font-mono font-bold text-sm">${data.xp||0} XP</div><div class="text-[10px] text-zinc-500">${data.attempts > 0 ? Math.round((data.correct/data.attempts)*100) : 0}% Tepat</div></div>
-                </div>`;
-                rank++;
-            });
-            const listEl = document.getElementById('leaderboard-list');
-            if(listEl) listEl.innerHTML = html || '<p class="text-center text-zinc-500 text-sm mt-4">Tiada rekod.</p>';
-            document.getElementById('leaderboard-loading').classList.add('hidden');
-        });
-    };
-    
-    window.closeLeaderboard = function() {
-        const modal = document.getElementById('leaderboard-modal');
-        if(!modal) return;
-        modal.classList.remove('opacity-100');
-        document.getElementById('leaderboard-content').classList.replace('scale-100', 'scale-95');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-    };
-
-    window.openSimulation = function() {
-        const modal = document.getElementById('simulation-modal');
-        if(!modal) return;
-        modal.classList.remove('hidden');
-        setTimeout(() => { modal.classList.add('opacity-100'); document.getElementById('simulation-content').classList.replace('scale-95', 'scale-100'); }, 10);
-    };
-    
-    window.closeSimulation = function() {
-        const modal = document.getElementById('simulation-modal');
-        if(!modal) return;
-        modal.classList.remove('opacity-100');
-        document.getElementById('simulation-content').classList.replace('scale-100', 'scale-95');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-    };
-
-    window.updateMacroGraph = function(val) {
-        document.getElementById('g-value-text').innerText = `RM ${val} Bilion`;
-        const diff = val - 50;
-        const offset = diff * 1.5;
-        const adCurve = document.getElementById('ad-curve-group');
-        if(adCurve) adCurve.style.transform = `translate(${offset}px, ${-offset}px)`;
-        
-        const eqX = 150 + (offset/2);
-        const eqY = 150 - (offset/2);
-        
-        document.getElementById('eq-dot').setAttribute('cx', eqX);
-        document.getElementById('eq-dot').setAttribute('cy', eqY);
-        document.getElementById('eq-line-y').setAttribute('x1', eqX);
-        document.getElementById('eq-line-y').setAttribute('x2', eqX);
-        document.getElementById('eq-line-p').setAttribute('y1', eqY);
-        document.getElementById('eq-line-p').setAttribute('y2', eqY);
-        
-        const status = diff > 0 ? "Pengembangan ekonomi (Inflasi Tarikan Permintaan)" : (diff < 0 ? "Penguncupan ekonomi (Deflasi/Pengangguran)" : "Keseimbangan asal ekonomi STPM.");
-        document.getElementById('sim-analysis').innerText = status;
-        document.getElementById('sim-p').innerText = diff > 0 ? "P1 (Naik)" : (diff < 0 ? "P2 (Turun)" : "P0");
-        document.getElementById('sim-y').innerText = diff > 0 ? "Y1 (Naik)" : (diff < 0 ? "Y2 (Turun)" : "Y0");
-    };
-
-    window.openApiConfigModal = function() {
-        const modal = document.getElementById('api-config-modal');
-        if(!modal) return;
-        modal.classList.remove('hidden');
-        document.getElementById('api-config-url-input').value = window.state.apiConfig.gasUrl || '';
-        document.getElementById('api-config-gemini-input').value = window.state.apiConfig.geminiKey || '';
-        setTimeout(() => { modal.classList.add('opacity-100'); document.getElementById('api-config-content').classList.replace('scale-95', 'scale-100'); }, 10);
-    };
-    
-    window.closeApiConfigModal = function() {
-        const modal = document.getElementById('api-config-modal');
-        if(!modal) return;
-        modal.classList.remove('opacity-100');
-        document.getElementById('api-config-content').classList.replace('scale-100', 'scale-95');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-    };
-    
-    window.saveApiUrlConfig = function() {
-        window.state.apiConfig.gasUrl = document.getElementById('api-config-url-input').value;
-        window.state.apiConfig.geminiKey = document.getElementById('api-config-gemini-input').value;
-        window.closeApiConfigModal();
-        window.showCustomModal("Disimpan", "Konfigurasi API telah disahkan.", "check-circle", true);
-        window.fetchQuestionsFromCloud();
-    };
-
-    window.triggerManualSync = function() {
-        window.syncDatabaseWithBackend();
-        window.fetchQuestionsFromCloud();
-        window.showCustomModal("Segerak Data", "Papan pemuka dan soalan dikemaskini.", "refresh-cw", true);
-    };
-
-    if (window.firebaseReady && typeof window.initApp === 'function') {
-        window.initApp();
+    else if (action === "submit_score") {
+      responseObj = handleSubmitScore(payload);
     }
 
-    let unsubscribeStudents = null;
-    let unsubscribeAnnouncements = null;
-    let unsubscribeMessages = null;
+  } catch (error) {
+    responseObj = { status: "error", message: "Ralat Pelayan (GAS): " + error.toString() };
+  }
 
-    window.syncDatabaseWithBackend = function() {
-        if(window.state && window.state.role === 'teacher') window.loadTeacherDashboardData();
-        else if (window.state && window.state.role === 'student') { 
-            window.updateStudentDashboardUI(); 
-            window.listenAnnouncements();
-            window.listenMessages();
-            window.showView('view-student-dashboard'); 
-        }
-        else window.showView('view-auth');
-    };
+  // Pulangkan response dalam format JSON
+  return ContentService.createTextOutput(JSON.stringify(responseObj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
 
-    window.loadTeacherDashboardData = function() {
-        if (!window.state.user) return;
-        window.fetchQuestionsFromCloud().catch(()=>{});
-        if (document.getElementById('nav-settings-btn')) document.getElementById('nav-settings-btn').classList.remove('hidden');
+/**
+ * Mengendalikan permintaan GET (Berguna untuk semak sama ada link Web App hidup/aktif)
+ */
+function doGet(e) {
+  return ContentService.createTextOutput("Backend MacroNexus STPM sedang beroperasi dengan lancar.");
+}
 
-        document.getElementById('display-class-name').innerText = window.state.user.className || "Kelas Makroekonomi";
-        document.getElementById('display-class-code').innerText = window.state.user.classCode || "TIADA";
+/**
+ * FUNGSI 1: Ambil semua soalan dari Google Sheet
+ */
+function handleFetchAll() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheets = ss.getSheets();
+  let allQuestions = [];
+
+  sheets.forEach(sheet => {
+    const sheetName = sheet.getName();
+    // Hanya baca tab yang mempunyai perkataan "Set" atau "Bank"
+    if (sheetName.toLowerCase().includes("set") || sheetName.toLowerCase().includes("bank")) {
+      const data = sheet.getDataRange().getValues();
+      if (data.length > 1) {
+        // Ambil header baris pertama
+        const headers = data[0].map(h => h.toString().toLowerCase().trim());
         
-        if (window.state.user.classCode) {
-            document.getElementById('active-class-banner').classList.remove('hidden');
-            document.getElementById('create-class-form').classList.add('hidden');
-            document.getElementById('resume-class-form').classList.add('hidden');
-            window.listenStudents();
-            window.listenAnnouncements();
-            window.listenMessages();
-        } else {
-            document.getElementById('active-class-banner').classList.add('hidden');
-            document.getElementById('create-class-form').classList.remove('hidden');
-            document.getElementById('resume-class-form').classList.remove('hidden');
-        }
-        window.showView('view-teacher-dashboard');
-    };
-
-    window.copyClassCode = function() {
-        const code = document.getElementById('display-class-code').innerText;
-        navigator.clipboard.writeText(code).then(() => {
-            window.showCustomModal("Berjaya", "Kod kelas disalin ke papan keratan.", "check-circle", true);
-        }).catch(() => {
-            const el = document.createElement('textarea');
-            el.value = code; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
-            window.showCustomModal("Berjaya", "Kod kelas disalin ke papan keratan.", "check-circle", true);
-        });
-    };
-
-    window.resumeExistingClass = function() {
-        window.closeTeacherResumeModal();
-        window.showView('view-loading');
-        if (document.getElementById('loading-text')) document.getElementById('loading-text').innerText = "Menyemak rekod...";
-
-        const classCodeInput = window.state.user.classCode;
-        if (!classCodeInput) { window.startNewClassFlow(); return; }
-        window.executeResumeClass(classCodeInput);
-    };
-
-    window.executeResumeClass = async function(classCodeInput) {
-       try {
-            let classData = { className: "Kelas Makroekonomi" };
-            if (window.db) {
-                const classDocPromise = window.getDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', classCodeInput));
-                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), 6000));
-                
-                const classDoc = await Promise.race([classDocPromise, timeoutPromise]);
-                
-                if (!classDoc.exists()) {
-                  window.showCustomModal("Tiada Rekod", "Kod kelas telah dipadam atau tidak wujud.", "alert-triangle");
-                  window.startNewClassFlow(); return;
-                }
-                classData = classDoc.data();
-            }
-            
-            const user = window.state.user;
-            user.classCode = classCodeInput;
-            user.className = classData.className;
-            window.state.activeClassCode = classCodeInput;
-            window.state.activeClassName = classData.className;
-            localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
-            window.syncDatabaseWithBackend();
-        } catch (err) {
-            window.state.activeClassCode = classCodeInput;
-            window.syncDatabaseWithBackend();
-        }
-    };
-
-    window.startNewClassFlow = function() {
-        window.closeTeacherResumeModal();
-        window.state.activeClassCode = null;
-        const user = window.state.user; user.classCode = '';
-        localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
-        window.syncDatabaseWithBackend();
-    };
-
-    window.closeTeacherResumeModal = function() {
-        const modal = document.getElementById('teacher-resume-modal');
-        if(!modal) return;
-        modal.classList.remove('opacity-100');
-        document.getElementById('teacher-resume-content').classList.replace('scale-100', 'scale-95');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-    };
-
-    window.listenStudents = function() {
-       if(!window.db || !window.state.user.classCode) return;
-       if(unsubscribeStudents) unsubscribeStudents();
-       const q = window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'students'));
-       unsubscribeStudents = window.onSnapshot(q, (snapshot) => {
-          let html = '';
-          let totalA = 0, totalC = 0, stdCount = 0;
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            if(data.classCode === window.state.user.classCode) {
-               stdCount++; totalA += (data.attempts||0); totalC += (data.correct||0);
-               const acc = data.attempts > 0 ? Math.round((data.correct/data.attempts)*100) : 0;
-               html += `<tr>
-                 <td class="p-3 font-bold text-white">${window.escapeHtml(data.name)}</td>
-                 <td class="p-3 text-amber-500 font-mono">${window.escapeHtml(data.classCode)}</td>
-                 <td class="p-3"><span class="px-2 py-1 bg-orange-500/10 text-orange-400 rounded text-xs">L${data.level||1}</span></td>
-                 <td class="p-3 font-mono">${data.xp||0}</td>
-                 <td class="p-3 font-mono">${acc}%</td>
-                 <td class="p-3 text-center">
-                   <button onclick="window.confirmDeleteStudent('${doc.id}', '${window.escapeHtml(data.name).replace(/'/g, "\\'")}')" class="text-red-500 bg-red-500/10 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:bg-red-500/20">Keluarkan</button>
-                 </td>
-               </tr>`;
-            }
-          });
-          document.getElementById('students-table-body').innerHTML = html || '<tr><td colspan="6" class="p-6 text-center text-zinc-500">Tiada pelajar berdaftar.</td></tr>';
-          if(document.getElementById('stat-teacher-students')) document.getElementById('stat-teacher-students').innerText = stdCount;
-          if(document.getElementById('stat-teacher-attempts')) document.getElementById('stat-teacher-attempts').innerText = totalA;
-          if(document.getElementById('stat-teacher-accuracy')) document.getElementById('stat-teacher-accuracy').innerText = totalA > 0 ? Math.round((totalC/totalA)*100) + '%' : '0%';
-       });
-    };
-
-    window.confirmDeleteStudent = function(id, name) {
-        window.showGenericConfirm(
-           "Keluarkan Pelajar?", 
-           `Adakah anda pasti ingin mengeluarkan ${name}? Tindakan ini akan mengosongkan rekod kod kelas mereka.`, 
-           () => {
-               if (window.db) window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', id), { classCode: '' }).catch(()=>{});
-               window.showCustomModal("Berjaya", "Pelajar telah dikeluarkan.", "check-circle", true);
-           },
-           "user-x"
-        );
-    };
-
-    window.listenAnnouncements = function() {
-       if(!window.db || !window.state.user.classCode) return;
-       if(unsubscribeAnnouncements) unsubscribeAnnouncements();
-       const q = window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'announcements'), window.orderBy('timestamp', 'desc'));
-       unsubscribeAnnouncements = window.onSnapshot(q, (snapshot) => {
-          let html = '';
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            if(data.classCode === window.state.user.classCode) {
-               html += `<div class="p-3 bg-zinc-900/50 rounded-xl border border-white/5 relative group mb-2">
-                 <p class="text-zinc-300 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-words">${window.escapeHtml(data.text)}</p>
-                 <div class="mt-2 text-[10px] text-zinc-500 font-bold flex justify-between items-center">
-                   <span>Oleh: Cikgu ${window.escapeHtml(data.senderName)}</span>`;
-               if(window.state.role === 'teacher') {
-                  html += `<div class="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                    <button onclick="window.editAnnouncement('${doc.id}', '${window.escapeHtml(data.text).replace(/'/g, "\\'")}')" class="text-blue-400 hover:text-blue-300"><i data-lucide="edit" class="w-3.5 h-3.5"></i></button>
-                    <button onclick="window.confirmDeleteAnnouncement('${doc.id}')" class="text-red-400 hover:text-red-300"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
-                  </div>`;
-               }
-               html += `</div></div>`;
-            }
-          });
-          const listId = window.state.role === 'teacher' ? 'teacher-announcements-list' : 'student-announcements-list';
-          const el = document.getElementById(listId);
-          if (el) { el.innerHTML = html || '<p class="text-zinc-600 italic">Tiada pengumuman.</p>'; window.initLucide(); }
-       });
-    };
-
-    window.editAnnouncement = function(id, currentText) {
-        window.state.editingAnnouncementId = id;
-        const input = document.getElementById('teacher-announcement-input');
-        if(input) input.value = currentText;
-        const btn = document.querySelector('#teacher-announcement-form button[type="submit"]');
-        if(btn) btn.innerText = "Kemaskini Pengumuman";
-        const cancelBtn = document.getElementById('btn-cancel-edit-announcement');
-        if (cancelBtn) cancelBtn.classList.remove('hidden');
-    };
-
-    window.cancelEditAnnouncement = function() {
-        window.state.editingAnnouncementId = null;
-        const input = document.getElementById('teacher-announcement-input');
-        if(input) input.value = '';
-        const btn = document.querySelector('#teacher-announcement-form button[type="submit"]');
-        if(btn) btn.innerText = "Siarkan";
-        const cancelBtn = document.getElementById('btn-cancel-edit-announcement');
-        if (cancelBtn) cancelBtn.classList.add('hidden');
-    };
-
-    window.confirmDeleteAnnouncement = function(id) {
-        window.showGenericConfirm(
-            "Padam Pengumuman?",
-            "Pengumuman ini akan dibuang secara kekal dari kelas.",
-            () => {
-               if (window.db) window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'announcements', id)).catch(()=>{});
-               window.showCustomModal("Berjaya", "Pengumuman dipadam.", "check-circle", true);
-            },
-            "trash"
-        );
-    };
-
-    window.listenMessages = function() {
-       if(!window.db || !window.state.user.classCode) return;
-       if(unsubscribeMessages) unsubscribeMessages();
-       const q = window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'messages'), window.orderBy('timestamp', 'asc'));
-       unsubscribeMessages = window.onSnapshot(q, (snapshot) => {
-          let html = '';
-          window.state.currentMessageIds = [];
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            if(data.classCode === window.state.user.classCode) {
-               window.state.currentMessageIds.push(doc.id);
-               const currentUserId = window.state.user.id || (window.auth.currentUser ? window.auth.currentUser.uid : 'offline');
-               const isMe = data.senderId === currentUserId;
-               const bg = isMe ? 'bg-amber-500/10 border border-amber-500/20 text-white' : 'bg-zinc-900 border border-white/5 text-zinc-300';
-               const align = isMe ? 'ml-auto' : 'mr-auto';
-               const senderName = isMe ? 'Anda' : window.escapeHtml(data.senderName);
-               html += `<div class="max-w-[85%] ${align} ${bg} p-3 rounded-xl text-xs sm:text-sm leading-relaxed mb-2 break-words">
-                 <div class="text-[9px] font-bold ${isMe ? 'text-amber-500' : 'text-zinc-500'} mb-1">${senderName}</div>
-                 ${window.escapeHtml(data.text)}
-               </div>`;
-            }
-          });
-          const containerId = window.state.role === 'teacher' ? 'teacher-messages-container' : 'student-messages-container';
-          const container = document.getElementById(containerId);
-          if (container) {
-            container.innerHTML = html || '<p class="text-zinc-500 text-xs italic">Belum ada mesej di kelas ini.</p>';
-            container.scrollTop = container.scrollHeight;
-          }
-       });
-    };
-
-    window.clearClassMessages = function() {
-       if(!window.state.currentMessageIds || window.state.currentMessageIds.length === 0) return;
-       window.showGenericConfirm(
-           "Padam Semua Mesej?", 
-           "Semua log sembang kelas ini akan dipadam secara kekal.", 
-           () => {
-               window.state.currentMessageIds.forEach(msgId => {
-                   window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'messages', msgId)).catch(()=>{});
-               });
-               window.showCustomModal("Selesai", "Semua mesej telah dibersihkan.", "check-circle", true);
-           },
-           "trash-2"
-       );
-    };
-
-    window.pendingConfirmAction = null;
-    window.showGenericConfirm = function(title, message, callback, icon="help-circle") {
-        let modal = document.getElementById('generic-confirm-modal');
-        document.getElementById('generic-confirm-title').innerText = title;
-        document.getElementById('generic-confirm-message').innerText = message;
-        const iconEl = document.getElementById('generic-confirm-icon');
-        if(iconEl) { iconEl.setAttribute('data-lucide', icon); window.initLucide(); }
-
-        window.pendingConfirmAction = callback;
-        modal.classList.remove('hidden');
-        setTimeout(() => { 
-            modal.classList.add('opacity-100'); 
-            document.getElementById('generic-confirm-content').classList.replace('scale-95', 'scale-100'); 
-        }, 10);
-    };
-
-    window.closeGenericConfirm = function() {
-        const modal = document.getElementById('generic-confirm-modal');
-        if(!modal) return;
-        modal.classList.remove('opacity-100');
-        document.getElementById('generic-confirm-content').classList.replace('scale-100', 'scale-95');
-        setTimeout(() => { modal.classList.add('hidden'); window.pendingConfirmAction = null; }, 300);
-    };
-
-    window.executeGenericConfirm = function() {
-        if(window.pendingConfirmAction) window.pendingConfirmAction();
-        window.closeGenericConfirm();
-    };
-
-    window.handleLogout = async function() {
-      if(window.auth) { try { await window.auth.signOut(); } catch(e) {} }
-      localStorage.setItem('macronexus_logged_out', 'true');
-      localStorage.removeItem('macronexus_user_profile');
-      window.state.user = null;
-      window.state.activeClassCode = null;
-      window.showView('view-auth');
-    };
-
-    window.updateStudentDashboardUI = function() {
-      const user = window.state.user;
-      if (!user) return;
-      
-      window.fetchQuestionsFromCloud().catch(()=>{});
-
-      document.getElementById('welcome-student-title').innerText = "Selamat Datang, " + window.escapeHtml(user.name) + "! 📚";
-      
-      const currentXp = user.xp || 0;
-      const level = user.level || 1;
-      const relativeXp = currentXp - ((level - 1) * 200);
-      const percent = Math.min(100, Math.max(0, Math.round((relativeXp / 200) * 100)));
-
-      if(document.getElementById('student-level-badge')) document.getElementById('student-level-badge').innerText = "L" + level;
-      if(document.getElementById('student-level-num')) document.getElementById('student-level-num').innerText = "Tahap " + level;
-      if(document.getElementById('student-current-xp')) document.getElementById('student-current-xp').innerText = currentXp;
-      if(document.getElementById('student-next-xp')) document.getElementById('student-next-xp').innerText = level * 200;
-      if(document.getElementById('student-xp-bar')) document.getElementById('student-xp-bar').style.width = percent + "%";
-
-      const totalAttempts = user.attempts || 0;
-      const totalCorrect = user.correct || 0;
-      const accuracy = totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0;
-
-      if(document.getElementById('stat-student-questions')) document.getElementById('stat-student-questions').innerText = totalAttempts;
-      if(document.getElementById('stat-student-accuracy')) document.getElementById('stat-student-accuracy').innerText = accuracy + "%";
-
-      const gradeEl = document.getElementById('stat-student-grade');
-      const gradeDescEl = document.getElementById('stat-student-grade-desc');
-      if (gradeEl && gradeDescEl) {
-        if (totalAttempts < 5) {
-          gradeEl.innerText = "?";
-          gradeDescEl.innerText = "Jawab min 5 soalan untuk ramalan.";
-        } else if (accuracy >= 80) {
-          gradeEl.innerText = "A";
-          gradeEl.className = "text-3xl font-black font-mono text-emerald-400";
-          gradeDescEl.innerText = "Cemerlang! Prestasi setara A STPM.";
-        } else if (accuracy >= 65) {
-          gradeEl.innerText = "B+";
-          gradeEl.className = "text-3xl font-black font-mono text-blue-400";
-          gradeDescEl.innerText = "Baik! Sasaran Kepujian Tinggi.";
-        } else if (accuracy >= 50) {
-          gradeEl.innerText = "C+";
-          gradeEl.className = "text-3xl font-black font-mono text-amber-400";
-          gradeDescEl.innerText = "Memuaskan. Teruskan latihan.";
-        } else {
-          gradeEl.innerText = "D";
-          gradeEl.className = "text-3xl font-black font-mono text-red-400";
-          gradeDescEl.innerText = "Perlukan ulangkaji lanjut.";
-        }
-      }
-
-      const joinClassPanel = document.getElementById('student-join-class-panel');
-      const activeClassBanner = document.getElementById('student-active-class-banner');
-      if (joinClassPanel) joinClassPanel.classList.toggle('hidden', !!user.classCode);
-      if (activeClassBanner) {
-        activeClassBanner.classList.toggle('hidden', !user.classCode);
-        if (user.classCode) document.getElementById('student-active-class-code').innerText = user.classCode;
-      }
-    };
-
-    window.startQuizFlow = function() {
-        const chap = document.getElementById('student-chapter-selector').value;
-        const set = document.getElementById('student-set-selector').value;
-        const mode = document.getElementById('student-mode-selector').value;
-
-        let pool = window.globalQuestions || window.localFallbackQuestions;
-        
-        if(chap !== "0") pool = pool.filter(q => q.chapter === chap);
-        if(set !== "0") pool = pool.filter(q => window.normalizeSetName(q.sheetName || q.set) === "Set " + set);
-
-        if(pool.length === 0) {
-            window.showCustomModal("Bank Soalan Kosong", "Tiada soalan ditemui untuk pilihan set/bab tersebut.", "alert-triangle");
-            return;
-        }
-
-        window.state.quizState = {
-            questions: pool.slice(0, 20),
-            chapter: chap === "0" ? "Semua Bab" : "Bab " + chap,
-            set: set === "0" ? "Semua Set" : "Set " + set,
-            mode: mode,
-            currentIndex: 0,
-            answers: {},
-            score: 0,
-            xpEarned: 0,
-            hasSubmitted: false,
-            secondsTaken: 0,
-            timerInterval: setInterval(() => {
-                window.state.quizState.secondsTaken++;
-                const mins = Math.floor(window.state.quizState.secondsTaken / 60).toString().padStart(2, '0');
-                const secs = (window.state.quizState.secondsTaken % 60).toString().padStart(2, '0');
-                if(document.getElementById('quiz-timer')) {
-                    document.getElementById('quiz-timer').innerText = `${mins}:${secs}`;
-                }
-            }, 1000)
-        };
-
-        window.showView('view-quiz');
-        
-        if (mode === 'onebyone') {
-            document.getElementById('quiz-single-view').classList.remove('hidden');
-            document.getElementById('quiz-multi-view').classList.add('hidden');
-            document.getElementById('quiz-progress-bar-wrapper').classList.remove('hidden');
-            document.getElementById('quiz-control-buttons').classList.remove('hidden');
-            document.getElementById('btn-quiz-submit').classList.remove('hidden');
-            document.getElementById('btn-quiz-next').classList.add('hidden');
-            window.renderSingleQuestion();
-        } else {
-            document.getElementById('quiz-single-view').classList.add('hidden');
-            document.getElementById('quiz-multi-view').classList.remove('hidden');
-            document.getElementById('quiz-progress-bar-wrapper').classList.add('hidden');
-            document.getElementById('quiz-control-buttons').classList.add('hidden');
-            window.renderMultiQuestions();
-        }
-    };
-
-    window.renderSingleQuestion = function() {
-        const qState = window.state.quizState;
-        const q = qState.questions[qState.currentIndex];
-        
-        document.getElementById('quiz-chapter-indicator').innerText = `${qState.chapter} — ${qState.set}`;
-        document.getElementById('quiz-index-indicator').innerText = `Soalan ${qState.currentIndex + 1} / ${qState.questions.length}`;
-        document.getElementById('quiz-progress-bar').style.width = `${Math.round(((qState.currentIndex) / qState.questions.length) * 100)}%`;
-        
-        document.getElementById('quiz-question-text').innerHTML = window.escapeHtml(q.text || q.q);
-        
-        const optsContainer = document.getElementById('quiz-options-container');
-        optsContainer.innerHTML = '';
-        
-        const optionsList = q.options || q.opts || [];
-        optionsList.forEach((opt, idx) => {
-            const btn = document.createElement('button');
-            btn.id = `opt-${idx}`;
-            btn.className = "w-full text-left p-4 rounded-2xl border-2 border-zinc-800 hover:border-zinc-700 bg-zinc-950 text-xs sm:text-sm text-zinc-300 font-medium flex items-center gap-3";
-            btn.onclick = () => {
-                if(qState.hasSubmitted) return;
-                qState.answers[qState.currentIndex] = idx;
-                Array.from(optsContainer.children).forEach(c => {
-                    c.classList.remove('border-orange-500', 'bg-orange-500/10');
-                    c.classList.add('border-zinc-800', 'bg-zinc-950');
-                });
-                btn.classList.remove('border-zinc-800', 'bg-zinc-950');
-                btn.classList.add('border-orange-500', 'bg-orange-500/10');
-            };
-            btn.innerHTML = `<span class="w-6 h-6 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-500 flex items-center justify-center font-mono text-[11px]">${String.fromCharCode(65+idx)}</span><span>${window.escapeHtml(opt)}</span>`;
-            optsContainer.appendChild(btn);
-        });
-
-        document.getElementById('quiz-explanation-box').classList.add('hidden');
-        document.getElementById('btn-quiz-submit').classList.remove('hidden');
-        document.getElementById('btn-quiz-next').classList.add('hidden');
-        qState.hasSubmitted = false;
-
-        if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
-            window.MathJax.typesetPromise().catch(()=>{});
-        }
-    };
-
-    window.submitSingleAnswer = function() {
-        const qState = window.state.quizState;
-        if(qState.answers[qState.currentIndex] === undefined) {
-            window.showCustomModal("Pilih Jawapan", "Sila pilih satu jawapan dahulu.", "info");
-            return;
-        }
-        
-        qState.hasSubmitted = true;
-        const q = qState.questions[qState.currentIndex];
-        const selected = qState.answers[qState.currentIndex];
-        const correctAns = q.answer !== undefined ? q.answer : q.ans;
-        const isCorrect = selected === correctAns;
-
-        const correctBtn = document.getElementById(`opt-${correctAns}`);
-        const selectedBtn = document.getElementById(`opt-${selected}`);
-
-        if(isCorrect) {
-            qState.score++;
-            qState.xpEarned += 30;
-            if(selectedBtn) {
-                selectedBtn.classList.remove('border-orange-500', 'bg-orange-500/10');
-                selectedBtn.classList.add('border-emerald-500', 'bg-emerald-500/10');
-            }
-        } else {
-            qState.xpEarned += 10;
-            if(selectedBtn) {
-                selectedBtn.classList.remove('border-orange-500', 'bg-orange-500/10');
-                selectedBtn.classList.add('border-red-500', 'bg-red-500/10');
-            }
-            if(correctBtn) {
-                correctBtn.classList.remove('border-zinc-800', 'bg-zinc-950');
-                correctBtn.classList.add('border-emerald-500', 'bg-emerald-500/10');
-            }
-        }
-
-        document.getElementById('quiz-explanation-box').classList.remove('hidden');
-        document.getElementById('quiz-explanation-text').innerHTML = q.explanation || "Tiada penerangan tambahan.";
-
-        document.getElementById('btn-quiz-submit').classList.add('hidden');
-        document.getElementById('btn-quiz-next').classList.remove('hidden');
-    };
-
-    window.nextSingleQuestion = function() {
-        window.state.quizState.currentIndex++;
-        if(window.state.quizState.currentIndex < window.state.quizState.questions.length) {
-            window.renderSingleQuestion();
-        } else {
-            window.concludeQuiz();
-        }
-    };
-
-    window.renderMultiQuestions = function() {
-        const qState = window.state.quizState;
-        const container = document.getElementById('quiz-multi-view');
-        container.innerHTML = '';
-
-        qState.questions.forEach((q, qIndex) => {
-            const wrap = document.createElement('div');
-            wrap.className = "p-5 rounded-2xl border border-white/5 bg-zinc-900/50 space-y-4";
-            wrap.innerHTML = `<h4 class="text-white text-sm"><span class="text-orange-500 mr-2">${qIndex + 1}.</span>${window.escapeHtml(q.text || q.q)}</h4>`;
-            
-            const opts = document.createElement('div');
-            opts.className = "grid gap-3";
-            const optionsList = q.options || q.opts || [];
-            optionsList.forEach((opt, oIndex) => {
-                const btn = document.createElement('button');
-                btn.className = "w-full text-left p-3 rounded-xl border border-zinc-800 bg-zinc-950 text-sm text-zinc-400 flex gap-3 items-center transition-all";
-                btn.id = `multi-${qIndex}-${oIndex}`;
-                btn.onclick = () => {
-                    qState.answers[qIndex] = oIndex;
-                    Array.from(opts.children).forEach(c => {
-                        c.classList.remove('border-orange-500', 'bg-orange-500/10', 'text-white');
-                        c.classList.add('border-zinc-800', 'bg-zinc-950', 'text-zinc-400');
-                    });
-                    btn.classList.remove('border-zinc-800', 'bg-zinc-950', 'text-zinc-400');
-                    btn.classList.add('border-orange-500', 'bg-orange-500/10', 'text-white');
-                };
-                btn.innerHTML = `<span class="w-5 h-5 rounded bg-zinc-900 border border-zinc-800 flex justify-center items-center text-[10px]">${String.fromCharCode(65+oIndex)}</span><span>${window.escapeHtml(opt)}</span>`;
-                opts.appendChild(btn);
-            });
-            wrap.appendChild(opts);
-            container.appendChild(wrap);
-        });
-
-        const actions = document.createElement('div');
-        actions.className = "pt-4 flex gap-3 justify-end";
-        actions.innerHTML = `
-            <button onclick="window.exitQuiz()" class="px-6 py-3 bg-zinc-800 text-white rounded-xl text-sm font-bold">Batal</button>
-            <button onclick="window.submitExamSheet()" class="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-black rounded-xl text-sm font-bold">Hantar Jawapan</button>
-        `;
-        container.appendChild(actions);
-
-        if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
-            window.MathJax.typesetPromise().catch(()=>{});
-        }
-    };
-
-    window.submitExamSheet = function() {
-        const qState = window.state.quizState;
-        const answered = Object.keys(qState.answers).length;
-        const total = qState.questions.length;
-
-        if (answered < total) {
-            window.showGenericConfirm(
-                "Hantar Lebih Awal?", 
-                `Anda hanya menjawab ${answered}/${total} soalan. Hantar sekarang?`, 
-                () => window.executeSubmitExamSheet(),
-                "help-circle"
-            );
-        } else {
-            window.executeSubmitExamSheet();
-        }
-    };
-
-    window.executeSubmitExamSheet = function() {
-        const qState = window.state.quizState;
-        qState.questions.forEach((q, idx) => {
-            const correctAns = q.answer !== undefined ? q.answer : q.ans;
-            if(qState.answers[idx] === correctAns) {
-                qState.score++;
-                qState.xpEarned += 30;
-            } else {
-                qState.xpEarned += 10;
-            }
-        });
-        window.concludeQuiz();
-    };
-
-    window.exitQuiz = function() {
-        window.showGenericConfirm(
-            "Batal Latihan?", 
-            "Adakah anda pasti? Segala jawapan tidak akan disimpan.", 
-            () => {
-                if (window.state.quizState.timerInterval) clearInterval(window.state.quizState.timerInterval);
-                window.syncDatabaseWithBackend();
-            },
-            "alert-triangle"
-        );
-    };
-
-    window.backToDashboard = function() {
-        window.syncDatabaseWithBackend();
-    };
-
-    window.concludeQuiz = function() {
-        if (window.state.quizState.timerInterval) clearInterval(window.state.quizState.timerInterval);
-
-        const user = window.state.user;
-        user.attempts = (user.attempts || 0) + window.state.quizState.questions.length;
-        user.correct = (user.correct || 0) + window.state.quizState.score;
-        user.xp = (user.xp || 0) + window.state.quizState.xpEarned;
-        
-        const calculatedLevel = Math.floor(user.xp / 200) + 1;
-        if (calculatedLevel > (user.level || 1)) {
-          setTimeout(() => {
-            window.showCustomModal("Tahniah! Level Up 🎉", `Anda berjaya naik ke Tahap ${calculatedLevel}! Teruskan usaha murni anda.`, "award", true);
-          }, 800);
-        }
-        user.level = calculatedLevel;
-
-        localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
-
-        if (window.db && user.role === 'student') {
-             const currentUserId = user.id || (window.auth && window.auth.currentUser ? window.auth.currentUser.uid : null);
-             if (currentUserId) {
-                window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'users', currentUserId, 'profile', 'main'), { xp: user.xp, level: user.level, attempts: user.attempts, correct: user.correct }).catch(()=>{});
-                window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', currentUserId), { xp: user.xp, level: user.level, attempts: user.attempts, correct: user.correct }).catch(()=>{});
-                const sessionId = 'SESSION_' + Date.now();
-                window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', currentUserId, 'quiz_sessions', sessionId), {
-                    timestamp: window.serverTimestamp(), score: window.state.quizState.score, totalQuestions: window.state.quizState.questions.length, xpEarned: window.state.quizState.xpEarned, chapter: window.state.quizState.chapter, set: window.state.quizState.set, mode: window.state.quizState.mode, timeTakenSeconds: window.state.quizState.secondsTaken
-                }).catch(()=>{});
-             }
-        }
-
-        const accuracy = Math.round((window.state.quizState.score / window.state.quizState.questions.length) * 100);
-        document.getElementById('results-xp-gained').innerText = `+${window.state.quizState.xpEarned} XP`;
-        document.getElementById('results-accuracy').innerText = `${accuracy}%`;
-
-        window.showView('view-results');
-    };
-
-    document.addEventListener('DOMContentLoaded', () => {
-      const authForm = document.getElementById('auth-form');
-      if(authForm) {
-        authForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const name = document.getElementById('auth-name').value.trim();
-          const rawClassCode = document.getElementById('auth-classcode').value.trim().toUpperCase();
-
-          if (!name) return;
-          window.showView('view-loading');
-          localStorage.removeItem('macronexus_logged_out');
-
-          try {
-              window.state.role = window.state.selectedRole || 'student';
-              if (window.auth && !window.auth.currentUser) await window.signInAnonymously(window.auth);
-              const userId = window.auth && window.auth.currentUser ? window.auth.currentUser.uid : ('MANUAL_' + Date.now());
-              const profile = {
-                id: userId,
-                name: name, email: "", role: window.state.role, classCode: window.state.role === 'student' ? rawClassCode : '', xp: 0, level: 1, attempts: 0, correct: 0
-              };
-
-              if (window.state.role === 'student' && window.db) {
-                if (rawClassCode) {
-                  const classDocPromise = window.getDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', rawClassCode));
-                  const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), 6000));
-                  const classDoc = await Promise.race([classDocPromise, timeoutPromise]);
-                  
-                  if (!classDoc.exists()) {
-                    window.showCustomModal("Kelas Tidak Wujud", "Kod kelas tidak sah.", "alert-triangle");
-                    window.showView('view-auth'); return;
-                  }
-                  const classData = classDoc.data();
-                  profile.className = classData.className || "";
-                  profile.teacherName = classData.teacherName || "";
-                }
-              }
-
-              if (window.db) {
-                  window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', profile.id, 'profile', 'main'), profile).catch(()=>{});
-                  if (profile.role === 'student') window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', profile.id), profile).catch(()=>{});
-              }
-
-              localStorage.setItem('macronexus_user_profile', JSON.stringify(profile));
-              window.state.user = profile;
-              window.state.activeClassCode = profile.classCode || null;
-              window.fetchQuestionsFromCloud().catch(()=>{});
-              window.syncDatabaseWithBackend();
-          } catch (error) {
-               window.showCustomModal("Luar Talian", "Beralih ke mod setempat.", "info");
-               window.syncDatabaseWithBackend();
-          }
-        });
-      }
-
-      const teacherAnnouncementForm = document.getElementById('teacher-announcement-form');
-      if (teacherAnnouncementForm) {
-        teacherAnnouncementForm.addEventListener('submit', (e) => {
-           e.preventDefault();
-           if (!window.state.activeClassCode) return;
-           const input = document.getElementById('teacher-announcement-input');
-           const text = input.value.trim();
-           if (!text) return;
-
-           const senderId = window.state.user.id || (window.auth && window.auth.currentUser ? window.auth.currentUser.uid : 'offline');
-
-           if (window.state.editingAnnouncementId) {
-               if (window.db) {
-                   window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'announcements', window.state.editingAnnouncementId), {
-                       text: text, timestamp: window.serverTimestamp()
-                   }).catch(()=>{});
-               }
-               window.cancelEditAnnouncement();
-               window.showCustomModal("Berjaya", "Pengumuman telah dikemaskini.", "check-circle", true);
-           } else {
-               if (window.db) {
-                   window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'announcements'), {
-                       classCode: window.state.activeClassCode, text: text, timestamp: window.serverTimestamp(),
-                       senderName: window.state.user.name || "Guru", senderId: senderId
-                   }).catch(()=>{});
-               }
-               input.value = '';
-               window.showCustomModal("Siaran Berjaya! 📣", "Pengumuman berjaya dihantar.", "check-circle", true);
-           }
-        });
-      }
-
-      const studentMsgForm = document.getElementById('student-message-form');
-      if (studentMsgForm) {
-        studentMsgForm.addEventListener('submit', (e) => {
-           e.preventDefault();
-           if (!window.state.user || !window.state.user.classCode) {
-               window.showCustomModal("Ralat Sembang", "Anda belum menyertai sebarang kelas.", "alert-triangle");
-               return;
-           }
-           const input = document.getElementById('student-message-input');
-           const text = input.value.trim();
-           if (!text) return;
-
-           const senderId = window.state.user.id || (window.auth && window.auth.currentUser ? window.auth.currentUser.uid : 'offline');
-
-           if (window.db) {
-               window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'messages'), {
-                   classCode: window.state.user.classCode, text: text, timestamp: window.serverTimestamp(),
-                   senderName: window.state.user.name || "Pelajar", senderId: senderId
-               }).catch((err) => {
-                   console.error("Gagal hantar mesej:", err);
-                   window.showCustomModal("Ralat Penghantaran", "Mesej gagal dihantar ke pangkalan data.", "alert-triangle");
-               });
-           }
-           input.value = '';
-        });
-      }
-
-      const createClassForm = document.getElementById('create-class-form');
-      if (createClassForm) {
-        createClassForm.addEventListener('submit', (e) => {
-          e.preventDefault();
-          const className = document.getElementById('new-class-name').value.trim();
-          if (!className) return;
-
-          const classCode = "MKR" + Math.floor(1000 + Math.random() * 9000);
-          const user = window.state.user;
-          user.classCode = classCode;
-          user.className = className;
-          const teacherId = user.id || (window.auth && window.auth.currentUser ? window.auth.currentUser.uid : 'offline');
-
-          if (window.db) {
-              window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', teacherId, 'profile', 'main'), user).catch(()=>{});
-              window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', classCode), {
-                classCode: classCode, className: className, teacherId: teacherId, teacherName: user.name, timestamp: window.serverTimestamp ? window.serverTimestamp() : new Date()
-              }).catch(()=>{});
-          }
-
-          window.state.activeClassCode = classCode;
-          window.state.activeClassName = className;
-          localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
-          window.showCustomModal("Kelas Berjaya Dibina!", `Kod kelas: <b>${classCode}</b>`, "check-circle", true);
-          window.syncDatabaseWithBackend();
-        });
-      }
-
-      const resumeClassForm = document.getElementById('resume-class-form');
-      if (resumeClassForm) {
-        resumeClassForm.addEventListener('submit', (e) => {
-          e.preventDefault();
-          const code = document.getElementById('resume-class-input').value.trim().toUpperCase();
-          if(!code) return;
-          window.executeResumeClass(code);
-        });
-      }
-
-      const studentJoinClassForm = document.getElementById('student-join-class-form');
-      if (studentJoinClassForm) {
-        studentJoinClassForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const classCodeInput = document.getElementById('student-join-class-input').value.trim().toUpperCase();
-          if (!classCodeInput) return;
-
-          window.showView('view-loading');
+        // Loop setiap baris soalan
+        for (let i = 1; i < data.length; i++) {
+          let row = data[i];
+          let qObj = { sheetName: sheetName };
           
-          try {
-            let classData = { className: "Kelas Luar Talian", teacherName: "Cikgu" };
-            if (window.db) {
-                const classDocPromise = window.getDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'classes', classCodeInput));
-                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), 6000));
-                const classDoc = await Promise.race([classDocPromise, timeoutPromise]);
-                
-                if (!classDoc.exists()) {
-                  window.showCustomModal("Tidak Ditemui", "Kod kelas tidak sah.", "alert-triangle");
-                  window.syncDatabaseWithBackend(); return;
-                }
-                classData = classDoc.data();
-            }
-            
-            const user = window.state.user;
-            user.classCode = classCodeInput;
-            user.className = classData.className || "";
-            user.teacherName = classData.teacherName || "";
-            window.state.activeClassCode = classCodeInput;
-
-            const studentId = user.id || (window.auth && window.auth.currentUser ? window.auth.currentUser.uid : 'offline');
-
-            if (window.db) {
-                window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'users', studentId, 'profile', 'main'), user).catch(()=>{});
-                window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', studentId), user).catch(()=>{});
-            }
-            localStorage.setItem('macronexus_user_profile', JSON.stringify(user));
-            window.showCustomModal("Berjaya!", "Telah menyertai kelas.", "check-circle", true);
-            window.syncDatabaseWithBackend();
-          } catch (err) {
-            window.showCustomModal("Luar Talian", "Meneruskan mode offline.", "info");
-            window.syncDatabaseWithBackend();
-          }
-        });
+          headers.forEach((header, index) => {
+            qObj[header] = row[index];
+          });
+          
+          // Selaraskan format JSON untuk frontend
+          let formattedQ = {
+            sheetName: sheetName,
+            chapter: qObj.chapter || qObj.bab || "1",
+            q: qObj.question || qObj.soalan || "Soalan Kosong",
+            opts: [
+              qObj.optiona || qObj.pilihan_a || qObj.option_a || "",
+              qObj.optionb || qObj.pilihan_b || qObj.option_b || "",
+              qObj.optionc || qObj.pilihan_c || qObj.option_c || "",
+              qObj.optiond || qObj.pilihan_d || qObj.option_d || ""
+            ],
+            ans: qObj.correctanswer || qObj.jawapan || "A",
+            explanation: qObj.explanation || qObj.penerangan || "Tiada penerangan."
+          };
+          
+          allQuestions.push(formattedQ);
+        }
       }
-    });
-  </script>
+    }
+  });
 
-</body>
-</html>
+  return { status: "success", questions: allQuestions };
+}
+
+/**
+ * FUNGSI 2: Berkomunikasi dengan Gemini AI untuk Jana Soalan
+ */
+function handleGenerateChapter(payload) {
+  const apiKey = payload.apiKey;
+  const chapterId = payload.chapterId || "1";
+  const chapterName = payload.chapterName || ("Bab " + chapterId);
+
+  // Model Flash adalah yang paling pantas dan stabil untuk teks berformat
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+  const systemPrompt = `Anda adalah pakar penilai ekonomi STPM. Bina 20 soalan aneka pilihan (KBAT) Makroekonomi STPM berdasarkan ${chapterName}. Kembalikan jawapan secara TEPAT dalam format JSON array: [{"Chapter": ${chapterId}, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}]. PASTIKAN RESPONSE ANDA ADALAH FORMAT JSON SAHAJA TANPA PENERANGAN TEKS ATAU TANDA BACKTICKS.`;
+
+  const options = {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify({
+      contents: [{ parts: [{ text: `Bina 20 soalan (KBAT) Makroekonomi STPM untuk ${chapterName}.` }] }],
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      generationConfig: { responseMimeType: "application/json" }
+    }),
+    muteHttpExceptions: true
+  };
+
+  const res = UrlFetchApp.fetch(endpoint, options);
+  
+  if (res.getResponseCode() === 200) {
+    const data = JSON.parse(res.getContentText());
+    let rawJson = data.candidates[0].content.parts[0].text;
+    
+    // Pembersihan JSON sekiranya AI terselit backticks
+    rawJson = rawJson.replace(/```json/g, "").replace(/```/g, "").trim();
+    
+    return { status: "success", data: JSON.parse(rawJson) };
+  } else {
+    return { status: "error", message: "Gemini API Error: " + res.getContentText() };
+  }
+}
+
+/**
+ * FUNGSI 3: Simpan / Upload soalan ke dalam Google Sheet (Tab Baharu)
+ */
+function handleUpload(payload) {
+  let questions = payload.questionsData;
+  // Fallback jika format dari frontend sedikit berbeza
+  if (!questions && payload.questionsJson) {
+     questions = JSON.parse(payload.questionsJson);
+  }
+  
+  if (!questions || !questions.length) {
+    return { status: "error", message: "Tiada data soalan diterima untuk disimpan." };
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // Analisis nombor 'Set' tertinggi yang sedia ada
+  let maxSet = 0;
+  ss.getSheets().forEach(s => {
+    let match = s.getName().match(/Set\s*(\d+)/i);
+    if (match) maxSet = Math.max(maxSet, parseInt(match[1]));
+  });
+  
+  let nextSet = maxSet + 1;
+  let newSheetName = "Set " + nextSet;
+  
+  let sheet = ss.getSheetByName(newSheetName);
+  if (!sheet) {
+    sheet = ss.insertSheet(newSheetName);
+    // Masukkan Header Kolom standard
+    sheet.appendRow(["QuestionID", "Chapter", "Topic", "Difficulty", "Question", "OptionA", "OptionB", "OptionC", "OptionD", "CorrectAnswer", "Explanation"]);
+    sheet.getRange("A1:K1").setFontWeight("bold").setBackground("#f3f4f6"); // Serikan sikit warna
+  }
+
+  // Masukkan setiap soalan ke dalam baris Sheet
+  questions.forEach(q => {
+    sheet.appendRow([
+      q.QuestionID || `SET${nextSet}_B${q.Chapter||q.chapter||1}_${Math.floor(Math.random() * 9999)}`,
+      q.Chapter || q.chapter || 1,
+      q.Topic || "Janaan AI",
+      q.Difficulty || "STPM",
+      q.Question || q.question || "",
+      q.OptionA || q.optionA || (q.opts ? q.opts[0] : ""),
+      q.OptionB || q.optionB || (q.opts ? q.opts[1] : ""),
+      q.OptionC || q.optionC || (q.opts ? q.opts[2] : ""),
+      q.OptionD || q.optionD || (q.opts ? q.opts[3] : ""),
+      q.CorrectAnswer || q.ans || "A",
+      q.Explanation || q.explanation || "Tiada penerangan."
+    ]);
+  });
+
+  return { status: "success", message: `Berjaya menyimpan ${questions.length} soalan ke dalam ${newSheetName}` };
+}
+
+/**
+ * FUNGSI 4: (Opsyenal) Catat rekod markah pelajar di Google Sheet
+ */
+function handleSubmitScore(payload) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetName = "Rekod Skor";
+  let sheet = ss.getSheetByName(sheetName);
+  
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+    sheet.appendRow(["Timestamp", "Nama Pelajar", "Kod Kelas", "Tahap (Level)", "Jumlah XP", "Soalan Dijawab", "Jawapan Tepat"]);
+    sheet.getRange("A1:G1").setFontWeight("bold");
+  }
+
+  sheet.appendRow([
+    new Date(),
+    payload.name || "Pelajar Tidak Dikenali",
+    payload.classCode || "Tiada",
+    payload.level || 1,
+    payload.xp || 0,
+    payload.attempts || 0,
+    payload.correct || 0
+  ]);
+
+  return { status: "success", message: "Skor direkod." };
+}
