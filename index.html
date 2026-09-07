@@ -223,7 +223,9 @@
           });
           const text = await response.text();
           try {
-             return { success: true, data: JSON.parse(text) };
+             const data = JSON.parse(text);
+             // Kini memeriksa status sebenar dari GAS, bukan sekadar HTTP 200
+             return { success: data.status === 'success' || data.status === true, data: data };
           } catch(e) {
              return { success: response.ok || response.status === 0, raw: text };
           }
@@ -831,9 +833,10 @@
           const res = await window.makeCloudCall('saveQuestions', { questionsJson: JSON.stringify(payloadArray) });
           if (res.success) {
               await window.fetchQuestionsFromCloud(); 
-              window.showCustomModal("Proses Selesai!", `Soalan berjaya dijana & disimpan ke pangkalan data.`, "sparkles", true);
+              window.showCustomModal("Proses Selesai!", `Soalan berjaya dijana & disimpan ke pangkalan data. Sila semak tab latihan.`, "sparkles", true);
           } else {
-              window.showCustomModal("Gagal Menyimpan", "Soalan AI telah siap dijana, namun Google Sheet menolak penyimpanan (Ralat Akses URL). Sila semak deployment GAS anda.", "alert-triangle", false);
+              const errMsg = res.data && res.data.message ? res.data.message : "Pastikan anda membina Deployment versi baharu (New Version).";
+              window.showCustomModal("Gagal Menyimpan ke Sheet", `AI berjaya menjana soalan, tetapi GAS menolak penyimpanan.<br><br>Mesej Pelayan: <b>${errMsg}</b>`, "alert-triangle", false);
           }
         } catch (err) { window.showCustomModal("Ralat Pemformatan", "Gagal memproses data AI kepada format yang betul.", "alert-triangle"); }
         
