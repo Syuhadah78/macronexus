@@ -934,8 +934,12 @@
     };
 
     window.syncDatabaseWithBackend = function() {
-        if (window.state.role === 'teacher') window.loadTeacherDashboardData();
-        else window.updateStudentDashboardUI();
+        if (window.state.role === 'teacher') {
+            window.loadTeacherDashboardData();
+        } else {
+            window.updateStudentDashboardUI();
+            window.showView('view-student-dashboard');
+        }
     };
 
     window.listenAnnouncements = function() {
@@ -989,6 +993,7 @@
     window.loadTeacherDashboardData = function() {
         if (!window.db || !window.state.activeClassCode) {
             document.getElementById('active-class-banner').classList.add('hidden');
+            window.showView('view-teacher-dashboard');
             return;
         }
         
