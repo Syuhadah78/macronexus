@@ -16,7 +16,7 @@
       students: [],
       apiConfig: {
         gasUrl: 'https://script.google.com/macros/s/AKfycbzx6sA7WtsZu5xLoe3zR0nwDDbs3NPNhA0veuFPSVoPXSFkE8JOnGFOMuy_l0V4Msg/exec',
-        geminiKey: 'AQ.Ab8RN6JTIbGRAEFrBvlF3_8vxi7zFMOScHOrPo_m9dTdQ6kr1g'
+        geminiKey: 'AQ.Ab8RN6K5gODgWzErYk7H8VGgmMkINp9po2-fdSuc7RaSs8_6Mg'
       },
       quizState: {
         questions: [], chapter: '0', set: '0', mode: 'onebyone',
@@ -746,35 +746,62 @@
         const loader = document.getElementById('ai-batch-loader');
         const btn = document.getElementById('btn-generate-batch');
 
-        if (!window.state.apiConfig.gasUrl || !window.state.apiConfig.geminiKey) {
-            window.showCustomModal("Tetapan Tidak Lengkap", "Sila masukkan URL Apps Script dan API Gemini di menu Tetapan terlebih dahulu.", "alert-triangle", false);
+        if (!window.state.apiConfig.gasUrl) {
+            window.showCustomModal("Tetapan Tidak Lengkap", "Sila masukkan URL Apps Script di menu Tetapan terlebih dahulu.", "alert-triangle", false);
             return;
         }
 
         loader.classList.remove('hidden'); btn.disabled = true;
         document.getElementById('loader-status-text').innerText = "Menghubungkan ke Gemini AI...";
 
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${window.state.apiConfig.geminiKey}`;
+        // Menggunakan kunci API dari tetapan atau kunci sandaran yang diberikan
+        const apiKey = window.state.apiConfig.geminiKey || "AQ.Ab8RN6K5gODgWzErYk7H8VGgmMkINp9po2-fdSuc7RaSs8_6Mg"; 
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+        
         const query = chapter === "0" ? "Bina 20 soalan meliputi semua bab." : `Bina 20 soalan khusus bagi Bab ${chapter}.`;
-        const prompt = `Pakar ekonomi STPM. Bina 20 soalan KBAT. MESTI format JSON murni: [{"Chapter": 1, "Question": "Q", "OptionA": "A", "OptionB": "B", "OptionC": "C", "OptionD": "D", "CorrectAnswer": "A", "Explanation": "E"}]. PASTIKAN RESPONSE ANDA ADALAH FORMAT JSON SAHAJA.`;
+        const prompt = `Anda pakar pembuat soalan Makroekonomi STPM. Bina 20 soalan aneka pilihan (KBAT). Pastikan data mengikut skema JSON dengan tepat.`;
 
         let resultJsonRaw = null;
         try {
             const response = await fetch(endpoint, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: query }] }], systemInstruction: { parts: [{ text: prompt }] } })
+                body: JSON.stringify({ 
+                    contents: [{ parts: [{ text: query }] }], 
+                    systemInstruction: { parts: [{ text: prompt }] },
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    "Chapter": { type: "INTEGER", description: "Nombor bab Makroekonomi, cth: 1" },
+                                    "Question": { type: "STRING", description: "Ayat soalan lengkap" },
+                                    "OptionA": { type: "STRING", description: "Pilihan A" },
+                                    "OptionB": { type: "STRING", description: "Pilihan B" },
+                                    "OptionC": { type: "STRING", description: "Pilihan C" },
+                                    "OptionD": { type: "STRING", description: "Pilihan D" },
+                                    "CorrectAnswer": { type: "STRING", description: "Satu huruf besar sahaja: A, B, C, atau D" },
+                                    "Explanation": { type: "STRING", description: "Penerangan mengapa jawapan tersebut betul" }
+                                },
+                                required: ["Chapter", "Question", "OptionA", "OptionB", "OptionC", "OptionD", "CorrectAnswer", "Explanation"]
+                            }
+                        }
+                    }
+                })
             });
             if (response.ok) {
                 const result = await response.json();
                 resultJsonRaw = result.candidates?.[0]?.content?.parts?.[0]?.text;
             } else {
+                console.error("Ralat pelayan Gemini:", await response.text());
                 throw new Error("Ralat HTTP dari pelayan Gemini.");
             }
         } catch (err) { console.warn(err); }
 
         if (!resultJsonRaw) {
             loader.classList.add('hidden'); btn.disabled = false;
-            window.showCustomModal("Ralat AI", "Sistem gagal menghubungi pelayan AI. Pastikan API Key Gemini anda sah dan kuota mencukupi.", "alert-triangle"); return;
+            window.showCustomModal("Ralat AI", "Sistem gagal menghubungi pelayan AI. Sila cuba lagi sebentar.", "alert-triangle"); return;
         }
 
         if (destination === 'csv') {
