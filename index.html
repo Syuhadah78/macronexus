@@ -75,7 +75,6 @@
       if (window.lucide) window.lucide.createIcons(); 
     };
 
-    // FUNGSI NAVIGASI & MODAL YANG HILANG SEBELUM INI
     window.showView = function(viewId) {
       const views = ['view-loading', 'view-auth', 'view-teacher-dashboard', 'view-student-dashboard', 'view-quiz', 'view-results'];
       views.forEach(v => {
@@ -687,6 +686,19 @@
       Array.from(sets).sort().forEach(s => { let v = s.match(/\d+/) ? s.match(/\d+/)[0] : s; setSel.innerHTML += `<option value="${v}">${s}</option>`; });
     };
 
+    window.deleteStudentRecord = async function(studentId, studentName) {
+        if (!confirm(`Pasti mahu mengeluarkan pelajar "${studentName}" dari pangkalan data?`)) return;
+        try {
+            if (window.db && window.deleteDoc && window.doc) {
+                await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', studentId));
+            }
+            window.showCustomModal("Berjaya", `Pelajar ${studentName} telah dikeluarkan.`, "check-circle", true);
+            await window.loadTeacherDashboardData();
+        } catch(e) {
+            window.showCustomModal("Ralat", "Gagal mengeluarkan pelajar dari pelayan.", "alert-triangle");
+        }
+    };
+
     window.loadTeacherDashboardData = async function() {
         const user = window.state.user;
         if (!user || !user.classCode) return;
@@ -698,7 +710,11 @@
         if (window.db && window.getDocs && window.collection) {
             try {
                 const snap = await window.getDocs(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'students'));
-                snap.forEach(doc => { studentsList.push(doc.data()); });
+                snap.forEach(doc => { 
+                    let d = doc.data();
+                    d.firestoreId = doc.id;
+                    studentsList.push(d); 
+                });
                 localStorage.setItem('macronexus_all_students', JSON.stringify(studentsList));
             } catch(e) {
                 console.warn("Ralat Firebase:", e);
@@ -717,6 +733,7 @@
             } else {
                 myStudents.forEach(s => {
                     totalAttempts += (s.attempts || 0); totalCorrect += (s.correct || 0);
+                    const studentKey = s.firestoreId || s.id;
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                       <td class="p-3 sm:p-4 text-white font-medium">${window.escapeHtml(s.name)}</td>
@@ -724,7 +741,7 @@
                       <td class="p-3 sm:p-4 text-orange-400 font-bold">L${s.level||1}</td>
                       <td class="p-3 sm:p-4 text-amber-500 font-bold">${s.xp||0}</td>
                       <td class="p-3 sm:p-4 text-zinc-300">${s.attempts > 0 ? Math.round((s.correct/s.attempts)*100) : 0}%</td>
-                      <td class="p-3 sm:p-4 text-center"><button class="px-3 py-1 bg-zinc-900 text-zinc-500 hover:text-red-400 rounded-lg text-xs" onclick="alert('Fungsi buang pelajar dari jadual akan datang.')">Buang</button></td>
+                      <td class="p-3 sm:p-4 text-center"><button class="px-3 py-1 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg text-xs font-bold transition-all" onclick="window.deleteStudentRecord('${studentKey}', '${window.escapeHtml(s.name)}')">Buang</button></td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -826,6 +843,7 @@
         loader.classList.remove('hidden');
         btn.disabled = true;
 
+        // Model AI yang dikemaskini tanpa model usang
         const modelsToTry = ["gemini-2.5-flash", "gemini-1.5-flash"];
         let allGeneratedQuestions = [];
         
@@ -869,13 +887,13 @@
                     resultJsonRaw = result.candidates?.[0]?.content?.parts?.[0]?.text;
                     if (resultJsonRaw) { responseSuccess = true; break; }
                 }
-              } catch (err) { console.error(err); }
+              } catch (err) { console.error("Ralat cuba model:", modelsToTry[m], err); }
             }
 
             if (!responseSuccess) {
                 loader.classList.add('hidden');
                 btn.disabled = false;
-                window.showCustomModal("Ralat AI", `Sistem gagal menghubungi pelayan AI Gemini pada pusingan Bab ${currentChapter}.`, "alert-triangle");
+                window.showCustomModal("Ralat AI", `Sistem gagal menghubungi pelayan AI Gemini pada pusingan Bab ${currentChapter}. Sila pastikan talian internet stabil atau cuba sekali lagi.`, "alert-triangle");
                 return;
             }
 
