@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MacroNexus - Menghubung Ilmu, Membina Kecemerlangan</title>
   
+  <!-- PASANG STATE DAN FUNGSI GLOBAL UTAMA -->
   <script>
-    // 1. STATE GLOBAL APLIKASI
     window.state = {
       user: null,
       role: 'student',
@@ -165,6 +165,7 @@
     };
   </script>
 
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -189,6 +190,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
+  <!-- Firebase Integration -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
     import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
@@ -843,13 +845,12 @@
         loader.classList.remove('hidden');
         btn.disabled = true;
 
-        // Model AI yang dikemaskini tanpa model usang
-        const modelsToTry = ["gemini-2.5-flash", "gemini-1.5-flash"];
+        const modelsToTry = ["gemini-3.5-flash", "gemini-2.5-flash"];
         let allGeneratedQuestions = [];
         
         let chaptersToGenerate = [];
         if (chapter === "0") {
-            chaptersToGenerate = ["1", "2", "3", "4", "5"]; // Mengutip 5 pusingan untuk 100 soalan
+            chaptersToGenerate = ["1", "2", "3", "4", "5"]; 
         } else {
             chaptersToGenerate = [chapter];
         }
