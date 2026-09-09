@@ -1,602 +1,608 @@
 <!DOCTYPE html>
-<html lang="ms">
+<html lang="ms" class="h-full">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Penjana OPR - SK Bikang (Tema Catur)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MacroNexus - Menghubung Ilmu, Membina Kecemerlangan</title>
+  
+  <script>
+    window.state = {
+      user: null,
+      role: 'student',
+      selectedRole: 'student',
+      activeClassCode: null,
+      activeClassName: null,
+      students: [],
+      apiConfig: {
+        gasUrl: 'https://script.google.com/macros/s/AKfycbx94lsYX1G3CCFr7GhY12pcO1NAAFbfDbswpRFeBg8lePyw0M88EiVm32ceiHj3WUc/exec',
+        geminiKey: 'AQ.Ab8RN6JTIbGRAEFrBvlF3_8vxi7zFMOScHOrPo_m9dTdQ6kr1g' // Sila tukar ke kunci bermula AIza... kemudian
+      },
+      quizState: {
+        questions: [], chapter: '0', set: '0', mode: 'onebyone', currentIndex: 0,
+        answers: {}, score: 0, xpEarned: 0, hasSubmitted: false, secondsTaken: 0, timerInterval: null
+      }
+    };
+
+    window.localFallbackQuestions = [
+      {
+        id: "LOCAL_B1_Q01", chapter: "1", sheetName: "Set 1",
+        text: "Antara yang berikut, yang manakah merupakan bidang kajian makroekonomi?",
+        options: ["Kajian tentang gelagat pengguna", "Kajian penentuan harga faktor", "Kajian tentang tingkat harga umum", "Kajian kos pengeluaran firma"],
+        answer: 2, explanation: "Makroekonomi mengkaji petunjuk ekonomi agregat seperti tingkat harga umum dan inflasi."
+      }
+    ];
+
+    window.normalizeSetName = function(sheetName) {
+      if (!sheetName) return "Set 1";
+      let match = sheetName.trim().match(/\d+/);
+      return match ? "Set " + match[0] : sheetName.trim();
+    };
+
+    window.escapeHtml = function(str) {
+      if (!str) return '';
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    };
+
+    window.cleanJsonString = function(raw) {
+      if (!raw) return "[]";
+      let cleaned = raw.trim();
+      const backticks = String.fromCharCode(96, 96, 96);
+      if (cleaned.startsWith(backticks + "json")) cleaned = cleaned.substring(7);
+      else if (cleaned.startsWith(backticks)) cleaned = cleaned.substring(3);
+      if (cleaned.endsWith(backticks)) cleaned = cleaned.substring(0, cleaned.length - 3);
+      return cleaned.trim();
+    };
+
+    window.initLucide = function() { if (window.lucide) window.lucide.createIcons(); };
+
+    window.initialAuth = async function() {
+      if (!window.auth) return;
+      try {
+          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+              await window.signInWithCustomToken(window.auth, __initial_auth_token);
+          } else {
+              await window.signInAnonymously(window.auth);
+          }
+      } catch (err) {
+          console.warn("Autentikasi senyap gagal, sedia untuk pengesahan manual.");
+      }
+    };
+  </script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { brand: { zincDark: '#09090b', orange: '#f97316', amber: '#f59e0b', gold: '#fbbf24' } } } } };
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import { getFirestore, doc, setDoc, getDoc, getDocs, collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, serverTimestamp, orderBy } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCDAGpmffFqw0ImEjmQmpmcRsoZ-v3UMqw", authDomain: "macronexus-7805.firebaseapp.com",
+      databaseURL: "https://macronexus-7805-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "macronexus-7805",
+      storageBucket: "macronexus-7805.firebasestorage.app", messagingSenderId: "1048525857157", appId: "1:1048525857157:web:df15601fd73ccb2cdae4ec"
+    };
+    
+    let app, auth, db;
+    try { app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); } catch(e) { console.warn("Firebase tiada."); }
+    
+    window.db = db; window.auth = auth; window.appId = 'macronexus-7805';
+    window.collection = collection; window.doc = doc; window.setDoc = setDoc; window.getDoc = getDoc; window.getDocs = getDocs;
+    window.onSnapshot = onSnapshot; window.query = query; window.addDoc = addDoc; window.updateDoc = updateDoc; window.deleteDoc = deleteDoc;
+    window.serverTimestamp = serverTimestamp; window.orderBy = orderBy; window.signInWithCustomToken = signInWithCustomToken;
+    window.signInAnonymously = signInAnonymously; window.onAuthStateChanged = onAuthStateChanged; window.signOut = signOut;
+
+    window.loginWithGoogle = async function() {
+      if (!auth) { window.showCustomModal("Ralat", "Sistem autentikasi Firebase disekat.", "alert-triangle"); return; }
+      const provider = new GoogleAuthProvider();
+      try {
+        window.showView('view-loading');
+        document.getElementById('loading-text').innerText = "Menghubungkan Google...";
+        const result = await signInWithPopup(auth, provider);
+        const firebaseUser = result.user;
+        const emailLower = (firebaseUser.email || "").toLowerCase();
         
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0b1120;
-            background-image: 
-                linear-gradient(45deg, rgba(30, 41, 59, 0.4) 25%, transparent 25%, transparent 75%, rgba(30, 41, 59, 0.4) 75%, rgba(30, 41, 59, 0.4)),
-                linear-gradient(45deg, rgba(30, 41, 59, 0.4) 25%, transparent 25%, transparent 75%, rgba(30, 41, 59, 0.4) 75%, rgba(30, 41, 59, 0.4));
-            background-size: 40px 40px;
-            background-position: 0 0, 20px 20px;
-            min-height: 100vh;
-            color: #1e293b;
-        }
+        let detectedRole = emailLower.startsWith('g-') ? 'teacher' : 'student';
+        if (window.state.selectedRole) detectedRole = window.state.selectedRole;
+        
+        const profile = {
+          id: firebaseUser.uid, name: firebaseUser.displayName || "Pengguna", email: firebaseUser.email || "",
+          role: detectedRole, classCode: window.state.activeClassCode || '', xp: 0, level: 1, attempts: 0, correct: 0
+        };
 
-        .report-container {
-            background-color: #f0f9ff; /* Very light sky blue */
-            width: 210mm;
-            min-height: 297mm;
-            max-height: 297mm;
-            margin: 0 auto;
-            box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(59, 130, 246, 0.2);
-            border-radius: 12px;
-            overflow: hidden;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            box-sizing: border-box;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+        if (db) {
+            const privateDocRef = doc(db, 'artifacts', window.appId, 'users', firebaseUser.uid, 'profile', 'main');
+            const privateDoc = await getDoc(privateDocRef);
+            if (privateDoc.exists()) Object.assign(profile, privateDoc.data());
+            else await setDoc(privateDocRef, profile);
 
-        .banner {
-            background: linear-gradient(135deg, #090d16 0%, #1e293b 40%, #1d4ed8 100%);
-            color: white;
-            padding: 12px 28px 10px;
-            position: relative;
-            overflow: hidden;
-            flex-shrink: 0;
-            border-bottom: 3px solid #fbbf24;
-        }
-
-        .banner::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image: linear-gradient(45deg, rgba(251, 191, 36, 0.05) 25%, transparent 25%), 
-                              linear-gradient(-45deg, rgba(251, 191, 36, 0.05) 25%, transparent 25%);
-            background-size: 24px 24px;
-            opacity: 0.7;
-        }
-
-        .banner::after {
-            content: '\f439';
-            font-family: 'Font Awesome 6 Free';
-            font-weight: 900;
-            position: absolute;
-            right: 20px;
-            bottom: -25px;
-            font-size: 140px;
-            color: rgba(251, 191, 36, 0.08);
-            transform: rotate(-10deg);
-        }
-
-        .school-name {
-            font-family: 'Playfair Display', serif;
-            letter-spacing: 2px;
-            color: #fbbf24;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .opr-title {
-            font-family: 'Brush Script MT', 'Lucida Handwriting', cursive;
-            font-size: 3.5rem; /* 2x size */
-            line-height: 1;
-            letter-spacing: 1px;
-        }
-
-        .content {
-            padding: 12px 28px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            box-sizing: border-box;
-            overflow: hidden;
-        }
-
-        .info-card {
-            background: linear-gradient(to bottom right, #f8fafc, #f1f5f9);
-            border-left: 3px solid #2563eb;
-            border-radius: 6px;
-            padding: 4px 8px;
-            border-top: 1px solid #e2e8f0;
-            border-right: 1px solid #e2e8f0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .info-label {
-            font-size: 0.58rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #475569;
-            font-weight: 700;
-            margin-bottom: 1px;
-        }
-
-        .info-value {
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: #0f172a;
-        }
-
-        .section-title {
-            display: flex;
-            align-items: center;
-            font-size: 0.78rem;
-            font-weight: 800;
-            color: #0f172a;
-            margin-bottom: 2px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 2px;
-        }
-
-        .section-title i {
-            color: #2563eb;
-            margin-right: 6px;
-            font-size: 0.75rem;
-        }
-
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0f172a;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
-        }
-
-        @media print {
-            body {
-                background: #f0f9ff !important; /* Very light sky blue for print */
-                padding: 0 !important;
-                margin: 0 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-            .no-print {
-                display: none !important;
-            }
-            .report-container {
-                background-color: #f0f9ff !important;
-                box-shadow: none !important;
-                border: none !important;
-                border-radius: 0 !important;
-                width: 210mm !important;
-                height: 297mm !important;
-                max-height: 297mm !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                page-break-after: avoid;
-                page-break-inside: avoid;
-            }
-            .banner {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-            .info-card {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-            @page {
-                size: A4 portrait;
-                margin: 0mm;
+            if (profile.role === 'student') {
+                const studentDocRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'students', firebaseUser.uid);
+                await setDoc(studentDocRef, profile, {merge:true});
             }
         }
-    </style>
+        localStorage.setItem('macronexus_user_profile', JSON.stringify(profile));
+        window.state.user = profile; window.state.role = profile.role;
+        window.initApp(); // Terus ke dashboard
+      } catch (error) {
+        window.showCustomModal("Kesalahan Log Masuk", "Gagal masuk menggunakan Google. Sila guna Daftar Manual.", "alert-triangle");
+        window.showView('view-auth');
+      }
+    };
+    window.firebaseReady = true;
+  </script>
+
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #000000; color: #f4f4f5; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #09090b; }
+    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #f97316; }
+    .glass-panel { background: rgba(15, 15, 15, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .custom-scrollbar::-webkit-scrollbar { height: 4px; width: 4px; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-slide-in { animation: slideIn 0.3s ease-out forwards; }
+  </style>
 </head>
-<body class="py-6 px-4">
+<body class="min-h-screen flex flex-col justify-between overflow-x-hidden">
 
-    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        <!-- Control Panel / Editor (Left Column) -->
-        <div class="lg:col-span-5 bg-slate-900/95 backdrop-blur-md text-white p-5 rounded-2xl shadow-2xl border border-slate-700/60 no-print sticky top-6">
-            <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
-                <h2 class="text-lg font-bold flex items-center gap-2 text-amber-400">
-                    <i class="fa-solid fa-chess-board"></i> Panel Kawalan OPR SK Bikang
-                </h2>
-                <button onclick="resetDefaultData()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg border border-slate-600 transition">
-                    <i class="fa-solid fa-rotate-right mr-1"></i> Reset Asal
-                </button>
-            </div>
+  <!-- MODAL MAKLUMAN -->
+  <div id="custom-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
+    <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-orange-500/20 text-center transform scale-95 transition-transform duration-300" id="custom-modal-content">
+      <div id="modal-icon-container" class="inline-flex p-4 rounded-full bg-orange-500/10 text-orange-500 mb-4 shadow-lg shadow-orange-500/10">
+        <i id="modal-icon" data-lucide="info" class="w-8 h-8"></i>
+      </div>
+      <h3 id="modal-title" class="text-xl font-bold text-white mb-2 break-words">Pemberitahuan</h3>
+      <div id="modal-message" class="text-zinc-400 text-sm leading-relaxed mb-6 break-words text-left overflow-y-auto max-h-60 custom-scrollbar pr-1 font-medium"></div>
+      <button onclick="window.closeCustomModal()" class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 text-black font-extrabold rounded-xl transition-all">Faham & Teruskan</button>
+    </div>
+  </div>
 
-            <div class="space-y-3.5 max-h-[72vh] overflow-y-auto pr-2">
-                <!-- Sekolah & Logo -->
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Nama Sekolah</label>
-                        <input type="text" id="input-school" value="SEKOLAH KEBANGSAAN BIKANG" oninput="updateReport()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-semibold text-amber-400 uppercase tracking-wider mb-1"><i class="fa-solid fa-shield-halved mr-1"></i> Logo Sekolah</label>
-                        <input type="file" id="logo-upload" accept="image/*" onchange="handleLogoUpload(event)" class="w-full text-[10px] text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-600 cursor-pointer">
-                    </div>
-                </div>
+  <!-- MODAL BUANG PELAJAR -->
+  <div id="confirm-delete-modal" class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
+    <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-red-500/20 text-center transform scale-95 transition-transform duration-300" id="confirm-delete-content">
+      <div class="inline-flex p-4 rounded-full bg-red-500/10 text-red-500 mb-4"><i data-lucide="user-x" class="w-8 h-8"></i></div>
+      <h3 class="text-xl font-bold text-white mb-2">Keluarkan Pelajar?</h3>
+      <p class="text-zinc-400 text-sm mb-6">Adakah anda pasti ingin mengeluarkan pelajar ini?</p>
+      <div class="flex flex-col gap-3">
+        <button id="btn-confirm-delete-execute" class="w-full py-3 bg-red-600 text-white font-extrabold rounded-xl shadow-lg">Ya, Keluarkan</button>
+        <button onclick="window.closeConfirmDeleteModal()" class="w-full py-3 bg-zinc-800 text-white font-bold rounded-xl border border-white/5">Batal</button>
+      </div>
+    </div>
+  </div>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Nama Kelab / Unit</label>
-                        <input type="text" id="input-club" value="Kelab Catur" oninput="updateReport()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Tarikh</label>
-                        <input type="text" id="input-date" value="9/9/2026" oninput="updateReport()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Tajuk Aktiviti</label>
-                    <input type="text" id="input-activity" value="Latihan dan perlawanan antara ahli" oninput="updateReport()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-                </div>
-
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Objektif</label>
-                    <textarea id="input-objective" rows="2" oninput="updateReport()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">Membiasakan murid dalam suasana perlawanan.</textarea>
-                </div>
-
-                <!-- Masa, Tempat -->
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Masa</label>
-                        <input type="text" id="input-time" value="7.00 - 8.00 Pagi" oninput="updateReport()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Tempat</label>
-                        <input type="text" id="input-location" value="Tahun 1" oninput="updateReport()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-                    </div>
-                </div>
-
-                <!-- Kehadiran -->
-                <div class="p-2.5 bg-slate-800/60 rounded-xl border border-slate-700">
-                    <label class="block text-[11px] font-semibold text-amber-400 uppercase tracking-wider mb-2"><i class="fa-solid fa-users mr-1"></i> Maklumat Kehadiran</label>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div>
-                            <span class="text-[10px] text-slate-400">Lelaki</span>
-                            <input type="number" id="input-male" value="10" oninput="updateReport()" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white">
-                        </div>
-                        <div>
-                            <span class="text-[10px] text-slate-400">Perempuan</span>
-                            <input type="number" id="input-female" value="15" oninput="updateReport()" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white">
-                        </div>
-                        <div>
-                            <span class="text-[10px] text-slate-400">Guru Lelaki</span>
-                            <input type="number" id="input-teacher" value="2" oninput="updateReport()" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Ulasan -->
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Ulasan Keseluruhan</label>
-                    <textarea id="input-review" rows="3" oninput="updateReport()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">Sesi latihan dan perlawanan persahabatan telah dijalankan dengan jayanya. Kehadiran ahli kelab amat memuaskan, mencatatkan penyertaan 25 orang murid yang menunjukkan komitmen tinggi. Objektif utama aktiviti ini untuk mendedahkan murid kepada suasana perlawanan sebenar berjaya dicapai dengan cemerlang.</textarea>
-                </div>
-
-                <div class="p-3 bg-slate-800/60 rounded-xl border border-slate-700 space-y-3">
-                    <label class="block text-[11px] font-semibold text-amber-400 uppercase tracking-wider"><i class="fa-solid fa-camera mr-1"></i> Muat Naik & Kawalan Saiz Frame & Gambar (Maks 4)</label>
-                    <input type="file" id="image-upload" accept="image/*" multiple onchange="handleImageUpload(event)" class="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
-                    
-                    <!-- Controls for each image slot -->
-                    <div class="space-y-2 pt-1 border-t border-slate-700/80">
-                        <div class="text-[11px] font-bold text-slate-300">Larasan Tinggi Frame & Zum Gambar:</div>
-                        
-                        <div class="grid grid-cols-2 gap-2 bg-slate-900/60 p-2 rounded-lg">
-                            <div>
-                                <span class="text-[10px] text-amber-300">Gambar 1 - Tinggi Frame (<span id="h-val-0">130</span>px)</span>
-                                <input type="range" id="frame-h-0" min="80" max="220" value="130" oninput="updateImageDimensions(0)" class="w-full accent-amber-400 h-1 bg-slate-800 rounded cursor-pointer">
-                            </div>
-                            <div>
-                                <span class="text-[10px] text-amber-300">Gambar 1 - Zum (<span id="s-val-0">100</span>%)</span>
-                                <input type="range" id="img-zoom-0" min="50" max="200" value="100" oninput="updateImageDimensions(0)" class="w-full accent-amber-400 h-1 bg-slate-800 rounded cursor-pointer">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-2 bg-slate-900/60 p-2 rounded-lg">
-                            <div>
-                                <span class="text-[10px] text-amber-300">Gambar 2 - Tinggi Frame (<span id="h-val-1">130</span>px)</span>
-                                <input type="range" id="frame-h-1" min="80" max="220" value="130" oninput="updateImageDimensions(1)" class="w-full accent-amber-400 h-1 bg-slate-800 rounded cursor-pointer">
-                            </div>
-                            <div>
-                                <span class="text-[10px] text-amber-300">Gambar 2 - Zum (<span id="s-val-1">100</span>%)</span>
-                                <input type="range" id="img-zoom-1" min="50" max="200" value="100" oninput="updateImageDimensions(1)" class="w-full accent-amber-400 h-1 bg-slate-800 rounded cursor-pointer">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-2 bg-slate-900/60 p-2 rounded-lg">
-                            <div>
-                                <span class="text-[10px] text-amber-300">Gambar 3 - Tinggi Frame (<span id="h-val-2">130</span>px)</span>
-                                <input type="range" id="frame-h-2" min="80" max="220" value="130" oninput="updateImageDimensions(2)" class="w-full accent-amber-400 h-1 bg-slate-800 rounded cursor-pointer">
-                            </div>
-                            <div>
-                                <span class="text-[10px] text-amber-300">Gambar 3 - Zum (<span id="s-val-2">100</span>%)</span>
-                                <input type="range" id="img-zoom-2" min="50" max="200" value="100" oninput="updateImageDimensions(2)" class="w-full accent-amber-400 h-1 bg-slate-800 rounded cursor-pointer">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-2 bg-slate-900/60 p-2 rounded-lg">
-                            <div>
-                                <span class="text-[10px] text-amber-300">Gambar 4 - Tinggi Frame (<span id="h-val-3">130</span>px)</span>
-                                <input type="range" id="frame-h-3" min="80" max="220" value="130" oninput="updateImageDimensions(3)" class="w-full accent-amber-400 h-1 bg-slate-800 rounded cursor-pointer">
-                            </div>
-                            <div>
-                                <span class="text-[10px] text-amber-300">Gambar 4 - Zum (<span id="s-val-3">100</span>%)</span>
-                                <input type="range" id="img-zoom-3" min="50" max="200" value="100" oninput="updateImageDimensions(3)" class="w-full accent-amber-400 h-1 bg-slate-800 rounded cursor-pointer">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Disediakan Oleh (Nama Guru)</label>
-                    <input type="text" id="input-author" value="Guru Penasihat Kelab Catur" oninput="updateReport()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-                </div>
-            </div>
-
-            <div class="mt-4 pt-3 border-t border-slate-800">
-                <button onclick="window.print()" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-extrabold py-2.5 px-4 rounded-xl shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-2 text-xs uppercase tracking-wider">
-                    <i class="fa-solid fa-print"></i> Cetak / Simpan PDF (1 Halaman A4)
-                </button>
-            </div>
+  <nav id="navbar" class="bg-zinc-950/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-40 hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center gap-2">
+          <div class="bg-gradient-to-tr from-orange-500 to-amber-500 p-2 rounded-xl shadow-lg"><i data-lucide="graduation-cap" class="h-5 w-5 text-white"></i></div>
+          <span class="font-bold text-lg text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-300">MacroNexus</span>
         </div>
-
-        <div class="lg:col-span-7 flex justify-center overflow-x-auto pb-6">
-            <div class="report-container" id="report-preview">
-                
-                <!-- Banner Header -->
-                <div class="banner">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="school-name" id="preview-school">SEKOLAH KEBANGSAAN BIKANG</h3>
-                            <h1 class="opr-title mb-1 text-white drop-shadow-md">
-                                OPR
-                            </h1>
-                            <div class="inline-block bg-amber-400/20 backdrop-blur-sm px-3 py-0.5 rounded-full border border-amber-400/40">
-                                <h2 class="text-xs font-bold text-amber-200">
-                                    <i class="fa-solid fa-chess-knight mr-1.5"></i><span id="preview-club">Kelab Catur</span>
-                                </h2>
-                            </div>
-                        </div>
-                        <!-- School Logo Preview Area (Ensuring exact fit without zoom) -->
-                        <div id="logo-preview-container" class="w-[90px] h-[90px] bg-white/10 border border-amber-400/50 rounded-lg flex items-center justify-center p-1.5 shadow-md">
-                            <img id="logo-img-preview" src="" alt="Logo" class="w-full h-full object-contain hidden">
-                            <div id="logo-placeholder-icon" class="text-amber-300 text-center text-[10px] font-semibold">
-                                <i class="fa-solid fa-school text-lg block mb-0.5"></i> Logo
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Main Content Body -->
-                <div class="content">
-                    
-                    <!-- Activity & Objective Card -->
-                    <div class="space-y-2">
-                        <div class="bg-slate-50 p-2 rounded-lg border border-slate-200 relative overflow-hidden">
-                            <div class="absolute top-0 left-0 w-1.5 h-full bg-amber-500"></div>
-                            <h3 class="text-xs font-extrabold text-gray-900 mb-0.5 uppercase tracking-wide" id="preview-activity">Aktiviti: Latihan dan perlawanan antara ahli</h3>
-                            <p class="text-gray-700 text-[11px] leading-relaxed">
-                                <span class="font-bold text-blue-900 mr-1"><i class="fa-solid fa-bullseye text-blue-600 mr-1"></i>Objektif:</span> 
-                                <span id="preview-objective">Membiasakan murid dalam suasana perlawanan.</span>
-                            </p>
-                        </div>
-
-                        <!-- 4 Details Cards Grid -->
-                        <div class="grid grid-cols-4 gap-2">
-                            <div class="info-card">
-                                <div class="info-label"><i class="fa-regular fa-calendar-days mr-1 text-blue-600"></i> Tarikh</div>
-                                <div class="info-value text-[11px]" id="preview-date">9/9/2026</div>
-                            </div>
-                            <div class="info-card">
-                                <div class="info-label"><i class="fa-regular fa-clock mr-1 text-blue-600"></i> Masa</div>
-                                <div class="info-value text-[11px]" id="preview-time">7.00 - 8.00 Pagi</div>
-                            </div>
-                            <div class="info-card">
-                                <div class="info-label"><i class="fa-solid fa-location-dot mr-1 text-blue-600"></i> Tempat</div>
-                                <div class="info-value text-[11px]" id="preview-location">Tahun 1</div>
-                            </div>
-                            <div class="info-card">
-                                <div class="info-label"><i class="fa-solid fa-users mr-1 text-blue-600"></i> Kehadiran</div>
-                                <div class="info-value text-[11px] flex items-center justify-between mt-0.5">
-                                    <span class="text-blue-700" title="Lelaki"><i class="fa-solid fa-child-reaching mr-0.5"></i><span id="preview-male">10</span></span> 
-                                    <span class="text-pink-600" title="Perempuan"><i class="fa-solid fa-child-dress mr-0.5"></i><span id="preview-female">15</span></span> 
-                                    <span class="text-slate-700" title="Guru Lelaki"><i class="fa-solid fa-user-tie mr-0.5"></i><span id="preview-teacher">2</span></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Summary Review -->
-                        <div>
-                            <h4 class="section-title"><i class="fa-solid fa-clipboard-check"></i> Ulasan Keseluruhan</h4>
-                            <div class="bg-slate-50 p-2 rounded-lg border border-slate-200">
-                                <p class="text-gray-700 text-[11px] leading-relaxed text-justify" id="preview-review">
-                                    Sesi latihan dan perlawanan persahabatan telah dijalankan dengan jayanya. Kehadiran ahli kelab amat memuaskan, mencatatkan penyertaan 25 orang murid yang menunjukkan komitmen tinggi. Objektif utama aktiviti ini untuk mendedahkan murid kepada suasana perlawanan sebenar berjaya dicapai dengan cemerlang.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h4 class="section-title"><i class="fa-solid fa-camera"></i> Lensa Aktiviti</h4>
-                            <div class="grid grid-cols-2 gap-3" id="preview-gallery">
-                                <!-- Image Slot 0 -->
-                                <div class="relative overflow-hidden rounded-lg border-2 border-slate-300 bg-slate-900 shadow-sm flex items-center justify-center" id="frame-wrapper-0" style="height: 130px;">
-                                    <img id="img-preview-0" src="https://placehold.co/400x300/1e293b/ffffff?text=Catur+1" alt="Gambar 1" style="width: 100%; height: 100%; object-fit: cover; transform: scale(1.0);" onerror="this.src='https://placehold.co/400x300/e2e8f0/475569?text=Aktiviti+1'">
-                                    <div class="absolute bottom-0 inset-x-0 bg-black/70 text-white text-[10px] px-2 py-0.5 text-center">Sesi Perlawanan 1</div>
-                                </div>
-                                <!-- Image Slot 1 -->
-                                <div class="relative overflow-hidden rounded-lg border-2 border-slate-300 bg-slate-900 shadow-sm flex items-center justify-center" id="frame-wrapper-1" style="height: 130px;">
-                                    <img id="img-preview-1" src="https://placehold.co/400x300/1e293b/ffffff?text=Catur+2" alt="Gambar 2" style="width: 100%; height: 100%; object-fit: cover; transform: scale(1.0);" onerror="this.src='https://placehold.co/400x300/e2e8f0/475569?text=Aktiviti+2'">
-                                    <div class="absolute bottom-0 inset-x-0 bg-black/70 text-white text-[10px] px-2 py-0.5 text-center">Sesi Perlawanan 2</div>
-                                </div>
-                                <!-- Image Slot 2 -->
-                                <div class="relative overflow-hidden rounded-lg border-2 border-slate-300 bg-slate-900 shadow-sm flex items-center justify-center" id="frame-wrapper-2" style="height: 130px;">
-                                    <img id="img-preview-2" src="https://placehold.co/400x300/1e293b/ffffff?text=Catur+3" alt="Gambar 3" style="width: 100%; height: 100%; object-fit: cover; transform: scale(1.0);" onerror="this.src='https://placehold.co/400x300/e2e8f0/475569?text=Aktiviti+3'">
-                                    <div class="absolute bottom-0 inset-x-0 bg-black/70 text-white text-[10px] px-2 py-0.5 text-center">Bimbingan Guru</div>
-                                </div>
-                                <!-- Image Slot 3 -->
-                                <div class="relative overflow-hidden rounded-lg border-2 border-slate-300 bg-slate-900 shadow-sm flex items-center justify-center" id="frame-wrapper-3" style="height: 130px;">
-                                    <img id="img-preview-3" src="https://placehold.co/400x300/1e293b/ffffff?text=Catur+4" alt="Gambar 4" style="width: 100%; height: 100%; object-fit: cover; transform: scale(1.0);" onerror="this.src='https://placehold.co/400x300/e2e8f0/475569?text=Aktiviti+4'">
-                                    <div class="absolute bottom-0 inset-x-0 bg-black/70 text-white text-[10px] px-2 py-0.5 text-center">Suasana Kelas</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Footer Signature -->
-                    <div class="pt-2 border-t border-slate-200 flex justify-between items-end mt-1">
-                        <div>
-                            <p class="text-[9px] text-slate-500 font-semibold mb-4 uppercase tracking-wide">Disediakan oleh:</p>
-                            <div class="border-t border-slate-800 pt-1 w-40">
-                                <p class="text-[11px] font-bold text-gray-900 text-center" id="preview-author">Guru Penasihat</p>
-                                <p class="text-[8px] text-slate-500 text-center">Kelab Catur SK Bikang</p>
-                            </div>
-                        </div>
-                        <div class="text-[9px] text-slate-400 font-medium">
-                            <i class="fa-solid fa-chess-board text-amber-600 mr-1"></i> Sistem OPR Digital SK Bikang
-                        </div>
-                    </div>
-
-                </div>
-            </div>
+        <div class="flex items-center gap-4">
+          <div class="text-right hidden md:block">
+            <div id="nav-user-name" class="text-sm font-semibold text-white">Memuat...</div>
+            <div id="nav-user-role" class="text-xs text-amber-500 capitalize font-bold">Pelajar</div>
+          </div>
+          <div id="nav-avatar" class="h-10 w-10 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-extrabold uppercase">M</div>
+          <button onclick="window.handleLogout()" class="p-2 text-zinc-400 hover:text-white rounded-xl"><i data-lucide="log-out" class="w-5 h-5"></i></button>
         </div>
+      </div>
+    </div>
+  </nav>
 
+  <script>
+    window.showView = function(viewId) {
+      ['view-loading', 'view-auth', 'view-teacher-dashboard', 'view-student-dashboard', 'view-quiz', 'view-results'].forEach(v => {
+        const el = document.getElementById(v); if (el) el.classList.add('hidden');
+      });
+      const target = document.getElementById(viewId); if (target) target.classList.remove('hidden');
+      const navbar = document.getElementById('navbar');
+      if (navbar) { if(viewId !== 'view-loading' && viewId !== 'view-auth') navbar.classList.remove('hidden'); else navbar.classList.add('hidden'); }
+      window.scrollTo(0, 0); window.initLucide();
+    };
+    
+    window.showCustomModal = function(title, msg, icon="info", success=false) {
+      const mod = document.getElementById('custom-modal');
+      document.getElementById('modal-title').innerText = title; document.getElementById('modal-message').innerHTML = msg;
+      document.getElementById('modal-icon').setAttribute('data-lucide', icon);
+      mod.classList.remove('hidden'); setTimeout(() => mod.classList.add('opacity-100'), 50); window.initLucide();
+    };
+    window.closeCustomModal = function() {
+      const mod = document.getElementById('custom-modal'); mod.classList.remove('opacity-100');
+      setTimeout(() => mod.classList.add('hidden'), 300);
+    };
+
+    window.closeConfirmDeleteModal = function() {
+        const m = document.getElementById('confirm-delete-modal'); m.classList.remove('opacity-100');
+        setTimeout(() => m.classList.add('hidden'), 300);
+    };
+
+    window.confirmDeleteStudent = function(id) {
+        const m = document.getElementById('confirm-delete-modal');
+        m.classList.remove('hidden'); setTimeout(() => m.classList.add('opacity-100'), 50);
+        document.getElementById('btn-confirm-delete-execute').onclick = () => window.executeDeleteStudent(id);
+    };
+    
+    window.executeDeleteStudent = async function(id) {
+        if(window.db) {
+            try { await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', id), { classCode: "" }); } 
+            catch(e) { console.error(e); }
+        }
+        window.closeConfirmDeleteModal(); window.loadTeacherDashboardData();
+    };
+
+    window.handleLogout = async function() {
+      if(window.auth) await window.signOut(window.auth);
+      localStorage.removeItem('macronexus_user_profile');
+      window.state.user = null; window.state.role = 'student'; window.state.activeClassCode = null;
+      window.showView('view-auth');
+    };
+
+    window.setAuthRole = function(role) {
+      window.state.selectedRole = role;
+      const bS = document.getElementById('btn-role-student'), bT = document.getElementById('btn-role-teacher'), fC = document.getElementById('field-class-code');
+      if (role === 'student') {
+        if(bS) bS.className = "p-4 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-amber-500 flex flex-col items-center gap-2 w-full";
+        if(bT) bT.className = "p-4 rounded-xl border-2 border-zinc-800 text-zinc-400 flex flex-col items-center gap-2 w-full";
+        if(fC) fC.classList.remove('hidden');
+      } else {
+        if(bS) bS.className = "p-4 rounded-xl border-2 border-zinc-800 text-zinc-400 flex flex-col items-center gap-2 w-full";
+        if(bT) bT.className = "p-4 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-amber-500 flex flex-col items-center gap-2 w-full";
+        if(fC) fC.classList.add('hidden');
+      }
+    };
+  </script>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-grow w-full relative">
+
+    <!-- VIEW: LOADING -->
+    <div id="view-loading" class="flex flex-col items-center justify-center py-32">
+      <div class="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+      <p id="loading-text" class="text-zinc-400 text-sm font-medium">Menghubungkan Portal MacroNexus...</p>
+    </div>
+
+    <!-- VIEW: AUTH -->
+    <div id="view-auth" class="hidden max-w-md mx-auto py-10">
+      <div class="glass-panel p-8 rounded-3xl shadow-2xl border border-white/5">
+        <div class="text-center mb-8">
+          <div class="inline-flex bg-gradient-to-tr from-orange-500 to-amber-500 p-3 rounded-2xl mb-4"><i data-lucide="globe-2" class="h-8 w-8 text-white"></i></div>
+          <h2 class="text-3xl font-black text-white mb-1">MacroNexus</h2>
+          <p class="text-zinc-400 text-sm">Sistem Pembelajaran Makroekonomi STPM</p>
+        </div>
+        <form id="auth-form" class="space-y-6">
+          <div class="grid grid-cols-2 gap-3">
+            <button type="button" onclick="window.setAuthRole('student')" id="btn-role-student" class="p-4 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-amber-500 flex flex-col items-center w-full"><i data-lucide="users"></i><span class="font-bold text-sm">Pelajar</span></button>
+            <button type="button" onclick="window.setAuthRole('teacher')" id="btn-role-teacher" class="p-4 rounded-xl border-2 border-zinc-800 text-zinc-400 flex flex-col items-center w-full"><i data-lucide="graduation-cap"></i><span class="font-bold text-sm">Guru</span></button>
+          </div>
+          <button type="button" onclick="window.loginWithGoogle()" class="w-full bg-white text-black font-bold py-3.5 rounded-xl flex items-center justify-center gap-3 text-sm transform hover:scale-[1.02] shadow-lg">
+             <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" class="w-5 h-5" alt="G"> Masuk dengan Google / DELIMa
+          </button>
+          <div class="flex items-center gap-3 my-5"><div class="flex-grow h-px bg-white/10"></div><span class="text-[10px] text-zinc-500 font-bold uppercase">ATAU DAFTAR MANUAL</span><div class="flex-grow h-px bg-white/10"></div></div>
+          <div>
+            <label class="block text-xs font-bold text-zinc-400 uppercase mb-1">Nama Penuh</label>
+            <input required id="auth-name" type="text" placeholder="Contoh: Muhammad Alif" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm outline-none" />
+          </div>
+          <div id="field-class-code">
+            <label class="block text-xs font-bold text-zinc-400 uppercase mb-1">Kod Kelas</label>
+            <input id="auth-classcode" type="text" placeholder="Contoh: MKR1234" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm outline-none uppercase" />
+          </div>
+          <button type="submit" class="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-black font-extrabold py-3.5 rounded-xl shadow-lg transform hover:scale-[1.02]">Daftar & Masuk</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="view-teacher-dashboard" class="hidden space-y-8 animate-slide-in">
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-white/5 pb-6">
+        <div>
+          <h1 class="text-3xl font-black text-white">Panel Pengajar</h1>
+          <p class="text-zinc-400 text-sm mt-1">Kelola kelas, buat soalan AI, dan pantau prestasi pelajar.</p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <form id="create-class-form" class="flex gap-2">
+            <input required id="new-class-name" type="text" placeholder="Nama Kelas Baharu" class="bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2 text-sm outline-none" />
+            <button type="submit" class="bg-gradient-to-tr from-orange-500 to-amber-500 text-black px-4 py-2 rounded-lg font-bold flex items-center gap-2 text-sm shadow-lg"><i data-lucide="plus" class="w-4 h-4"></i> Bina Kelas</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- AI Question Generator -->
+      <div class="glass-panel p-6 rounded-3xl border border-orange-500/10">
+        <h2 class="text-xl font-bold text-white flex items-center gap-2 mb-4"><i data-lucide="sparkles" class="text-orange-500 w-5 h-5"></i> Penjana Soalan AI Pukal (100 Soalan)</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+             <label class="block text-xs font-bold text-zinc-400 uppercase mb-1.5">Liputan Bab</label>
+             <select id="ai-gen-chapter" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-sm outline-none">
+               <option value="0" selected>Semua Soalan (100 Soalan: Bab 1-5)</option>
+               <option value="1">Bab 1 Sahaja (20 Soalan)</option>
+               <option value="2">Bab 2 Sahaja (20 Soalan)</option>
+               <option value="3">Bab 3 Sahaja (20 Soalan)</option>
+               <option value="4">Bab 4 Sahaja (20 Soalan)</option>
+               <option value="5">Bab 5 Sahaja (20 Soalan)</option>
+             </select>
+          </div>
+          <div class="flex flex-col justify-end md:col-start-3">
+             <button onclick="window.generateLiveQuestions()" id="btn-generate-batch" class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold rounded-xl shadow-lg flex items-center justify-center gap-2 text-sm disabled:opacity-50"><i data-lucide="cloud-upload" class="w-4 h-4"></i> Jana & Simpan ke Sheets</button>
+          </div>
+        </div>
+        <div id="ai-batch-loader" class="hidden flex-col items-center py-6 bg-zinc-950 rounded-2xl border border-orange-500/10 mt-4 text-center">
+          <div class="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+          <p id="loader-status-text" class="text-sm font-bold text-amber-500">Menghubungkan AI...</p>
+        </div>
+      </div>
+
+      <!-- Live Student List -->
+      <div class="bg-zinc-950 border border-white/5 rounded-3xl overflow-hidden shadow-xl mt-8">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+          <h2 class="text-xl font-bold text-white flex items-center gap-2"><i data-lucide="users" class="text-orange-400 w-5 h-5"></i> Senarai Pelajar (Live)</h2>
+          <button onclick="window.loadTeacherDashboardData()" class="p-2 bg-zinc-900 rounded-lg text-zinc-400 hover:text-white"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+        </div>
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-zinc-900 text-zinc-400 text-xs uppercase">
+                <th class="p-4 font-bold">Nama Pelajar</th><th class="p-4 font-bold">Kod Kelas</th>
+                <th class="p-4 font-bold">Tahap</th><th class="p-4 font-bold">XP</th>
+                <th class="p-4 font-bold">Latihan Selesai</th><th class="p-4 font-bold">Tindakan</th>
+              </tr>
+            </thead>
+            <tbody id="students-table-body" class="divide-y divide-white/5 text-sm">
+              <tr><td colspan="6" class="p-6 text-center text-zinc-500">Memuat turun data awan...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-student-dashboard" class="hidden space-y-8 animate-slide-in">
+      <div class="bg-gradient-to-r from-orange-600/10 via-amber-500/10 to-yellow-500/10 border border-orange-500/20 rounded-3xl p-8 relative overflow-hidden">
+        <h1 id="welcome-student-title" class="text-3xl font-black text-white mb-2">Selamat Belajar! 📚</h1>
+        <p class="text-zinc-400 text-sm">Teruskan menjawab untuk mengumpul lebih banyak XP hari ini!</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="glass-panel p-6 rounded-3xl flex flex-col justify-center text-center">
+          <div class="text-2xl font-black text-white font-mono" id="stat-student-questions">0</div>
+          <div class="text-xs text-zinc-500 font-bold uppercase mt-1">Soalan Terjawab</div>
+        </div>
+        <div class="glass-panel p-6 rounded-3xl flex flex-col justify-center text-center">
+          <div class="text-2xl font-black text-white font-mono" id="stat-student-accuracy">0%</div>
+          <div class="text-xs text-zinc-500 font-bold uppercase mt-1">Ketepatan</div>
+        </div>
+        <div class="glass-panel p-6 rounded-3xl flex flex-col justify-center">
+          <div class="flex justify-between items-end mb-2">
+            <div><div class="text-xs text-zinc-500 font-bold uppercase mb-1">Tahap</div><div class="text-2xl font-black text-white" id="student-level-num">Tahap 1</div></div>
+            <div class="text-xs font-bold text-amber-500"><span id="student-current-xp">0</span>/<span id="student-next-xp">200</span> XP</div>
+          </div>
+          <div class="w-full bg-zinc-950 rounded-full h-1.5"><div id="student-xp-bar" class="bg-gradient-to-r from-orange-500 to-amber-500 h-1 rounded-full w-0 transition-all"></div></div>
+        </div>
+      </div>
+
+      <div class="glass-panel p-6 rounded-3xl space-y-4 border border-orange-500/20">
+         <div class="flex flex-col sm:flex-row justify-between pb-3 gap-3">
+          <h3 class="text-base font-bold text-white flex items-center gap-2"><i data-lucide="sliders" class="text-orange-500 w-4 h-4"></i> Tetapan Latihan</h3>
+          <div class="flex gap-2">
+            <button onclick="window.fetchQuestionsFromCloud()" class="bg-zinc-900 text-amber-500 font-extrabold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Kemaskini Soalan</button>
+            <button onclick="window.startQuizFlow()" class="bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold text-xs px-5 py-2 rounded-xl shadow-lg flex items-center gap-1.5"><i data-lucide="play" class="w-3.5 h-3.5"></i> Mula Latihan</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <select id="student-set-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-sm outline-none"><option value="0">Semua Set</option><option value="1">Set 1</option></select>
+          <select id="student-chapter-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-sm outline-none"><option value="0">Semua Bab</option><option value="1">Bab 1</option><option value="2">Bab 2</option></select>
+          <select id="student-mode-selector" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-sm outline-none"><option value="onebyone">Satu Persatu</option></select>
+        </div>
+      </div>
+
+      <!-- Kedudukan Global -->
+      <div class="glass-panel p-6 rounded-3xl mt-8">
+        <h3 class="text-base font-bold text-white flex items-center gap-2 mb-4 border-b border-white/5 pb-2"><i data-lucide="globe" class="text-blue-400 w-5 h-5"></i> Kedudukan Global Pelajar</h3>
+        <div class="overflow-y-auto max-h-[300px] custom-scrollbar">
+          <table class="w-full text-left border-collapse">
+            <tbody id="global-leaderboard-body" class="divide-y divide-white/5 text-sm">
+              <tr><td colspan="3" class="p-4 text-center text-zinc-500">Memuat turun data awan...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <script>
-        let currentImages = [
-            'https://placehold.co/400x300/1e293b/ffffff?text=Catur+1',
-            'https://placehold.co/400x300/1e293b/ffffff?text=Catur+2',
-            'https://placehold.co/400x300/1e293b/ffffff?text=Catur+3',
-            'https://placehold.co/400x300/1e293b/ffffff?text=Catur+4'
-        ];
+      window.makeCloudCall = async function(action, payload = {}) {
+          if (!window.state.apiConfig.gasUrl) return { success: false };
+          try {
+              const response = await fetch(window.state.apiConfig.gasUrl, { method: 'POST', body: JSON.stringify({ action: action, ...payload }) });
+              return { success: response.ok || response.status === 200 || response.status === 0 };
+          } catch (e) { return { success: false }; }
+      };
 
-        function updateReport() {
-            document.getElementById('preview-school').innerText = document.getElementById('input-school').value;
-            document.getElementById('preview-club').innerText = document.getElementById('input-club').value;
-            document.getElementById('preview-activity').innerText = 'Aktiviti: ' + document.getElementById('input-activity').value;
-            document.getElementById('preview-objective').innerText = document.getElementById('input-objective').value;
-            document.getElementById('preview-date').innerText = document.getElementById('input-date').value;
-            document.getElementById('preview-time').innerText = document.getElementById('input-time').value;
-            document.getElementById('preview-location').innerText = document.getElementById('input-location').value;
-            document.getElementById('preview-male').innerText = document.getElementById('input-male').value;
-            document.getElementById('preview-female').innerText = document.getElementById('input-female').value;
-            document.getElementById('preview-teacher').innerText = document.getElementById('input-teacher').value;
-            document.getElementById('preview-review').innerText = document.getElementById('input-review').value;
-            document.getElementById('preview-author').innerText = document.getElementById('input-author').value;
-        }
-
-        function handleLogoUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const logoImg = document.getElementById('logo-img-preview');
-                const placeholderIcon = document.getElementById('logo-placeholder-icon');
-                
-                logoImg.src = e.target.result;
-                logoImg.classList.remove('hidden');
-                placeholderIcon.classList.add('hidden');
+      window.fetchQuestionsFromCloud = async function() {
+        if (!window.state.apiConfig.gasUrl) { window.globalQuestions = window.localFallbackQuestions; return true; }
+        try {
+            const response = await fetch(window.state.apiConfig.gasUrl, { method: 'POST', body: JSON.stringify({ action: 'fetch_all' }) });
+            let data = JSON.parse(await response.text());
+            if (data && data.questions) {
+                window.globalQuestions = data.questions.map((q, idx) => {
+                    return {
+                        id: `Q_${idx}`, chapter: q.chapter || q.Chapter || "1", sheetName: q.sheetName || q.set || "Set 1",
+                        text: q.q || q.Question || "Soalan", options: q.opts || [q.OptionA, q.OptionB, q.OptionC, q.OptionD],
+                        answer: ['A','B','C','D'].indexOf((q.ans || q.CorrectAnswer || "A").toUpperCase()),
+                        explanation: q.explanation || q.Explanation || ""
+                    };
+                });
+                return true;
             }
-            reader.readAsDataURL(file);
-        }
+        } catch(e) { window.globalQuestions = window.localFallbackQuestions; }
+        return true;
+      };
 
-        function handleImageUpload(event) {
-            const files = event.target.files;
-            if (!files || files.length === 0) return;
+      window.loadTeacherDashboardData = async function() {
+        if (!window.db) return;
+        const tbody = document.getElementById('students-table-body');
+        tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-zinc-500">Memuat turun data pelajar dari pelayan awan...</td></tr>';
+        
+        try {
+           const querySnapshot = await window.getDocs(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'students'));
+           tbody.innerHTML = '';
+           let hasStudents = false;
+           querySnapshot.forEach((doc) => {
+               const student = doc.data();
+               if(student.classCode === window.state.activeClassCode || window.state.activeClassCode === null || window.state.activeClassCode === '') {
+                   hasStudents = true;
+                   tbody.innerHTML += `<tr>
+                     <td class="p-4 font-bold text-white">${window.escapeHtml(student.name)}</td>
+                     <td class="p-4 text-amber-500 font-mono">${window.escapeHtml(student.classCode || "Tiada")}</td>
+                     <td class="p-4"><span class="px-2 py-1 bg-zinc-800 rounded-md">Lvl ${student.level || 1}</span></td>
+                     <td class="p-4 text-orange-400 font-bold">${student.xp || 0} XP</td>
+                     <td class="p-4 text-zinc-300">${student.attempts || 0} Soalan</td>
+                     <td class="p-4"><button onclick="window.confirmDeleteStudent('${student.id}')" class="p-2 bg-red-500/10 text-red-500 rounded hover:bg-red-500/20"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+                   </tr>`;
+               }
+           });
+           if(!hasStudents) tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-zinc-500">Tiada pelajar dalam kelas ini.</td></tr>';
+           window.initLucide();
+        } catch(e) { console.error(e); tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-red-500">Gagal memuat turun data.</td></tr>'; }
+      };
 
-            let loadedCount = 0;
-            let newImages = [];
+      window.updateGlobalLeaderboard = async function() {
+          if (!window.db) return;
+          const tbody = document.getElementById('global-leaderboard-body');
+          try {
+             const q = window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'students'), window.orderBy('xp', 'desc'));
+             const snapshot = await window.getDocs(q);
+             tbody.innerHTML = ''; let rank = 1;
+             snapshot.forEach(doc => {
+                 const s = doc.data();
+                 let medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}.`;
+                 tbody.innerHTML += `<tr>
+                   <td class="p-4 font-bold text-xl w-16 text-center">${medal}</td>
+                   <td class="p-4 font-bold text-white">${window.escapeHtml(s.name)}</td>
+                   <td class="p-4"><span class="text-orange-400 font-bold">${s.xp || 0} XP</span> (Lvl ${s.level || 1})</td>
+                 </tr>`;
+                 rank++;
+             });
+          } catch(e) { console.error(e); }
+      };
 
-            for (let i = 0; i < Math.min(files.length, 4); i++) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    newImages.push(e.target.result);
-                    loadedCount++;
-                    if (loadedCount === Math.min(files.length, 4) || loadedCount === files.length) {
-                        while(newImages.length < 4) {
-                            newImages.push(currentImages[newImages.length] || 'https://placehold.co/400x300/e2e8f0/475569?text=Gambar');
-                        }
-                        currentImages = newImages;
-                        renderGalleryImages();
-                    }
-                }
-                reader.readAsDataURL(files[i]);
+      window.updateStudentDashboardUI = function() {
+          const user = window.state.user; if (!user) return;
+          document.getElementById('welcome-student-title').innerText = "Selamat Datang, " + window.escapeHtml(user.name) + "!";
+          document.getElementById('stat-student-questions').innerText = user.attempts || 0;
+          document.getElementById('stat-student-accuracy').innerText = user.attempts ? Math.round((user.correct/user.attempts)*100) + "%" : "0%";
+          document.getElementById('student-level-num').innerText = "Tahap " + (user.level || 1);
+          document.getElementById('student-current-xp').innerText = user.xp || 0;
+          document.getElementById('student-next-xp').innerText = (user.level || 1) * 200;
+          
+          let relativeXp = (user.xp || 0) - (((user.level || 1)-1) * 200);
+          document.getElementById('student-xp-bar').style.width = Math.min(100, Math.round((relativeXp/200)*100)) + "%";
+          window.updateGlobalLeaderboard();
+      };
+
+      window.generateLiveQuestions = async function() {
+          const chapter = document.getElementById('ai-gen-chapter').value;
+          const loader = document.getElementById('ai-batch-loader');
+          const btn = document.getElementById('btn-generate-batch');
+          let apiKey = window.state.apiConfig.geminiKey;
+
+          if (!apiKey || !apiKey.startsWith("AIza")) {
+             window.showCustomModal("Ralat API Key", "Sila masukkan Kunci API Gemini yang sah (bermula dengan huruf AIza...) di dalam fail kod atau menu tetapan.", "alert-circle");
+             return;
+          }
+
+          loader.classList.remove('hidden'); btn.disabled = true;
+          let allGeneratedQuestions = [];
+          
+          // Logik Ulangan (Batch) untuk 100 Soalan
+          let chaptersToRun = chapter === "0" ? ["1", "2", "3", "4", "5"] : [chapter];
+          
+          for(let i=0; i<chaptersToRun.length; i++) {
+              let chapNum = chaptersToRun[i];
+              document.getElementById('loader-status-text').innerText = `Menjana soalan Bab ${chapNum} (${i+1}/${chaptersToRun.length})... Sila tunggu.`;
+              
+              const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+              const prompt = `Bina 20 soalan aneka pilihan (KBAT) Makroekonomi STPM khusus untuk Bab ${chapNum}. Return JSON only: [{"Chapter": ${chapNum}, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}] NO MARKDOWN.`;
+              
+              try {
+                  const response = await fetch(endpoint, {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                  });
+                  if (!response.ok) throw new Error("Ralat pelayan AI");
+                  const result = await response.json();
+                  const jsonStr = window.cleanJsonString(result.candidates?.[0]?.content?.parts?.[0]?.text);
+                  const parsedArr = JSON.parse(jsonStr);
+                  allGeneratedQuestions = allGeneratedQuestions.concat(parsedArr);
+              } catch(e) {
+                  window.showCustomModal("Ralat AI", `Gagal di Bab ${chapNum}. Pastikan internet stabil dan Kunci API sah.`, "alert-triangle");
+                  loader.classList.add('hidden'); btn.disabled = false; return;
+              }
+          }
+
+          document.getElementById('loader-status-text').innerText = "Menyimpan ke Google Sheets...";
+          
+          let maxSet = 5;
+          (window.globalQuestions || []).forEach(q => {
+             if(q.sheetName && q.sheetName.match(/Set\s*(\d+)/i)) maxSet = Math.max(maxSet, parseInt(q.sheetName.match(/Set\s*(\d+)/i)[1]));
+          });
+          
+          let payloadFormatted = allGeneratedQuestions.map((q, idx) => ({
+             QuestionID: `SET${maxSet+1}_B${q.Chapter}_Q${idx}`, Chapter: q.Chapter, Question: q.Question, 
+             OptionA: q.OptionA, OptionB: q.OptionB, OptionC: q.OptionC, OptionD: q.OptionD, 
+             CorrectAnswer: q.CorrectAnswer, Explanation: q.Explanation
+          }));
+
+          const res = await window.makeCloudCall('saveQuestions', { questionsJson: JSON.stringify(payloadFormatted) });
+          if(res.success) {
+              window.fetchQuestionsFromCloud();
+              window.showCustomModal("Berjaya!", `Sistem telah mengumpulkan ${payloadFormatted.length} soalan dan menyimpannya ke Set ${maxSet+1}.`, "check-circle");
+          } else {
+              window.showCustomModal("Gagal", "Gagal menghubungi Google Sheets.", "alert-triangle");
+          }
+          loader.classList.add('hidden'); btn.disabled = false;
+      };
+
+      window.initApp = function() {
+        if(window.appInitialized) return; window.appInitialized = true;
+        
+        let savedProfile = localStorage.getItem('macronexus_user_profile');
+        if (savedProfile) {
+            let prof = JSON.parse(savedProfile);
+            window.state.user = prof; window.state.role = prof.role; window.state.activeClassCode = prof.classCode || null;
+            document.getElementById('nav-user-name').innerText = prof.name;
+            if (prof.role === 'teacher') {
+                window.loadTeacherDashboardData(); window.showView('view-teacher-dashboard');
+            } else {
+                window.updateStudentDashboardUI(); window.showView('view-student-dashboard');
             }
+        } else {
+            window.showView('view-auth');
         }
+      };
 
-        function updateImageDimensions(index) {
-            const frameHeight = document.getElementById(`frame-h-${index}`).value;
-            const imgZoom = document.getElementById(`img-zoom-${index}`).value;
-
-            document.getElementById(`h-val-${index}`).innerText = frameHeight;
-            document.getElementById(`s-val-${index}`).innerText = imgZoom;
-
-            const frameWrapper = document.getElementById(`frame-wrapper-${index}`);
-            const imgEl = document.getElementById(`img-preview-${index}`);
-
-            if (frameWrapper) {
-                frameWrapper.style.height = frameHeight + 'px';
-            }
-            if (imgEl) {
-                imgEl.style.transform = `scale(${imgZoom / 100})`;
-            }
-        }
-
-        function renderGalleryImages() {
-            for (let i = 0; i < 4; i++) {
-                const imgEl = document.getElementById(`img-preview-${i}`);
-                if (imgEl && currentImages[i]) {
-                    imgEl.src = currentImages[i];
-                }
-            }
-        }
-
-        function resetDefaultData() {
-            document.getElementById('input-school').value = "SEKOLAH KEBANGSAAN BIKANG";
-            document.getElementById('input-club').value = "Kelab Catur";
-            document.getElementById('input-date').value = "9/9/2026";
-            document.getElementById('input-activity').value = "Latihan dan perlawanan antara ahli";
-            document.getElementById('input-objective').value = "Membiasakan murid dalam suasana perlawanan.";
-            document.getElementById('input-time').value = "7.00 - 8.00 Pagi";
-            document.getElementById('input-location').value = "Tahun 1";
-            document.getElementById('input-male').value = "10";
-            document.getElementById('input-female').value = "15";
-            document.getElementById('input-teacher').value = "2";
-            document.getElementById('input-review').value = "Sesi latihan dan perlawanan persahabatan telah dijalankan dengan jayanya. Kehadiran ahli kelab amat memuaskan, mencatatkan penyertaan 25 orang murid yang menunjukkan komitmen tinggi. Objektif utama aktiviti ini untuk mendedahkan murid kepada suasana perlawanan sebenar berjaya dicapai dengan cemerlang.";
-            document.getElementById('input-author').value = "Guru Penasihat Kelab Catur";
+      document.addEventListener('DOMContentLoaded', () => {
+        window.initLucide();
+        window.fetchQuestionsFromCloud();
+        
+        document.getElementById('auth-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('auth-name').value;
+            const role = window.state.selectedRole;
+            const code = document.getElementById('auth-classcode').value.toUpperCase();
             
-            // Reset logo
-            document.getElementById('logo-img-preview').classList.add('hidden');
-            document.getElementById('logo-placeholder-icon').classList.remove('hidden');
-            document.getElementById('logo-upload').value = "";
-
-            // Reset frame sizes & zoom
-            for(let i=0; i<4; i++) {
-                document.getElementById(`frame-h-${i}`).value = 130;
-                document.getElementById(`img-zoom-${i}`).value = 100;
-                document.getElementById(`h-val-${i}`).innerText = '130';
-                document.getElementById(`s-val-${i}`).innerText = '100';
-                const frameWrapper = document.getElementById(`frame-wrapper-${i}`);
-                const imgEl = document.getElementById(`img-preview-${i}`);
-                if(frameWrapper) frameWrapper.style.height = '130px';
-                if(imgEl) imgEl.style.transform = 'scale(1.0)';
-            }
+            const prof = { id: 'UID_'+Date.now(), name: name, role: role, classCode: role==='student'?code:'', xp:0, level:1, attempts:0, correct:0 };
             
-            updateReport();
-            renderGalleryImages();
-        }
+            if(window.db && role==='student') await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', prof.id), prof);
+            
+            localStorage.setItem('macronexus_user_profile', JSON.stringify(prof));
+            window.appInitialized = false; window.initApp();
+        });
 
-        window.onload = function() {
-            updateReport();
-            renderGalleryImages();
-        };
+        setTimeout(() => { if (!window.appInitialized) window.initApp(); }, 1500);
+      });
     </script>
+  </main>
 </body>
 </html>
