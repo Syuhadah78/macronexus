@@ -10,7 +10,7 @@
       user: null, role: 'student', selectedRole: 'student', activeClassCode: null, activeClassName: null, students: [],
       apiConfig: {
         gasUrl: 'https://script.google.com/macros/s/AKfycbx94lsYX1G3CCFr7GhY12pcO1NAAFbfDbswpRFeBg8lePyw0M88EiVm32ceiHj3WUc/exec',
-        geminiKey: '' // Kosongkan di sini. Sila guna ikon Tetapan ⚙️ di web untuk memasukkan kunci AIza anda.
+        geminiKey: '' // Kosongkan di sini. Sila guna ikon Tetapan ⚙️ di web untuk memasukkan kunci anda.
       },
       quizState: {
         questions: [], chapter: '0', set: '0', mode: 'onebyone', currentIndex: 0,
@@ -148,7 +148,7 @@
     <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-orange-500/20 text-center transform scale-95 transition-transform duration-300">
       <div class="inline-flex p-4 rounded-full bg-orange-500/10 text-orange-500 mb-4"><i data-lucide="settings" class="w-8 h-8"></i></div>
       <h3 class="text-xl font-bold text-white mb-2">Tetapan API & AI</h3>
-      <p class="text-zinc-400 text-xs mb-4">Masukkan Kunci API Gemini (bermula dengan AIza...)</p>
+      <p class="text-zinc-400 text-xs mb-4">Masukkan Kunci API Gemini (Bermula dengan AQ... atau AIza...)</p>
       <div class="space-y-3 text-left mb-6">
         <div>
           <label class="block text-xs font-bold text-zinc-400 uppercase mb-1">Google Apps Script URL</label>
@@ -156,7 +156,7 @@
         </div>
         <div>
           <label class="block text-xs font-bold text-zinc-400 uppercase mb-1">Kunci API Gemini AI</label>
-          <input id="api-gemini-key-input" type="password" placeholder="AIzaSy..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs outline-none" />
+          <input id="api-gemini-key-input" type="password" placeholder="AQ... / AIza..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs outline-none" />
         </div>
       </div>
       <div class="flex gap-2">
@@ -254,7 +254,6 @@
     window.executeDeleteStudent = async function(id) {
       if(window.db) {
         try { 
-            // Only erase their classCode to remove them from class list
             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', id), { classCode: "" }); 
             window.showCustomModal("Berjaya", "Pelajar telah dikeluarkan dari kelas.", "check-circle");
         } 
@@ -626,8 +625,8 @@
 
           let apiKey = window.state.apiConfig.geminiKey ? window.state.apiConfig.geminiKey.trim() : '';
 
-          if (!window.state.apiConfig.gasUrl || !apiKey || apiKey.startsWith("AQ")) {
-              window.showCustomModal("Tetapan AI Tidak Sah", "Kunci API Gemini anda salah. Sila masukkan Kunci API sebenar yang bermula dengan huruf 'AIza...'", "alert-circle", false);
+          if (!window.state.apiConfig.gasUrl || !apiKey) {
+              window.showCustomModal("Tetapan AI Tidak Sah", "Kunci API Gemini anda salah. Sila masukkan Kunci API sebenar yang bermula dengan huruf 'AIza...' atau 'AQ...'", "alert-circle", false);
               return;
           }
 
@@ -639,12 +638,18 @@
               let chapNum = chaptersToRun[i];
               document.getElementById('loader-status-text').innerText = `Menjana soalan Bab ${chapNum} (${i+1}/${chaptersToRun.length})...`;
               
-              const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+              // PERUBAHAN DI SINI: URL Endpoint tidak lagi menggunakan ?key=
+              const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
               const systemPrompt = `Anda adalah pakar ekonomi STPM. Bina 20 soalan (KBAT) Makroekonomi STPM Bab ${chapNum}. Return JSON array format only: [{"Chapter": ${chapNum}, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}] NO MARKDOWN, NO BACKTICKS.`;
               
               try {
                   const response = await fetch(endpoint, {
-                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      method: 'POST', 
+                      // PERUBAHAN DI SINI: Kita hantar apiKey menggunakan HTTP Header untuk menyokong format "AQ."
+                      headers: { 
+                          'Content-Type': 'application/json',
+                          'x-goog-api-key': apiKey 
+                      },
                       body: JSON.stringify({ 
                           contents: [{ parts: [{ text: `Bina 20 soalan KBAT Makroekonomi STPM Bab ${chapNum}` }] }],
                           systemInstruction: { parts: [{ text: systemPrompt }]},
