@@ -143,12 +143,25 @@
     </div>
   </div>
 
+  <!-- MODAL PENGESAHAN (CONFIRMATION) - BAHARU -->
+  <div id="custom-confirm-modal" class="fixed inset-0 z-[105] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
+    <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-orange-500/20 text-center transform scale-95 transition-transform duration-300">
+      <div class="inline-flex p-4 rounded-full bg-orange-500/10 text-orange-500 mb-4 shadow-lg"><i data-lucide="help-circle" class="w-8 h-8"></i></div>
+      <h3 id="confirm-modal-title" class="text-xl font-bold text-white mb-2">Pengesahan</h3>
+      <p id="confirm-modal-message" class="text-zinc-400 text-sm mb-6">Adakah anda pasti?</p>
+      <div class="flex flex-col gap-3">
+        <button id="btn-confirm-yes" class="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold rounded-xl shadow-lg">Ya, Teruskan</button>
+        <button onclick="window.closeConfirmModal()" class="w-full py-3 bg-zinc-800 text-white font-bold rounded-xl border border-white/5">Batal</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL TETAPAN API & GEMINI -->
   <div id="api-config-modal" class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
     <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-orange-500/20 text-center transform scale-95 transition-transform duration-300">
       <div class="inline-flex p-4 rounded-full bg-orange-500/10 text-orange-500 mb-4"><i data-lucide="settings" class="w-8 h-8"></i></div>
       <h3 class="text-xl font-bold text-white mb-2">Tetapan API & AI</h3>
-      <p class="text-zinc-400 text-xs mb-4">Masukkan Kunci API Gemini (Bermula dengan AQ... atau AIza...)</p>
+      <p class="text-zinc-400 text-xs mb-4">Masukkan Kunci API Gemini (bermula dengan AQ... atau AIza...)</p>
       <div class="space-y-3 text-left mb-6">
         <div>
           <label class="block text-xs font-bold text-zinc-400 uppercase mb-1">Google Apps Script URL</label>
@@ -211,6 +224,22 @@
       window.scrollTo(0, 0); window.initLucide();
     };
     
+    // FUNGSI MODAL PENGESAHAN BARU
+    window.showConfirmModal = function(title, msg, onConfirmCallback) {
+      const mod = document.getElementById('custom-confirm-modal');
+      document.getElementById('confirm-modal-title').innerText = title;
+      document.getElementById('confirm-modal-message').innerHTML = msg;
+      document.getElementById('btn-confirm-yes').onclick = () => {
+          window.closeConfirmModal();
+          if (onConfirmCallback) onConfirmCallback();
+      };
+      mod.classList.remove('hidden'); setTimeout(() => mod.classList.add('opacity-100'), 50); window.initLucide();
+    };
+    window.closeConfirmModal = function() {
+      const mod = document.getElementById('custom-confirm-modal'); mod.classList.remove('opacity-100');
+      setTimeout(() => mod.classList.add('hidden'), 300);
+    };
+
     window.showCustomModal = function(title, msg, icon="info", success=false) {
       const mod = document.getElementById('custom-modal');
       document.getElementById('modal-title').innerText = title; document.getElementById('modal-message').innerHTML = msg;
@@ -254,6 +283,7 @@
     window.executeDeleteStudent = async function(id) {
       if(window.db) {
         try { 
+            // Only erase their classCode to remove them from class list
             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', id), { classCode: "" }); 
             window.showCustomModal("Berjaya", "Pelajar telah dikeluarkan dari kelas.", "check-circle");
         } 
@@ -625,8 +655,9 @@
 
           let apiKey = window.state.apiConfig.geminiKey ? window.state.apiConfig.geminiKey.trim() : '';
 
+          // PERUBAHAN DI SINI: Membenarkan Kunci API AQ masuk melepasi sekatan.
           if (!window.state.apiConfig.gasUrl || !apiKey) {
-              window.showCustomModal("Tetapan AI Tidak Sah", "Kunci API Gemini anda salah. Sila masukkan Kunci API sebenar yang bermula dengan huruf 'AIza...' atau 'AQ...'", "alert-circle", false);
+              window.showCustomModal("Tetapan AI Tidak Sah", "Sila masukkan Kunci API yang sah (AQ... atau AIza...) pada halaman tetapan.", "alert-circle", false);
               return;
           }
 
@@ -638,17 +669,16 @@
               let chapNum = chaptersToRun[i];
               document.getElementById('loader-status-text').innerText = `Menjana soalan Bab ${chapNum} (${i+1}/${chaptersToRun.length})...`;
               
-              // PERUBAHAN DI SINI: URL Endpoint tidak lagi menggunakan ?key=
+              // PERUBAHAN DI SINI: Url kini bersih. Parameter '?key=' telah dibuang untuk menyokong format HTTP Headers (x-goog-api-key)
               const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
               const systemPrompt = `Anda adalah pakar ekonomi STPM. Bina 20 soalan (KBAT) Makroekonomi STPM Bab ${chapNum}. Return JSON array format only: [{"Chapter": ${chapNum}, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}] NO MARKDOWN, NO BACKTICKS.`;
               
               try {
                   const response = await fetch(endpoint, {
                       method: 'POST', 
-                      // PERUBAHAN DI SINI: Kita hantar apiKey menggunakan HTTP Header untuk menyokong format "AQ."
                       headers: { 
                           'Content-Type': 'application/json',
-                          'x-goog-api-key': apiKey 
+                          'x-goog-api-key': apiKey // Header keselamatan baharu untuk Kunci AQ
                       },
                       body: JSON.stringify({ 
                           contents: [{ parts: [{ text: `Bina 20 soalan KBAT Makroekonomi STPM Bab ${chapNum}` }] }],
@@ -794,9 +824,25 @@
         const n = document.getElementById(`multi-q-${qIdx}-opt-${optIdx}`); n.className="w-full text-left p-3 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-white font-bold flex items-center gap-2";
       };
 
+      // PERUBAHAN DI SINI: Menggantikan fungsi prompt confirm() dengan modal khas.
       window.submitExamSheet = function() {
-        if(Object.keys(window.state.quizState.answers).length < window.state.quizState.questions.length) if(!confirm("Ada soalan belum dijawab. Pasti hantar?")) return;
-        window.state.quizState.questions.forEach((q, i) => { if(window.state.quizState.answers[i] === q.answer) { window.state.quizState.score++; window.state.quizState.xpEarned += 30; } else window.state.quizState.xpEarned += 10; });
+        if(Object.keys(window.state.quizState.answers).length < window.state.quizState.questions.length) {
+            window.showConfirmModal("Belum Siap", "Ada soalan yang masih belum dijawab. Adakah anda pasti mahu menghantar kertas ini?", () => {
+                window.calculateAndConcludeQuiz();
+            });
+        } else {
+            window.calculateAndConcludeQuiz();
+        }
+      };
+
+      window.calculateAndConcludeQuiz = function() {
+        window.state.quizState.questions.forEach((q, i) => { 
+            if(window.state.quizState.answers[i] === q.answer) { 
+                window.state.quizState.score++; window.state.quizState.xpEarned += 30; 
+            } else {
+                window.state.quizState.xpEarned += 10; 
+            }
+        });
         window.concludeQuiz();
       };
 
@@ -816,7 +862,14 @@
         window.showView('view-results');
       };
 
-      window.exitQuiz = function() { if (confirm("Batal sesi ini? Markah semasa akan terbatal.")) { if (window.state.quizState.timerInterval) clearInterval(window.state.quizState.timerInterval); window.backToDashboard(); } };
+      // PERUBAHAN DI SINI: Menggantikan fungsi prompt confirm() dengan modal khas.
+      window.exitQuiz = function() { 
+          window.showConfirmModal("Batal Sesi?", "Adakah anda pasti ingin membatalkan sesi ini? Markah semasa dan kemajuan anda akan terbatal.", () => {
+              if (window.state.quizState.timerInterval) clearInterval(window.state.quizState.timerInterval); 
+              window.backToDashboard(); 
+          });
+      };
+
       window.backToDashboard = function() { window.updateStudentDashboardUI(); window.showView('view-student-dashboard'); };
 
       window.initApp = function() {
