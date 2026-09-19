@@ -143,7 +143,7 @@
     </div>
   </div>
 
-  <!-- MODAL PENGESAHAN (CONFIRMATION) - BAHARU -->
+  <!-- MODAL PENGESAHAN (CONFIRMATION) -->
   <div id="custom-confirm-modal" class="fixed inset-0 z-[105] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
     <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-orange-500/20 text-center transform scale-95 transition-transform duration-300">
       <div class="inline-flex p-4 rounded-full bg-orange-500/10 text-orange-500 mb-4 shadow-lg"><i data-lucide="help-circle" class="w-8 h-8"></i></div>
@@ -224,7 +224,7 @@
       window.scrollTo(0, 0); window.initLucide();
     };
     
-    // FUNGSI MODAL PENGESAHAN BARU
+    // FUNGSI MODAL PENGESAHAN
     window.showConfirmModal = function(title, msg, onConfirmCallback) {
       const mod = document.getElementById('custom-confirm-modal');
       document.getElementById('confirm-modal-title').innerText = title;
@@ -283,7 +283,6 @@
     window.executeDeleteStudent = async function(id) {
       if(window.db) {
         try { 
-            // Only erase their classCode to remove them from class list
             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'students', id), { classCode: "" }); 
             window.showCustomModal("Berjaya", "Pelajar telah dikeluarkan dari kelas.", "check-circle");
         } 
@@ -572,7 +571,6 @@
         return true;
       };
 
-      // LIVE FIREBASE: Update Teacher Dashboard
       window.loadTeacherDashboardData = async function() {
         if (!window.db) return;
         const tbody = document.getElementById('students-table-body');
@@ -600,7 +598,6 @@
         } catch(e) { console.error(e); tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-red-500">Gagal memuat turun data awan.</td></tr>'; }
       };
 
-      // LIVE FIREBASE: Update Global Leaderboard
       window.updateGlobalLeaderboard = async function() {
           if (!window.db) return;
           const tbody = document.getElementById('global-leaderboard-body');
@@ -655,9 +652,8 @@
 
           let apiKey = window.state.apiConfig.geminiKey ? window.state.apiConfig.geminiKey.trim() : '';
 
-          // PERUBAHAN DI SINI: Membenarkan Kunci API AQ masuk melepasi sekatan.
           if (!window.state.apiConfig.gasUrl || !apiKey) {
-              window.showCustomModal("Tetapan AI Tidak Sah", "Sila masukkan Kunci API yang sah (AQ... atau AIza...) pada halaman tetapan.", "alert-circle", false);
+              window.showCustomModal("Tetapan AI Tidak Sah", "Sila masukkan Kunci API yang sah pada halaman tetapan.", "alert-circle", false);
               return;
           }
 
@@ -669,8 +665,8 @@
               let chapNum = chaptersToRun[i];
               document.getElementById('loader-status-text').innerText = `Menjana soalan Bab ${chapNum} (${i+1}/${chaptersToRun.length})...`;
               
-              // PERUBAHAN DI SINI: Url kini bersih. Parameter '?key=' telah dibuang untuk menyokong format HTTP Headers (x-goog-api-key)
-              const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
+              // PERUBAHAN DI SINI: Model ditukar kepada versi terbaharu dan stabil (gemini-2.0-flash)
+              const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`;
               const systemPrompt = `Anda adalah pakar ekonomi STPM. Bina 20 soalan (KBAT) Makroekonomi STPM Bab ${chapNum}. Return JSON array format only: [{"Chapter": ${chapNum}, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}] NO MARKDOWN, NO BACKTICKS.`;
               
               try {
@@ -678,7 +674,7 @@
                       method: 'POST', 
                       headers: { 
                           'Content-Type': 'application/json',
-                          'x-goog-api-key': apiKey // Header keselamatan baharu untuk Kunci AQ
+                          'x-goog-api-key': apiKey 
                       },
                       body: JSON.stringify({ 
                           contents: [{ parts: [{ text: `Bina 20 soalan KBAT Makroekonomi STPM Bab ${chapNum}` }] }],
@@ -745,7 +741,7 @@
         if (selectedSet !== "0") pool = pool.filter(q => q.sheetName && q.sheetName.toLowerCase().includes(`set ${selectedSet}`));
         if (pool.length === 0) { window.showCustomModal("Tiada Soalan", "Tiada soalan untuk bab/set ini.", "info"); return; }
 
-        window.state.quizState.questions = pool.slice(0, 20); // Limit 20
+        window.state.quizState.questions = pool.slice(0, 20); 
         window.state.quizState.chapter = selectedChap === "0" ? "Semua Bab" : selectedChap;
         window.state.quizState.set = selectedSet === "0" ? "Semua Set" : `Set ${selectedSet}`;
         window.state.quizState.mode = selectedMode;
@@ -824,7 +820,6 @@
         const n = document.getElementById(`multi-q-${qIdx}-opt-${optIdx}`); n.className="w-full text-left p-3 rounded-xl border-2 border-orange-500 bg-orange-500/10 text-white font-bold flex items-center gap-2";
       };
 
-      // PERUBAHAN DI SINI: Menggantikan fungsi prompt confirm() dengan modal khas.
       window.submitExamSheet = function() {
         if(Object.keys(window.state.quizState.answers).length < window.state.quizState.questions.length) {
             window.showConfirmModal("Belum Siap", "Ada soalan yang masih belum dijawab. Adakah anda pasti mahu menghantar kertas ini?", () => {
@@ -862,7 +857,6 @@
         window.showView('view-results');
       };
 
-      // PERUBAHAN DI SINI: Menggantikan fungsi prompt confirm() dengan modal khas.
       window.exitQuiz = function() { 
           window.showConfirmModal("Batal Sesi?", "Adakah anda pasti ingin membatalkan sesi ini? Markah semasa dan kemajuan anda akan terbatal.", () => {
               if (window.state.quizState.timerInterval) clearInterval(window.state.quizState.timerInterval); 
