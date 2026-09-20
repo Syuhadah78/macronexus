@@ -665,16 +665,15 @@
               let chapNum = chaptersToRun[i];
               document.getElementById('loader-status-text').innerText = `Menjana soalan Bab ${chapNum} (${i+1}/${chaptersToRun.length})...`;
               
-              // PERUBAHAN DI SINI: Model ditukar kepada versi terbaharu dan stabil (gemini-2.0-flash)
-              const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`;
+              // PERUBAHAN: Kembali menggunakan URL Parameter (?key=) untuk menghalang ralat 401 OAuth
+              const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
               const systemPrompt = `Anda adalah pakar ekonomi STPM. Bina 20 soalan (KBAT) Makroekonomi STPM Bab ${chapNum}. Return JSON array format only: [{"Chapter": ${chapNum}, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}] NO MARKDOWN, NO BACKTICKS.`;
               
               try {
                   const response = await fetch(endpoint, {
                       method: 'POST', 
                       headers: { 
-                          'Content-Type': 'application/json',
-                          'x-goog-api-key': apiKey 
+                          'Content-Type': 'application/json'
                       },
                       body: JSON.stringify({ 
                           contents: [{ parts: [{ text: `Bina 20 soalan KBAT Makroekonomi STPM Bab ${chapNum}` }] }],
