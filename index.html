@@ -665,16 +665,15 @@
               let chapNum = chaptersToRun[i];
               document.getElementById('loader-status-text').innerText = `Menjana soalan Bab ${chapNum} (${i+1}/${chaptersToRun.length})...`;
               
-              // KEMASKINI KE INTERACTIONS API DAN GEMINI-3.6-FLASH
-              const endpoint = `https://generativelanguage.googleapis.com/v1beta/interactions`;
+              // KEMASKINI: Alihkan API Key semula ke dalam URL parameter untuk elak Ralat 401
+              const endpoint = `https://generativelanguage.googleapis.com/v1beta/interactions?key=${apiKey}`;
               const systemPrompt = `Anda adalah pakar ekonomi STPM. Bina 20 soalan (KBAT) Makroekonomi STPM Bab ${chapNum}. Return JSON array format only: [{"Chapter": ${chapNum}, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}] NO MARKDOWN, NO BACKTICKS.`;
               
               try {
                   const response = await fetch(endpoint, {
                       method: 'POST', 
                       headers: { 
-                          'Content-Type': 'application/json',
-                          'x-goog-api-key': apiKey
+                          'Content-Type': 'application/json'
                       },
                       body: JSON.stringify({ 
                           model: "gemini-3.6-flash",
@@ -690,12 +689,10 @@
                   
                   const result = await response.json();
                   
-                  // CARI KANDUNGAN DALAM "model_output"
                   let rawText = "";
                   if (result.steps) {
                       const modelOutputStep = result.steps.find(step => step.type === "model_output");
                       if (modelOutputStep && modelOutputStep.content && modelOutputStep.content.length > 0) {
-                          // Biasanya berada di dalam object pertama content array
                           rawText = modelOutputStep.content[0].text || "";
                       }
                   }
