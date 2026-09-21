@@ -10,7 +10,7 @@
       user: null, role: 'student', selectedRole: 'student', activeClassCode: null, activeClassName: null, students: [],
       apiConfig: {
         gasUrl: 'https://script.google.com/macros/s/AKfycbx94lsYX1G3CCFr7GhY12pcO1NAAFbfDbswpRFeBg8lePyw0M88EiVm32ceiHj3WUc/exec',
-        geminiKey: 'AQ.Ab8RN6IOmLOdpMTr8DiX7iKb5ABGs87bXYeXNyhUsjfFLJmd5A' // Kunci API terbaharu telah dikemas kini.
+        geminiKey: 'AQ.Ab8RN6IOmLOdpMTr8DiX7iKb5ABGs87bXYeXNyhUsjfFLJmd5A'
       },
       quizState: {
         questions: [], chapter: '0', set: '0', mode: 'onebyone', currentIndex: 0,
@@ -665,19 +665,20 @@
               let chapNum = chaptersToRun[i];
               document.getElementById('loader-status-text').innerText = `Menjana soalan Bab ${chapNum} (${i+1}/${chaptersToRun.length})...`;
               
-              const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+              // KEMASKINI KE INTERACTIONS API DAN GEMINI-3.6-FLASH
+              const endpoint = `https://generativelanguage.googleapis.com/v1beta/interactions`;
               const systemPrompt = `Anda adalah pakar ekonomi STPM. Bina 20 soalan (KBAT) Makroekonomi STPM Bab ${chapNum}. Return JSON array format only: [{"Chapter": ${chapNum}, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}] NO MARKDOWN, NO BACKTICKS.`;
               
               try {
                   const response = await fetch(endpoint, {
                       method: 'POST', 
                       headers: { 
-                          'Content-Type': 'application/json'
+                          'Content-Type': 'application/json',
+                          'x-goog-api-key': apiKey
                       },
                       body: JSON.stringify({ 
-                          contents: [{ parts: [{ text: `Bina 20 soalan KBAT Makroekonomi STPM Bab ${chapNum}` }] }],
-                          systemInstruction: { parts: [{ text: systemPrompt }]},
-                          generationConfig: { responseMimeType: "application/json" }
+                          model: "gemini-3.6-flash",
+                          input: systemPrompt + ` Bina 20 soalan KBAT Makroekonomi STPM Bab ${chapNum}`
                       })
                   });
                   
@@ -686,8 +687,22 @@
                       let errMsg = errData.error?.message || response.statusText;
                       throw new Error(`Ralat ${response.status}: ${errMsg}`);
                   }
+                  
                   const result = await response.json();
-                  let jsonStr = window.cleanJsonString(result.candidates?.[0]?.content?.parts?.[0]?.text);
+                  
+                  // CARI KANDUNGAN DALAM "model_output"
+                  let rawText = "";
+                  if (result.steps) {
+                      const modelOutputStep = result.steps.find(step => step.type === "model_output");
+                      if (modelOutputStep && modelOutputStep.content && modelOutputStep.content.length > 0) {
+                          // Biasanya berada di dalam object pertama content array
+                          rawText = modelOutputStep.content[0].text || "";
+                      }
+                  }
+
+                  if (!rawText) throw new Error("Gagal mengekstrak teks jawapan daripada pelayan (model_output tidak dijumpai).");
+
+                  let jsonStr = window.cleanJsonString(rawText);
                   const parsedArr = JSON.parse(jsonStr);
                   allGeneratedQuestions = allGeneratedQuestions.concat(parsedArr);
               } catch(e) {
