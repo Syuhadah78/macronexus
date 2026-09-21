@@ -10,7 +10,7 @@
       user: null, role: 'student', selectedRole: 'student', activeClassCode: null, activeClassName: null, students: [],
       apiConfig: {
         gasUrl: 'https://script.google.com/macros/s/AKfycbx94lsYX1G3CCFr7GhY12pcO1NAAFbfDbswpRFeBg8lePyw0M88EiVm32ceiHj3WUc/exec',
-        geminiKey: 'AQ.Ab8RN6Ju_Jexztsv4mckrHabbczPYEH4FdAj-71zqlf8h2SghA' // Kunci API lalai telah dikemas kini.
+        geminiKey: 'AQ.Ab8RN6IOmLOdpMTr8DiX7iKb5ABGs87bXYeXNyhUsjfFLJmd5A' // Kunci API terbaharu telah dikemas kini.
       },
       quizState: {
         questions: [], chapter: '0', set: '0', mode: 'onebyone', currentIndex: 0,
@@ -665,7 +665,6 @@
               let chapNum = chaptersToRun[i];
               document.getElementById('loader-status-text').innerText = `Menjana soalan Bab ${chapNum} (${i+1}/${chaptersToRun.length})...`;
               
-              // PERUBAHAN: Kembali menggunakan URL Parameter (?key=) untuk menghalang ralat 401 OAuth
               const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
               const systemPrompt = `Anda adalah pakar ekonomi STPM. Bina 20 soalan (KBAT) Makroekonomi STPM Bab ${chapNum}. Return JSON array format only: [{"Chapter": ${chapNum}, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}] NO MARKDOWN, NO BACKTICKS.`;
               
