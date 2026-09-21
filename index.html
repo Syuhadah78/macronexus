@@ -224,7 +224,6 @@
       window.scrollTo(0, 0); window.initLucide();
     };
     
-    // FUNGSI MODAL PENGESAHAN
     window.showConfirmModal = function(title, msg, onConfirmCallback) {
       const mod = document.getElementById('custom-confirm-modal');
       document.getElementById('confirm-modal-title').innerText = title;
@@ -665,8 +664,9 @@
               let chapNum = chaptersToRun[i];
               document.getElementById('loader-status-text').innerText = `Menjana soalan Bab ${chapNum} (${i+1}/${chaptersToRun.length})...`;
               
-              // KEMASKINI: Alihkan API Key semula ke dalam URL parameter untuk elak Ralat 401
-              const endpoint = `https://generativelanguage.googleapis.com/v1beta/interactions?key=${apiKey}`;
+              // KEMBALI KEPADA 'generateContent' UNTUK MENGELAKKAN RALAT OAUTH (401)
+              // KEKALKAN MODEL 'gemini-3.6-flash' UNTUK MENGELAKKAN RALAT MODEL DEPRECATED (404)
+              const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
               const systemPrompt = `Anda adalah pakar ekonomi STPM. Bina 20 soalan (KBAT) Makroekonomi STPM Bab ${chapNum}. Return JSON array format only: [{"Chapter": ${chapNum}, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}] NO MARKDOWN, NO BACKTICKS.`;
               
               try {
@@ -676,8 +676,9 @@
                           'Content-Type': 'application/json'
                       },
                       body: JSON.stringify({ 
-                          model: "gemini-3.6-flash",
-                          input: systemPrompt + ` Bina 20 soalan KBAT Makroekonomi STPM Bab ${chapNum}`
+                          contents: [{ parts: [{ text: `Bina 20 soalan KBAT Makroekonomi STPM Bab ${chapNum}` }] }],
+                          systemInstruction: { parts: [{ text: systemPrompt }]},
+                          generationConfig: { responseMimeType: "application/json" }
                       })
                   });
                   
@@ -689,15 +690,10 @@
                   
                   const result = await response.json();
                   
-                  let rawText = "";
-                  if (result.steps) {
-                      const modelOutputStep = result.steps.find(step => step.type === "model_output");
-                      if (modelOutputStep && modelOutputStep.content && modelOutputStep.content.length > 0) {
-                          rawText = modelOutputStep.content[0].text || "";
-                      }
-                  }
+                  // Menggunakan struktur parsing generateContent piawai
+                  let rawText = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-                  if (!rawText) throw new Error("Gagal mengekstrak teks jawapan daripada pelayan (model_output tidak dijumpai).");
+                  if (!rawText) throw new Error("Gagal mengekstrak teks jawapan daripada pelayan AI.");
 
                   let jsonStr = window.cleanJsonString(rawText);
                   const parsedArr = JSON.parse(jsonStr);
@@ -894,7 +890,6 @@
           }
       };
 
-      // Button listeners
       document.addEventListener('DOMContentLoaded', () => {
           const btnSubmit = document.getElementById('btn-quiz-submit');
           if (btnSubmit) {
