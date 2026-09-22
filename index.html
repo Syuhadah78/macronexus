@@ -6,13 +6,33 @@
   <title>MacroNexus - Menghubung Ilmu, Membina Kecemerlangan</title>
   
   <script>
+    // 1. PEMBERSIH MEMORI LAMA (Mencegah Ralat 401 akibat kunci kosong yang tersimpan)
+    const defaultGasUrl = 'https://script.google.com/macros/s/AKfycbx94lsYX1G3CCFr7GhY12pcO1NAAFbfDbswpRFeBg8lePyw0M88EiVm32ceiHj3WUc/exec';
+    const defaultApiKey = 'AQ.Ab8RN6IU-9HHWmPO54KPBUcy8otfHazJrVdKDXzuT_s4F7OKpw';
+    
+    let activeApiConfig = { gasUrl: defaultGasUrl, geminiKey: defaultApiKey };
+    
+    // Semak memori pelayar, jika kunci kosong, paksa guna kunci lalai.
+    try {
+        const storedConfig = localStorage.getItem('macronexus_api_config');
+        if (storedConfig) {
+            const parsed = JSON.parse(storedConfig);
+            activeApiConfig.gasUrl = parsed.gasUrl || defaultGasUrl;
+            // Jika memori menyimpan kunci kosong, abaikan dan guna kunci rasmi
+            if (!parsed.geminiKey || parsed.geminiKey.trim() === "") {
+                activeApiConfig.geminiKey = defaultApiKey;
+            } else {
+                activeApiConfig.geminiKey = parsed.geminiKey;
+            }
+            // Simpan semula tetapan yang dibersihkan ke dalam memori
+            localStorage.setItem('macronexus_api_config', JSON.stringify(activeApiConfig));
+        }
+    } catch(e) { console.warn("Ralat memuatkan tetapan tempatan."); }
+
+    // 2. TETAPAN STATE UTAMA
     window.state = {
       user: null, role: 'student', selectedRole: 'student', activeClassCode: null, activeClassName: null, students: [],
-      apiConfig: {
-        gasUrl: 'https://script.google.com/macros/s/AKfycbx94lsYX1G3CCFr7GhY12pcO1NAAFbfDbswpRFeBg8lePyw0M88EiVm32ceiHj3WUc/exec',
-        // KUNCI API TERBAHARU YANG DISAHKAN BERFUNGSI
-        geminiKey: 'AQ.Ab8RN6IU-9HHWmPO54KPBUcy8otfHazJrVdKDXzuT_s4F7OKpw'
-      },
+      apiConfig: activeApiConfig,
       quizState: {
         questions: [], chapter: '0', set: '0', mode: 'onebyone', currentIndex: 0,
         answers: {}, score: 0, xpEarned: 0, hasSubmitted: false, secondsTaken: 0, timerInterval: null
@@ -162,7 +182,7 @@
     <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 border border-orange-500/20 text-center transform scale-95 transition-transform duration-300">
       <div class="inline-flex p-4 rounded-full bg-orange-500/10 text-orange-500 mb-4"><i data-lucide="settings" class="w-8 h-8"></i></div>
       <h3 class="text-xl font-bold text-white mb-2">Tetapan API & AI</h3>
-      <p class="text-zinc-400 text-xs mb-4">Masukkan Kunci API Gemini (bermula dengan AQ... atau AIza...)</p>
+      <p class="text-zinc-400 text-xs mb-4">Pastikan Kunci API anda tepat (menyokong format AQ atau AIza)</p>
       <div class="space-y-3 text-left mb-6">
         <div>
           <label class="block text-xs font-bold text-zinc-400 uppercase mb-1">Google Apps Script URL</label>
@@ -170,7 +190,7 @@
         </div>
         <div>
           <label class="block text-xs font-bold text-zinc-400 uppercase mb-1">Kunci API Gemini AI</label>
-          <input id="api-gemini-key-input" type="password" placeholder="AQ... / AIza..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs outline-none" />
+          <input id="api-gemini-key-input" type="password" placeholder="AQ... atau AIza..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-xs outline-none" />
         </div>
       </div>
       <div class="flex gap-2">
@@ -253,22 +273,32 @@
 
     window.openApiConfigModal = function() {
       const mod = document.getElementById('api-config-modal');
-      const stored = localStorage.getItem('macronexus_api_config');
-      if(stored) { const parsed = JSON.parse(stored); window.state.apiConfig = parsed; }
+      // Paparkan tetapan terkini daripada state, bukan memuatkan buta-buta dari localStorage
       document.getElementById('api-gas-url-input').value = window.state.apiConfig.gasUrl || '';
       document.getElementById('api-gemini-key-input').value = window.state.apiConfig.geminiKey || '';
       mod.classList.remove('hidden'); setTimeout(() => mod.classList.add('opacity-100'), 50); window.initLucide();
     };
+    
     window.closeApiConfigModal = function() {
       const mod = document.getElementById('api-config-modal'); mod.classList.remove('opacity-100');
       setTimeout(() => mod.classList.add('hidden'), 300);
     };
+    
     window.saveApiSettings = function() {
-      window.state.apiConfig.gasUrl = document.getElementById('api-gas-url-input').value.trim();
-      window.state.apiConfig.geminiKey = document.getElementById('api-gemini-key-input').value.trim();
+      const newGasUrl = document.getElementById('api-gas-url-input').value.trim();
+      const newGeminiKey = document.getElementById('api-gemini-key-input').value.trim();
+      
+      if (!newGeminiKey) {
+          window.showCustomModal("Ralat", "Kunci API tidak boleh dibiarkan kosong.", "alert-triangle");
+          return;
+      }
+      
+      window.state.apiConfig.gasUrl = newGasUrl;
+      window.state.apiConfig.geminiKey = newGeminiKey;
+      
       localStorage.setItem('macronexus_api_config', JSON.stringify(window.state.apiConfig));
       window.closeApiConfigModal();
-      window.showCustomModal("Berjaya", "Tetapan API berjaya dikemaskini.", "check-circle");
+      window.showCustomModal("Berjaya", "Tetapan API berjaya dikemaskini dan disimpan.", "check-circle");
     };
 
     window.closeConfirmDeleteModal = function() {
@@ -384,7 +414,7 @@
 
       <!-- AI Question Generator -->
       <div class="glass-panel p-6 rounded-3xl border border-orange-500/10">
-        <h2 class="text-xl font-bold text-white flex items-center gap-2 mb-4"><i data-lucide="sparkles" class="text-orange-500 w-5 h-5"></i> Penjana Soalan AI Pukal</h2>
+        <h2 class="text-xl font-bold text-white flex items-center gap-2 mb-4"><i data-lucide="sparkles" class="text-orange-500 w-5 h-5"></i> Penjana Soalan AI Pukal (Gemini 2.5 Flash)</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
              <label class="block text-xs font-bold text-zinc-400 uppercase mb-1.5">Liputan Bab</label>
@@ -650,10 +680,11 @@
           const loader = document.getElementById('ai-batch-loader');
           const btn = document.getElementById('btn-generate-batch');
 
+          // Pemeriksaan Kunci API yang lebih ketat
           let apiKey = window.state.apiConfig.geminiKey ? window.state.apiConfig.geminiKey.trim() : '';
 
-          if (!window.state.apiConfig.gasUrl || !apiKey) {
-              window.showCustomModal("Tetapan AI Tidak Lengkap", "Sila masukkan Kunci API Gemini pada halaman tetapan.", "alert-circle", false);
+          if (!apiKey || apiKey === "") {
+              window.showCustomModal("Ralat Kunci API", "Sistem mengesan bahawa Kunci API Gemini anda kosong. Sila klik ikon Tetapan (⚙️) dan pastikan kunci telah dimasukkan dan disimpan.", "alert-triangle", false);
               return;
           }
 
@@ -665,6 +696,7 @@
               let chapNum = chaptersToRun[i];
               document.getElementById('loader-status-text').innerText = `Menjana soalan Bab ${chapNum} (${i+1}/${chaptersToRun.length})...`;
               
+              // Menggunakan gemini-2.5-flash (Sama seperti alat penguji yang berjaya)
               const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
               const systemPrompt = `Anda adalah pakar ekonomi STPM. Bina 20 soalan (KBAT) Makroekonomi STPM Bab ${chapNum}. Return JSON array format only: [{"Chapter": ${chapNum}, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}] NO MARKDOWN, NO BACKTICKS.`;
               
@@ -679,29 +711,20 @@
                       })
                   });
                   
-                  if (response.status === 401) {
-                      const errorData = await response.json().catch(() => ({}));
-                      let detailedError = errorData.error?.message || "Tiada maklumat tambahan dari pelayan.";
-                      
-                      let alertMsg = `
-                        <div class="space-y-4">
-                          <p class="text-zinc-300">Kunci API yang anda gunakan telah ditolak oleh Google (Ralat 401).</p>
-                          <div class="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                            <span class="text-xs text-red-400 font-bold uppercase block mb-1">Respons Google:</span>
-                            <span class="text-xs text-zinc-400 font-mono">${detailedError}</span>
-                          </div>
-                          <p class="text-zinc-300">Sila pastikan Kunci API ini telah dibina menerusi Google AI Studio dengan menggunakan akaun Gmail peribadi tanpa sebarang sekatan laman web.</p>
-                        </div>
-                      `;
-                      
-                      window.showCustomModal("Ralat Keselamatan 401", alertMsg, "alert-octagon");
-                      loader.classList.add('hidden'); btn.disabled = false; return;
-                  }
-                  
                   if (!response.ok) {
                       const errData = await response.json();
                       let errMsg = errData.error?.message || response.statusText;
-                      throw new Error(`Ralat ${response.status}: ${errMsg}`);
+                      
+                      let alertMsg = `
+                        <div class="space-y-4">
+                          <div class="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                            <span class="text-xs text-red-400 font-bold uppercase block mb-1">Respons Google (Ralat ${response.status}):</span>
+                            <span class="text-xs text-zinc-400 font-mono">${errMsg}</span>
+                          </div>
+                        </div>
+                      `;
+                      window.showCustomModal(`Gagal pada Bab ${chapNum}`, alertMsg, "alert-octagon");
+                      loader.classList.add('hidden'); btn.disabled = false; return;
                   }
                   
                   const result = await response.json();
@@ -713,7 +736,7 @@
                   const parsedArr = JSON.parse(jsonStr);
                   allGeneratedQuestions = allGeneratedQuestions.concat(parsedArr);
               } catch(e) {
-                  window.showCustomModal("Ralat Semasa Penjanaan AI", `Sistem gagal pada pusingan Bab ${chapNum}.<br><br><span class="text-red-400 font-bold">Mesej Pelayan Google:</span><br><span class="text-zinc-300 text-xs">${e.message}</span>`, "alert-triangle");
+                  window.showCustomModal("Ralat Semasa Penjanaan", `<span class="text-zinc-300 text-xs">${e.message}</span>`, "alert-triangle");
                   loader.classList.add('hidden'); btn.disabled = false; return;
               }
           }
