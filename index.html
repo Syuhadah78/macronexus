@@ -6,30 +6,25 @@
   <title>MacroNexus - Menghubung Ilmu, Membina Kecemerlangan</title>
   
   <script>
-    // 1. PEMBERSIH MEMORI LAMA (Mencegah Ralat 401 akibat kunci kosong yang tersimpan)
     const defaultGasUrl = 'https://script.google.com/macros/s/AKfycbx94lsYX1G3CCFr7GhY12pcO1NAAFbfDbswpRFeBg8lePyw0M88EiVm32ceiHj3WUc/exec';
     const defaultApiKey = 'AQ.Ab8RN6IU-9HHWmPO54KPBUcy8otfHazJrVdKDXzuT_s4F7OKpw';
     
     let activeApiConfig = { gasUrl: defaultGasUrl, geminiKey: defaultApiKey };
     
-    // Semak memori pelayar, jika kunci kosong, paksa guna kunci lalai.
     try {
         const storedConfig = localStorage.getItem('macronexus_api_config');
         if (storedConfig) {
             const parsed = JSON.parse(storedConfig);
             activeApiConfig.gasUrl = parsed.gasUrl || defaultGasUrl;
-            // Jika memori menyimpan kunci kosong, abaikan dan guna kunci rasmi
             if (!parsed.geminiKey || parsed.geminiKey.trim() === "") {
                 activeApiConfig.geminiKey = defaultApiKey;
             } else {
                 activeApiConfig.geminiKey = parsed.geminiKey;
             }
-            // Simpan semula tetapan yang dibersihkan ke dalam memori
             localStorage.setItem('macronexus_api_config', JSON.stringify(activeApiConfig));
         }
     } catch(e) { console.warn("Ralat memuatkan tetapan tempatan."); }
 
-    // 2. TETAPAN STATE UTAMA
     window.state = {
       user: null, role: 'student', selectedRole: 'student', activeClassCode: null, activeClassName: null, students: [],
       apiConfig: activeApiConfig,
@@ -273,7 +268,6 @@
 
     window.openApiConfigModal = function() {
       const mod = document.getElementById('api-config-modal');
-      // Paparkan tetapan terkini daripada state, bukan memuatkan buta-buta dari localStorage
       document.getElementById('api-gas-url-input').value = window.state.apiConfig.gasUrl || '';
       document.getElementById('api-gemini-key-input').value = window.state.apiConfig.geminiKey || '';
       mod.classList.remove('hidden'); setTimeout(() => mod.classList.add('opacity-100'), 50); window.initLucide();
@@ -680,13 +674,8 @@
           const loader = document.getElementById('ai-batch-loader');
           const btn = document.getElementById('btn-generate-batch');
 
-          // Pemeriksaan Kunci API yang lebih ketat
-          let apiKey = window.state.apiConfig.geminiKey ? window.state.apiConfig.geminiKey.trim() : '';
-
-          if (!apiKey || apiKey === "") {
-              window.showCustomModal("Ralat Kunci API", "Sistem mengesan bahawa Kunci API Gemini anda kosong. Sila klik ikon Tetapan (⚙️) dan pastikan kunci telah dimasukkan dan disimpan.", "alert-triangle", false);
-              return;
-          }
+          // HARDCODE Kunci API untuk memintas masalah Cache Memory Pelayar
+          const apiKey = 'AQ.Ab8RN6IU-9HHWmPO54KPBUcy8otfHazJrVdKDXzuT_s4F7OKpw';
 
           loader.classList.remove('hidden'); btn.disabled = true;
           let allGeneratedQuestions = [];
@@ -696,18 +685,18 @@
               let chapNum = chaptersToRun[i];
               document.getElementById('loader-status-text').innerText = `Menjana soalan Bab ${chapNum} (${i+1}/${chaptersToRun.length})...`;
               
-              // Menggunakan gemini-2.5-flash (Sama seperti alat penguji yang berjaya)
+              // Guna model 2.5-flash (seperti pada Alat Penguji)
               const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-              const systemPrompt = `Anda adalah pakar ekonomi STPM. Bina 20 soalan (KBAT) Makroekonomi STPM Bab ${chapNum}. Return JSON array format only: [{"Chapter": ${chapNum}, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}] NO MARKDOWN, NO BACKTICKS.`;
+              
+              // Permudahkan struktur arahan (payload) sama seperti Alat Penguji
+              const fullPrompt = `Anda adalah pakar ekonomi STPM. Sila bina 20 soalan (KBAT) Makroekonomi STPM Bab ${chapNum}. Anda MESTI memulangkan jawapan dalam format JSON array yang sah (valid JSON array) sahaja, tanpa sebarang teks tambahan, tanpa backticks, dan tanpa blok markdown seperti \`\`\`json. Format yang mesti diikut: [{"Chapter": ${chapNum}, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}]`;
               
               try {
                   const response = await fetch(endpoint, {
                       method: 'POST', 
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ 
-                          contents: [{ parts: [{ text: `Bina 20 soalan KBAT Makroekonomi STPM Bab ${chapNum}` }] }],
-                          systemInstruction: { parts: [{ text: systemPrompt }]},
-                          generationConfig: { responseMimeType: "application/json" }
+                          contents: [{ parts: [{ text: fullPrompt }] }]
                       })
                   });
                   
