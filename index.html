@@ -10,7 +10,8 @@
       user: null, role: 'student', selectedRole: 'student', activeClassCode: null, activeClassName: null, students: [],
       apiConfig: {
         gasUrl: 'https://script.google.com/macros/s/AKfycbx94lsYX1G3CCFr7GhY12pcO1NAAFbfDbswpRFeBg8lePyw0M88EiVm32ceiHj3WUc/exec',
-        geminiKey: 'AQ.Ab8RN6IOmLOdpMTr8DiX7iKb5ABGs87bXYeXNyhUsjfFLJmd5A'
+        // KUNCI API TERBAHARU YANG DISAHKAN BERFUNGSI
+        geminiKey: 'AQ.Ab8RN6IU-9HHWmPO54KPBUcy8otfHazJrVdKDXzuT_s4F7OKpw'
       },
       quizState: {
         questions: [], chapter: '0', set: '0', mode: 'onebyone', currentIndex: 0,
@@ -652,7 +653,7 @@
           let apiKey = window.state.apiConfig.geminiKey ? window.state.apiConfig.geminiKey.trim() : '';
 
           if (!window.state.apiConfig.gasUrl || !apiKey) {
-              window.showCustomModal("Tetapan AI Tidak Sah", "Sila masukkan Kunci API yang sah pada halaman tetapan.", "alert-circle", false);
+              window.showCustomModal("Tetapan AI Tidak Lengkap", "Sila masukkan Kunci API Gemini pada halaman tetapan.", "alert-circle", false);
               return;
           }
 
@@ -664,23 +665,38 @@
               let chapNum = chaptersToRun[i];
               document.getElementById('loader-status-text').innerText = `Menjana soalan Bab ${chapNum} (${i+1}/${chaptersToRun.length})...`;
               
-              // KEMBALI KEPADA 'generateContent' UNTUK MENGELAKKAN RALAT OAUTH (401)
-              // KEKALKAN MODEL 'gemini-3.6-flash' UNTUK MENGELAKKAN RALAT MODEL DEPRECATED (404)
-              const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
+              const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
               const systemPrompt = `Anda adalah pakar ekonomi STPM. Bina 20 soalan (KBAT) Makroekonomi STPM Bab ${chapNum}. Return JSON array format only: [{"Chapter": ${chapNum}, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}] NO MARKDOWN, NO BACKTICKS.`;
               
               try {
                   const response = await fetch(endpoint, {
                       method: 'POST', 
-                      headers: { 
-                          'Content-Type': 'application/json'
-                      },
+                      headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ 
                           contents: [{ parts: [{ text: `Bina 20 soalan KBAT Makroekonomi STPM Bab ${chapNum}` }] }],
                           systemInstruction: { parts: [{ text: systemPrompt }]},
                           generationConfig: { responseMimeType: "application/json" }
                       })
                   });
+                  
+                  if (response.status === 401) {
+                      const errorData = await response.json().catch(() => ({}));
+                      let detailedError = errorData.error?.message || "Tiada maklumat tambahan dari pelayan.";
+                      
+                      let alertMsg = `
+                        <div class="space-y-4">
+                          <p class="text-zinc-300">Kunci API yang anda gunakan telah ditolak oleh Google (Ralat 401).</p>
+                          <div class="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                            <span class="text-xs text-red-400 font-bold uppercase block mb-1">Respons Google:</span>
+                            <span class="text-xs text-zinc-400 font-mono">${detailedError}</span>
+                          </div>
+                          <p class="text-zinc-300">Sila pastikan Kunci API ini telah dibina menerusi Google AI Studio dengan menggunakan akaun Gmail peribadi tanpa sebarang sekatan laman web.</p>
+                        </div>
+                      `;
+                      
+                      window.showCustomModal("Ralat Keselamatan 401", alertMsg, "alert-octagon");
+                      loader.classList.add('hidden'); btn.disabled = false; return;
+                  }
                   
                   if (!response.ok) {
                       const errData = await response.json();
@@ -689,8 +705,6 @@
                   }
                   
                   const result = await response.json();
-                  
-                  // Menggunakan struktur parsing generateContent piawai
                   let rawText = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
                   if (!rawText) throw new Error("Gagal mengekstrak teks jawapan daripada pelayan AI.");
