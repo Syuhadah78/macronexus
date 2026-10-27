@@ -7,7 +7,7 @@
   
   <script>
     const defaultGasUrl = 'https://script.google.com/macros/s/AKfycbx94lsYX1G3CCFr7GhY12pcO1NAAFbfDbswpRFeBg8lePyw0M88EiVm32ceiHj3WUc/exec';
-    const defaultApiKey = 'AQ.Ab8RN6IU-9HHWmPO54KPBUcy8otfHazJrVdKDXzuT_s4F7OKpw';
+    const defaultApiKey = 'AQ.Ab8RN6J8JmlCDF_irWFnY1wgZEdVkzM85UEwnai9ailbmQNiCg';
     
     let activeApiConfig = { gasUrl: defaultGasUrl, geminiKey: defaultApiKey };
     
@@ -464,7 +464,7 @@
     <!-- VIEW: STUDENT DASHBOARD -->
     <div id="view-student-dashboard" class="hidden space-y-8 animate-slide-in">
       <div class="bg-gradient-to-r from-orange-600/10 via-amber-500/10 to-yellow-500/10 border border-orange-500/20 rounded-3xl p-8 relative overflow-hidden">
-        <h1 id="welcome-student-title" class="text-3xl font-black text-white mb-2">Selamat Belajar! 📚</h1>
+        <h1 id="welcome-student-title" class="text-3xl font-black text-white mb-2">Selamat Belajar! 🎓</h1>
         <p class="text-zinc-400 text-sm">Teruskan menjawab untuk mengumpul lebih banyak XP hari ini!</p>
         <div id="student-active-class-info" class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 text-sm font-bold hidden">
           <i data-lucide="info" class="w-4 h-4"></i><span id="student-active-class-text"></span>
@@ -646,7 +646,7 @@
         const user = window.state.user;
         if (!user) return;
         
-        document.getElementById('welcome-student-title').innerText = "Selamat Datang, " + window.escapeHtml(user.name) + "! 📚";
+        document.getElementById('welcome-student-title').innerText = "Selamat Datang, " + window.escapeHtml(user.name) + "! 🎓";
         
         const currentXp = user.xp || 0;
         const level = user.level || 1;
@@ -675,7 +675,7 @@
           const btn = document.getElementById('btn-generate-batch');
 
           // HARDCODE Kunci API untuk memintas masalah Cache Memory Pelayar
-          const apiKey = 'AQ.Ab8RN6IU-9HHWmPO54KPBUcy8otfHazJrVdKDXzuT_s4F7OKpw';
+          const apiKey = 'AQ.Ab8RN6J8JmlCDF_irWFnY1wgZEdVkzM85UEwnai9ailbmQNiCg';
 
           loader.classList.remove('hidden'); btn.disabled = true;
           let allGeneratedQuestions = [];
@@ -800,7 +800,7 @@
 
       window.renderSingleQuestion = function() {
         const q = window.state.quizState.questions[window.state.quizState.currentIndex];
-        document.getElementById('quiz-chapter-indicator').innerText = `Bab ${window.state.quizState.chapter} — ${window.state.quizState.set}`;
+        document.getElementById('quiz-chapter-indicator').innerText = `Bab ${window.state.quizState.chapter} 窶${window.state.quizState.set}`;
         document.getElementById('quiz-index-indicator').innerText = `Soalan ${window.state.quizState.currentIndex + 1} / ${window.state.quizState.questions.length}`;
         document.getElementById('quiz-progress-bar').style.width = `${Math.round((window.state.quizState.currentIndex / window.state.quizState.questions.length) * 100)}%`;
         document.getElementById('quiz-question-text').innerHTML = q.text;
