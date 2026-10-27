@@ -685,8 +685,8 @@
               let chapNum = chaptersToRun[i];
               document.getElementById('loader-status-text').innerText = `Menjana soalan Bab ${chapNum} (${i+1}/${chaptersToRun.length})...`;
               
-              // Guna model 2.5-flash (seperti pada Alat Penguji)
-              const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+              // Guna model 3.8-flash yang disahkan berbayar
+              const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
               
               // Permudahkan struktur arahan (payload) sama seperti Alat Penguji
               const fullPrompt = `Anda adalah pakar ekonomi STPM. Sila bina 20 soalan (KBAT) Makroekonomi STPM Bab ${chapNum}. Anda MESTI memulangkan jawapan dalam format JSON array yang sah (valid JSON array) sahaja, tanpa sebarang teks tambahan, tanpa backticks, dan tanpa blok markdown seperti \`\`\`json. Format yang mesti diikut: [{"Chapter": ${chapNum}, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}]`;
