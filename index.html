@@ -408,7 +408,7 @@
 
       <!-- AI Question Generator -->
       <div class="glass-panel p-6 rounded-3xl border border-orange-500/10">
-        <h2 class="text-xl font-bold text-white flex items-center gap-2 mb-4"><i data-lucide="sparkles" class="text-orange-500 w-5 h-5"></i> Penjana Soalan AI Pukal (Gemini 2.5 Flash)</h2>
+        <h2 class="text-xl font-bold text-white flex items-center gap-2 mb-4"><i data-lucide="sparkles" class="text-orange-500 w-5 h-5"></i> Penjana Soalan AI Pukal (Gemini 3.8 Flash)</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
              <label class="block text-xs font-bold text-zinc-400 uppercase mb-1.5">Liputan Bab</label>
@@ -674,8 +674,8 @@
           const loader = document.getElementById('ai-batch-loader');
           const btn = document.getElementById('btn-generate-batch');
 
-          // HARDCODE Kunci API untuk memintas masalah Cache Memory Pelayar
-          const apiKey = 'AQ.Ab8RN6J8JmlCDF_irWFnY1wgZEdVkzM85UEwnai9ailbmQNiCg';
+          // Hardcode kunci API secara mutlak (mengabaikan tetapan UI / Cache)
+          const apiKey = "AQ.Ab8RN6J8JmlCDF_irWFnY1wgZEdVkzM85UEwnai9ailbmQNiCg";
 
           loader.classList.remove('hidden'); btn.disabled = true;
           let allGeneratedQuestions = [];
@@ -685,7 +685,7 @@
               let chapNum = chaptersToRun[i];
               document.getElementById('loader-status-text').innerText = `Menjana soalan Bab ${chapNum} (${i+1}/${chaptersToRun.length})...`;
               
-              // Guna model 3.8-flash yang disahkan berbayar
+              // Guna model 3.8-flash seperti yang diminta
               const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
               
               // Permudahkan struktur arahan (payload) sama seperti Alat Penguji
@@ -710,6 +710,12 @@
                             <span class="text-xs text-red-400 font-bold uppercase block mb-1">Respons Google (Ralat ${response.status}):</span>
                             <span class="text-xs text-zinc-400 font-mono">${errMsg}</span>
                           </div>
+                          <p class="text-[11px] text-zinc-300 leading-relaxed">
+                            <strong>Diagnostik Kunci API:</strong> Sistem mengesahkan Kunci API (<code class="text-amber-500">AQ.Ab8RN6...</code>) telah dihantar ke pelayan AI Google.<br><br>
+                            Jika ia kekal <strong>401 Tidak Sah</strong>, bermakna Google API Studio menolaknya. Sila pastikan:
+                            <br>1. Kunci API tidak diletakkan <strong>Website Restriction</strong> (kerana sistem ini menggunakan domain dinamik).
+                            <br>2. Model "gemini-3.8-flash" wujud dan disokong oleh pelan berbayar anda.
+                          </p>
                         </div>
                       `;
                       window.showCustomModal(`Gagal pada Bab ${chapNum}`, alertMsg, "alert-octagon");
