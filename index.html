@@ -711,15 +711,29 @@
                             <span class="text-xs text-zinc-400 font-mono">${errMsg}</span>
                           </div>
                           <p class="text-[11px] text-zinc-300 leading-relaxed">
-                            <strong>Diagnostik Kunci API:</strong> Sistem mengesahkan Kunci API (<code class="text-amber-500">AQ.Ab8RN6...</code>) telah dihantar ke pelayan AI Google.<br><br>
-                            Jika ia kekal <strong>401 Tidak Sah</strong>, bermakna Google API Studio menolaknya. Sila pastikan:
-                            <br>1. Kunci API tidak diletakkan <strong>Website Restriction</strong> (kerana sistem ini menggunakan domain dinamik).
-                            <br>2. Model "gemini-3.8-flash" wujud dan disokong oleh pelan berbayar anda.
+                            <strong>Fakta Sistem:</strong> Kunci API yang bermula dengan "AQ..." tidak diiktiraf oleh pelayan Google sebagai Kunci API yang sah (sepatutnya bermula dengan "AIza...").<br><br>
+                            Oleh itu, sistem akan menghasilkan <strong>20 Soalan Simulasi (Mod Demo)</strong> secara automatik supaya anda masih boleh menguji sistem pengkalan data (Google Sheets) dan Sistem Kuiz.
                           </p>
                         </div>
                       `;
-                      window.showCustomModal(`Gagal pada Bab ${chapNum}`, alertMsg, "alert-octagon");
-                      loader.classList.add('hidden'); btn.disabled = false; return;
+                      window.showCustomModal(`Gagal pada Bab ${chapNum} - Beralih ke Mod Demo`, alertMsg, "alert-octagon");
+                      
+                      // Masukkan data simulasi (Mock Data) supaya pengguna tidak tersekat
+                      let mockData = [];
+                      for(let m = 1; m <= 20; m++) {
+                          mockData.push({
+                              Chapter: parseInt(chapNum), 
+                              Question: `[JANAAN DEMO] Ini adalah soalan contoh untuk Bab ${chapNum} (Soalan ${m}) akibat ketiadaan Kunci API "AIza..." yang sah. Antara berikut yang manakah benar?`,
+                              OptionA: "Fakta Demo A yang salah", 
+                              OptionB: "Fakta Demo B yang tepat", 
+                              OptionC: "Fakta Demo C yang salah", 
+                              OptionD: "Fakta Demo D yang salah", 
+                              CorrectAnswer: "B", 
+                              Explanation: "Ini adalah penjelasan automatik dari Mod Simulasi."
+                          });
+                      }
+                      allGeneratedQuestions = allGeneratedQuestions.concat(mockData);
+                      continue; // Teruskan ke bab seterusnya tanpa menghentikan sistem
                   }
                   
                   const result = await response.json();
