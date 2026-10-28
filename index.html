@@ -7,7 +7,7 @@
   
   <script>
     const defaultGasUrl = 'https://script.google.com/macros/s/AKfycbx94lsYX1G3CCFr7GhY12pcO1NAAFbfDbswpRFeBg8lePyw0M88EiVm32ceiHj3WUc/exec';
-    const defaultApiKey = 'AQ.Ab8RN6J8JmlCDF_irWFnY1wgZEdVkzM85UEwnai9ailbmQNiCg';
+    const defaultApiKey = 'AQ.Ab8RN6KM_bzHcbgt_40HSFtEu_rqoLSz_SOCpp5nfedjGJCBBw';
     
     let activeApiConfig = { gasUrl: defaultGasUrl, geminiKey: defaultApiKey };
     
@@ -674,8 +674,10 @@
           const loader = document.getElementById('ai-batch-loader');
           const btn = document.getElementById('btn-generate-batch');
 
-          // Hardcode kunci API secara mutlak (mengabaikan tetapan UI / Cache)
-          const apiKey = "AQ.Ab8RN6J8JmlCDF_irWFnY1wgZEdVkzM85UEwnai9ailbmQNiCg";
+          // Ambil kunci API aktif dari konfigurasi atau tetapan pengguna
+          const apiKey = (window.state.apiConfig && window.state.apiConfig.geminiKey && window.state.apiConfig.geminiKey.trim() !== '') 
+              ? window.state.apiConfig.geminiKey.trim() 
+              : 'AQ.Ab8RN6KM_bzHcbgt_40HSFtEu_rqoLSz_SOCpp5nfedjGJCBBw';
 
           loader.classList.remove('hidden'); btn.disabled = true;
           let allGeneratedQuestions = [];
@@ -683,12 +685,11 @@
           
           for(let i = 0; i < chaptersToRun.length; i++) {
               let chapNum = chaptersToRun[i];
-              document.getElementById('loader-status-text').innerText = `Menjana soalan Bab ${chapNum} (${i+1}/${chaptersToRun.length})...`;
+              document.getElementById('loader-status-text').innerText = `Menjana soalan Bab ${chapNum} (${i+1}/${chaptersToRun.length}) menggunakan Gemini 3.8 Flash...`;
               
-              // Guna model 3.8-flash seperti yang diminta
+              // Guna model gemini-3.8-flash berbayar yang disahkan sah
               const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
               
-              // Permudahkan struktur arahan (payload) sama seperti Alat Penguji
               const fullPrompt = `Anda adalah pakar ekonomi STPM. Sila bina 20 soalan (KBAT) Makroekonomi STPM Bab ${chapNum}. Anda MESTI memulangkan jawapan dalam format JSON array yang sah (valid JSON array) sahaja, tanpa sebarang teks tambahan, tanpa backticks, dan tanpa blok markdown seperti \`\`\`json. Format yang mesti diikut: [{"Chapter": ${chapNum}, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}]`;
               
               try {
@@ -710,30 +711,10 @@
                             <span class="text-xs text-red-400 font-bold uppercase block mb-1">Respons Google (Ralat ${response.status}):</span>
                             <span class="text-xs text-zinc-400 font-mono">${errMsg}</span>
                           </div>
-                          <p class="text-[11px] text-zinc-300 leading-relaxed">
-                            <strong>Fakta Sistem:</strong> Kunci API yang bermula dengan "AQ..." tidak diiktiraf oleh pelayan Google sebagai Kunci API yang sah (sepatutnya bermula dengan "AIza...").<br><br>
-                            Oleh itu, sistem akan menghasilkan <strong>20 Soalan Simulasi (Mod Demo)</strong> secara automatik supaya anda masih boleh menguji sistem pengkalan data (Google Sheets) dan Sistem Kuiz.
-                          </p>
                         </div>
                       `;
-                      window.showCustomModal(`Gagal pada Bab ${chapNum} - Beralih ke Mod Demo`, alertMsg, "alert-octagon");
-                      
-                      // Masukkan data simulasi (Mock Data) supaya pengguna tidak tersekat
-                      let mockData = [];
-                      for(let m = 1; m <= 20; m++) {
-                          mockData.push({
-                              Chapter: parseInt(chapNum), 
-                              Question: `[JANAAN DEMO] Ini adalah soalan contoh untuk Bab ${chapNum} (Soalan ${m}) akibat ketiadaan Kunci API "AIza..." yang sah. Antara berikut yang manakah benar?`,
-                              OptionA: "Fakta Demo A yang salah", 
-                              OptionB: "Fakta Demo B yang tepat", 
-                              OptionC: "Fakta Demo C yang salah", 
-                              OptionD: "Fakta Demo D yang salah", 
-                              CorrectAnswer: "B", 
-                              Explanation: "Ini adalah penjelasan automatik dari Mod Simulasi."
-                          });
-                      }
-                      allGeneratedQuestions = allGeneratedQuestions.concat(mockData);
-                      continue; // Teruskan ke bab seterusnya tanpa menghentikan sistem
+                      window.showCustomModal(`Gagal pada Bab ${chapNum}`, alertMsg, "alert-octagon");
+                      loader.classList.add('hidden'); btn.disabled = false; return;
                   }
                   
                   const result = await response.json();
