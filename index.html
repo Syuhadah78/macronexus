@@ -16,11 +16,15 @@
         if (storedConfig) {
             const parsed = JSON.parse(storedConfig);
             activeApiConfig.gasUrl = parsed.gasUrl || defaultGasUrl;
-            if (!parsed.geminiKey || parsed.geminiKey.trim() === "") {
+            
+            // Kemaskini automatik jika kunci tersimpan tidak sama dengan kunci sah yang terkini
+            if (!parsed.geminiKey || parsed.geminiKey.trim() === "" || parsed.geminiKey !== defaultApiKey) {
                 activeApiConfig.geminiKey = defaultApiKey;
+                localStorage.setItem('macronexus_api_config', JSON.stringify(activeApiConfig));
             } else {
                 activeApiConfig.geminiKey = parsed.geminiKey;
             }
+        } else {
             localStorage.setItem('macronexus_api_config', JSON.stringify(activeApiConfig));
         }
     } catch(e) { console.warn("Ralat memuatkan tetapan tempatan."); }
@@ -674,10 +678,10 @@
           const loader = document.getElementById('ai-batch-loader');
           const btn = document.getElementById('btn-generate-batch');
 
-          // Ambil kunci API aktif dari konfigurasi atau tetapan pengguna
+          // Dapatkan Kunci API dari konfigurasi aktif atau kunci lalai yang sah
           const apiKey = (window.state.apiConfig && window.state.apiConfig.geminiKey && window.state.apiConfig.geminiKey.trim() !== '') 
               ? window.state.apiConfig.geminiKey.trim() 
-              : 'AQ.Ab8RN6KM_bzHcbgt_40HSFtEu_rqoLSz_SOCpp5nfedjGJCBBw';
+              : defaultApiKey;
 
           loader.classList.remove('hidden'); btn.disabled = true;
           let allGeneratedQuestions = [];
