@@ -805,7 +805,7 @@
 
       window.renderSingleQuestion = function() {
         const q = window.state.quizState.questions[window.state.quizState.currentIndex];
-        document.getElementById('quiz-chapter-indicator').innerText = `Bab ${window.state.quizState.chapter} 窶${window.state.quizState.set}`;
+        document.getElementById('quiz-chapter-indicator').innerText = `Bab ${window.state.quizState.chapter} - ${window.state.quizState.set}`;
         document.getElementById('quiz-index-indicator').innerText = `Soalan ${window.state.quizState.currentIndex + 1} / ${window.state.quizState.questions.length}`;
         document.getElementById('quiz-progress-bar').style.width = `${Math.round((window.state.quizState.currentIndex / window.state.quizState.questions.length) * 100)}%`;
         document.getElementById('quiz-question-text').innerHTML = q.text;
