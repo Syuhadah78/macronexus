@@ -86,9 +86,10 @@
   <!-- Global Application Logic & Initial State -->
   <script>
     const defaultGasUrl = 'https://script.google.com/macros/s/AKfycbx94lsYX1G3CCFr7GhY12pcO1NAAFbfDbswpRFeBg8lePyw0M88EiVm32ceiHj3WUc/exec';
-    const defaultApiKey = 'AQ.Ab8RN6LWsAzXBnAx-C6Zds9zwAPa-kiV4cRte5hzsbImoLGGCA'; // Kunci API dikemaskini
+    const defaultApiKey = 'AQ.Ab8RN6LmgoyzxTTKdIgg7dsyT7ovzKfQ5i1MOqbC1CaeXZbcWQ'; // Kunci API dikemaskini
+    const defaultModel = 'gemini-3.8-flash'; // Model lalai dikemaskini
 
-    let activeApiConfig = { gasUrl: defaultGasUrl, geminiKey: defaultApiKey };
+    let activeApiConfig = { gasUrl: defaultGasUrl, geminiKey: defaultApiKey, geminiModel: defaultModel };
 
     try {
       const storedConfig = localStorage.getItem('macronexus_api_config');
@@ -96,6 +97,7 @@
         const parsed = JSON.parse(storedConfig);
         activeApiConfig.gasUrl = parsed.gasUrl || defaultGasUrl;
         activeApiConfig.geminiKey = parsed.geminiKey || defaultApiKey;
+        activeApiConfig.geminiModel = parsed.geminiModel || defaultModel;
       } else {
         localStorage.setItem('macronexus_api_config', JSON.stringify(activeApiConfig));
       }
@@ -575,17 +577,22 @@
         <i data-lucide="settings" class="w-8 h-8"></i>
       </div>
       <h3 class="text-xl font-extrabold text-white mb-1">Tetapan Sistem & API</h3>
-      <p class="text-zinc-400 text-xs mb-5">Konfigurasi URL Google Apps Script dan Kunci API Gemini AI anda.</p>
-      <div class="space-y-4 text-left mb-6">
+      <p class="text-zinc-400 text-xs mb-5">Konfigurasi awan dan model penjana soalan AI.</p>
+      
+      <div class="space-y-4 text-left mb-6 max-h-64 overflow-y-auto custom-scrollbar pr-2">
         <div>
-          <label class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1.5">Google Apps Script URL</label>
-          <input id="api-gas-url-input" type="text" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-zinc-950 border border-zinc-800 focus:border-orange-500 rounded-xl px-4 py-3 text-white text-xs outline-none transition-colors" />
-          <p class="text-[11px] text-zinc-500 mt-1">Disimpan dengan selamat dalam pelayar web anda (localStorage).</p>
+          <label class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1.5">Model Gemini AI</label>
+          <input id="api-gemini-model-input" type="text" placeholder="Contoh: gemini-3.8-flash" class="w-full bg-zinc-950 border border-zinc-800 focus:border-orange-500 rounded-xl px-4 py-3 text-white text-xs outline-none transition-colors" />
+          <p class="text-[11px] text-zinc-500 mt-1">Gunakan model yang ditetapkan untuk kunci API anda.</p>
         </div>
         <div>
           <label class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1.5">Kunci API Gemini (API Key)</label>
           <input id="api-gemini-key-input" type="password" placeholder="AIza... atau AQ..." class="w-full bg-zinc-950 border border-zinc-800 focus:border-orange-500 rounded-xl px-4 py-3 text-white text-xs outline-none transition-colors" />
           <p class="text-[11px] text-zinc-500 mt-1">Diperlukan untuk penjanaan soalan AI berfungsi terus dari peranti anda.</p>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1.5">Google Apps Script URL (Pilihan)</label>
+          <input id="api-gas-url-input" type="text" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-zinc-950 border border-zinc-800 focus:border-orange-500 rounded-xl px-4 py-3 text-white text-xs outline-none transition-colors" />
         </div>
       </div>
       <div class="flex gap-2.5">
@@ -1453,6 +1460,8 @@
       const mod = document.getElementById('api-config-modal');
       document.getElementById('api-gas-url-input').value = window.state.apiConfig.gasUrl || '';
       document.getElementById('api-gemini-key-input').value = window.state.apiConfig.geminiKey || '';
+      // Letakkan nilai model
+      document.getElementById('api-gemini-model-input').value = window.state.apiConfig.geminiModel || 'gemini-3.8-flash';
       mod.classList.remove('hidden');
       setTimeout(() => mod.classList.add('opacity-100'), 20);
       window.initLucide();
@@ -1467,13 +1476,15 @@
     window.saveApiSettings = function() {
       const newGasUrl = document.getElementById('api-gas-url-input').value.trim();
       const newGeminiKey = document.getElementById('api-gemini-key-input').value.trim();
+      const newGeminiModel = document.getElementById('api-gemini-model-input').value.trim() || 'gemini-3.8-flash';
       
       window.state.apiConfig.gasUrl = newGasUrl;
       window.state.apiConfig.geminiKey = newGeminiKey;
+      window.state.apiConfig.geminiModel = newGeminiModel;
 
       localStorage.setItem('macronexus_api_config', JSON.stringify(window.state.apiConfig));
       window.closeApiConfigModal();
-      window.showCustomModal("Tetapan Dikemaskini", "Tetapan Google Apps Script dan API Key berjaya disimpan dengan selamat.", "check-circle", true);
+      window.showCustomModal("Tetapan Dikemaskini", `Tetapan API berjaya disimpan dengan selamat. Model AI aktif anda ialah: <strong>${newGeminiModel}</strong>`, "check-circle", true);
     };
 
     window.closeConfirmDeleteModal = function() {
@@ -2562,10 +2573,14 @@
       const loader = document.getElementById('ai-batch-loader');
       const btn = document.getElementById('btn-generate-batch');
 
-      // Ambil API Key daripada tetapan (atau guna lalai)
+      // Ambil API Key & Model AI daripada tetapan
       const apiKey = (window.state.apiConfig && window.state.apiConfig.geminiKey) 
         ? window.state.apiConfig.geminiKey.trim() 
         : defaultApiKey;
+        
+      const modelName = (window.state.apiConfig && window.state.apiConfig.geminiModel) 
+        ? window.state.apiConfig.geminiModel.trim() 
+        : 'gemini-3.8-flash';
 
       if (!apiKey) {
         window.showCustomModal("Ralat API Key", "Sila masukkan Kunci API Gemini anda di dalam Tetapan Sistem terlebih dahulu untuk menggunakan fungsi ini.", "alert-triangle");
@@ -2592,7 +2607,7 @@
 
         try {
           // Panggilan terus ke Google Gemini API (dari Frontend)
-          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
           const promptText = `Anda adalah pakar ekonomi STPM. Sila bina 20 soalan (KBAT) Makroekonomi STPM Bab ${chapNum}. Anda MESTI memulangkan jawapan dalam format JSON array yang sah sahaja, tanpa sebarang teks tambahan dan tanpa blok markdown. Format yang mesti diikut: [{"Chapter": ${chapNum}, "Question": "...", "OptionA": "...", "OptionB": "...", "OptionC": "...", "OptionD": "...", "CorrectAnswer": "A", "Explanation": "..."}]`;
           
           const response = await fetch(endpoint, {
@@ -2623,7 +2638,7 @@
             `<div class="space-y-3">
               <p class="text-xs text-zinc-300">Gagal menjana soalan Bab ${chapNum}: <strong class="text-red-400 font-mono">${window.escapeHtml(e.message)}</strong></p>
               <div class="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-300">
-                Sila semak semula sambungan internet anda atau pastikan Kunci API Gemini yang anda tetapkan adalah sah.
+                Sila semak semula sambungan internet anda atau pastikan <strong>Model AI (${modelName})</strong> adalah tepat di dalam ruangan tetapan.
               </div>
             </div>`, 
             "alert-triangle"
