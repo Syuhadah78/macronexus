@@ -86,8 +86,8 @@
   <!-- Global Application Logic & Initial State -->
   <script>
     const defaultGasUrl = 'https://script.google.com/macros/s/AKfycbx94lsYX1G3CCFr7GhY12pcO1NAAFbfDbswpRFeBg8lePyw0M88EiVm32ceiHj3WUc/exec';
-    const defaultApiKey = 'AQ.Ab8RN6LmgoyzxTTKdIgg7dsyT7ovzKfQ5i1MOqbC1CaeXZbcWQ'; // Kunci API dikemaskini
-    const defaultModel = 'gemini-3.8-flash'; // Model lalai dikemaskini
+    const defaultApiKey = 'AQ.Ab8RN6LmgoyzxTTKdIgg7dsyT7ovzKfQ5i1MOqbC1CaeXZbcWQ'; 
+    const defaultModel = 'gemini-3.8-flash'; 
 
     let activeApiConfig = { gasUrl: defaultGasUrl, geminiKey: defaultApiKey, geminiModel: defaultModel };
 
@@ -582,13 +582,13 @@
       <div class="space-y-4 text-left mb-6 max-h-64 overflow-y-auto custom-scrollbar pr-2">
         <div>
           <label class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1.5">Model Gemini AI</label>
-          <input id="api-gemini-model-input" type="text" placeholder="Contoh: gemini-3.8-flash" class="w-full bg-zinc-950 border border-zinc-800 focus:border-orange-500 rounded-xl px-4 py-3 text-white text-xs outline-none transition-colors" />
+          <input id="api-gemini-model-input" type="text" placeholder="Contoh: gemini-1.5-flash" class="w-full bg-zinc-950 border border-zinc-800 focus:border-orange-500 rounded-xl px-4 py-3 text-white text-xs outline-none transition-colors" />
           <p class="text-[11px] text-zinc-500 mt-1">Gunakan model yang ditetapkan untuk kunci API anda.</p>
         </div>
         <div>
           <label class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1.5">Kunci API Gemini (API Key)</label>
-          <input id="api-gemini-key-input" type="password" placeholder="AIza... atau AQ..." class="w-full bg-zinc-950 border border-zinc-800 focus:border-orange-500 rounded-xl px-4 py-3 text-white text-xs outline-none transition-colors" />
-          <p class="text-[11px] text-zinc-500 mt-1">Diperlukan untuk penjanaan soalan AI berfungsi terus dari peranti anda.</p>
+          <input id="api-gemini-key-input" type="password" placeholder="Masukkan Kunci API (Cth: AIza... atau AQ...)" class="w-full bg-zinc-950 border border-zinc-800 focus:border-orange-500 rounded-xl px-4 py-3 text-white text-xs outline-none transition-colors" />
+          <p class="text-[11px] text-zinc-500 mt-1">Dapatkan kunci dari Google AI Studio atau Google Cloud Console.</p>
         </div>
         <div>
           <label class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1.5">Google Apps Script URL (Pilihan)</label>
@@ -1460,7 +1460,6 @@
       const mod = document.getElementById('api-config-modal');
       document.getElementById('api-gas-url-input').value = window.state.apiConfig.gasUrl || '';
       document.getElementById('api-gemini-key-input').value = window.state.apiConfig.geminiKey || '';
-      // Letakkan nilai model
       document.getElementById('api-gemini-model-input').value = window.state.apiConfig.geminiModel || 'gemini-3.8-flash';
       mod.classList.remove('hidden');
       setTimeout(() => mod.classList.add('opacity-100'), 20);
@@ -1478,6 +1477,11 @@
       const newGeminiKey = document.getElementById('api-gemini-key-input').value.trim();
       const newGeminiModel = document.getElementById('api-gemini-model-input').value.trim() || 'gemini-3.8-flash';
       
+      if (newGeminiKey && newGeminiKey.length < 20) {
+         window.showCustomModal("Format Kunci Tidak Sah", "Sila pastikan Kunci API yang dimasukkan adalah lengkap.", "alert-triangle");
+         return;
+      }
+
       window.state.apiConfig.gasUrl = newGasUrl;
       window.state.apiConfig.geminiKey = newGeminiKey;
       window.state.apiConfig.geminiModel = newGeminiModel;
@@ -2583,7 +2587,7 @@
         : 'gemini-3.8-flash';
 
       if (!apiKey) {
-        window.showCustomModal("Ralat API Key", "Sila masukkan Kunci API Gemini anda di dalam Tetapan Sistem terlebih dahulu untuk menggunakan fungsi ini.", "alert-triangle");
+        window.showCustomModal("Ralat Kunci API", "Sila pastikan anda memasukkan Kunci API Gemini yang sah di dalam Tetapan Sistem.", "alert-triangle");
         return;
       }
 
@@ -2638,7 +2642,7 @@
             `<div class="space-y-3">
               <p class="text-xs text-zinc-300">Gagal menjana soalan Bab ${chapNum}: <strong class="text-red-400 font-mono">${window.escapeHtml(e.message)}</strong></p>
               <div class="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-300">
-                Sila semak semula sambungan internet anda atau pastikan <strong>Model AI (${modelName})</strong> adalah tepat di dalam ruangan tetapan.
+                Sila semak semula sambungan internet anda atau pastikan <strong>Model AI (${modelName})</strong> dan <strong>Kunci API</strong> adalah tepat di dalam ruangan tetapan.
               </div>
             </div>`, 
             "alert-triangle"
@@ -3421,3 +3425,6 @@
   </script>
 </body>
 </html>
+```
+
+Kedua-dua antaramuka sistem kini dikemaskini. Sila jalankan alat "Penguji Kunci API" (Fail ke-2) dan tekan butang Ujian Biasa atau Pukal dengan Kunci baharu itu! Mudah-mudahan pelayan Gemini membenarkannya kali ini.
