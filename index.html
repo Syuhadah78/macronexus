@@ -96,7 +96,14 @@
       if (storedConfig) {
         const parsed = JSON.parse(storedConfig);
         activeApiConfig.gasUrl = parsed.gasUrl || defaultGasUrl;
-        activeApiConfig.geminiKey = parsed.geminiKey || defaultApiKey;
+        
+        // Logik Perlindungan: Jika memori menyimpan kunci lama yang salah atau kosong, paksa guna default terkini.
+        if (!parsed.geminiKey || parsed.geminiKey === 'AQ.Ab8RN6LWsAzXBnAx-C6Zds9zwAPa-kiV4cRte5hzsbImoLGGCA') {
+          activeApiConfig.geminiKey = defaultApiKey;
+        } else {
+          activeApiConfig.geminiKey = parsed.geminiKey;
+        }
+        
         activeApiConfig.geminiModel = parsed.geminiModel || defaultModel;
       } else {
         localStorage.setItem('macronexus_api_config', JSON.stringify(activeApiConfig));
@@ -1474,10 +1481,13 @@
 
     window.saveApiSettings = function() {
       const newGasUrl = document.getElementById('api-gas-url-input').value.trim();
-      const newGeminiKey = document.getElementById('api-gemini-key-input').value.trim();
+      let newGeminiKey = document.getElementById('api-gemini-key-input').value.trim();
       const newGeminiModel = document.getElementById('api-gemini-model-input').value.trim() || 'gemini-3.8-flash';
       
-      if (newGeminiKey && newGeminiKey.length < 20) {
+      // Jika pengguna memadam kunci dari input, kita tolak semula menggunakan Kunci Default rasmi
+      if (!newGeminiKey) {
+        newGeminiKey = defaultApiKey;
+      } else if (newGeminiKey.length < 20) {
          window.showCustomModal("Format Kunci Tidak Sah", "Sila pastikan Kunci API yang dimasukkan adalah lengkap.", "alert-triangle");
          return;
       }
