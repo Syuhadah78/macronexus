@@ -139,7 +139,7 @@
         explanation: "Dasar fiskal dijalankan oleh kerajaan menggunakan instrumen Perbelanjaan Kerajaan ($G$) dan Cukai ($T$) untuk mempengaruhi Permintaan Agregat ($AD$)."
       },
       {
-        id: "STPM_B2_Q01", chapter: "2", sheetName: "Set 1",
+        id: "STPM_B2_Q01", chapter: "2", sheetName: "Set 2",
         text: "Keluaran Negara Kasar (KNK) pada harga pasaran diperoleh daripada Keluaran Dalam Negara Kasar (KDNK) dengan mengambil kira...",
         options: [
           "Pendapatan faktor bersih dari luar negeri (PFBLN)",
@@ -151,14 +151,14 @@
         explanation: "Rumus hubungan: $KNK = KDNK + PFBLN$. Sekiranya rakyat tempatan di luar negara menjana pendapatan melebihi pendapatan warga asing di dalam negara, PFBLN bernilai positif."
       },
       {
-        id: "STPM_B3_Q01", chapter: "3", sheetName: "Set 1",
+        id: "STPM_B3_Q01", chapter: "3", sheetName: "Set 3",
         text: "Diberi fungsi penggunaan $C = 100 + 0.75Y_d$ dalam ekonomi 2 sektor. Berapakah nilai pengganda pelaburan ($k$)?",
         options: ["2.5", "4.0", "1.33", "0.25"],
         answer: 1,
         explanation: "Nilai kecenderungan mengguna sut ($MPC$) ialah $0.75$. Maka $MPS = 1 - MPC = 0.25$. Pengganda $k = \\frac{1}{MPS} = \\frac{1}{0.25} = 4.0$."
       },
       {
-        id: "STPM_B4_Q01", chapter: "4", sheetName: "Set 1",
+        id: "STPM_B4_Q01", chapter: "4", sheetName: "Set 4",
         text: "Berdasarkan Teori Kuantiti Wang Irving Fisher ($MV = PT$), jika halaju pusingan wang ($V$) dan jumlah urus niaga ($T$) adalah malar, pertambahan penawaran wang ($M$) sebanyak 10% akan menyebabkan...",
         options: [
           "Penurunan tingkat harga umum ($P$) sebanyak 10%",
@@ -170,7 +170,7 @@
         explanation: "Persamaan Fisher $MV = PT$. Apabila $V$ dan $T$ diasumsikan tetap, sebarang perubahan peratusan dalam penawaran wang ($M$) akan menyebabkan perubahan yang sama perkadaran dan sehaluan ke atas tingkat harga umum ($P$)."
       },
       {
-        id: "STPM_B5_Q01", chapter: "5", sheetName: "Set 1",
+        id: "STPM_B5_Q01", chapter: "5", sheetName: "Set 5",
         text: "Teori Faedah Berbanding oleh David Ricardo menyatakan sesebuah negara patut mengkhusus dalam pengeluaran barang yang mempunyai...",
         options: [
           "Kos lepas yang paling rendah berbanding negara lain",
@@ -253,6 +253,32 @@
         });
       }
     };
+
+    // Fungsi dinamik untuk mengemaskini senarai Pilihan Set (Set 1, Set 2, Set 6, dll.)
+    window.updateSetDropdown = function() {
+      const setSelect = document.getElementById('student-set-selector');
+      if (!setSelect) return;
+      
+      // Ambil nilai unik nama set daripada globalQuestions
+      const uniqueSets = [...new Set(window.globalQuestions.map(q => q.sheetName || "Set 1"))].sort();
+      
+      const currentVal = setSelect.value;
+      
+      setSelect.innerHTML = '<option value="0">Semua Set Soalan</option>';
+      uniqueSets.forEach(setStr => {
+        const opt = document.createElement('option');
+        // Gunakan nama sheet sebenar sebagai value bagi ketepatan penapisan
+        opt.value = setStr; 
+        opt.text = setStr;
+        setSelect.appendChild(opt);
+      });
+
+      // Kekalkan pilihan murid (jika set tersebut masih wujud)
+      if (Array.from(setSelect.options).some(o => o.value === currentVal)) {
+        setSelect.value = currentVal;
+      }
+    };
+
   </script>
 
   <!-- Firebase v11.6.1 ES Modules -->
@@ -939,7 +965,6 @@
             <label class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Pilihan Set Soalan</label>
             <select id="student-set-selector" class="w-full bg-zinc-950 border border-zinc-800 focus:border-orange-500 rounded-xl p-3 text-white text-sm outline-none transition-colors">
               <option value="0">Semua Set Soalan</option>
-              <option value="1" selected>Set 1 (Format Rasmi)</option>
             </select>
           </div>
 
@@ -1403,6 +1428,7 @@
       if (!window.state.apiConfig.gasUrl) {
         window.globalQuestions = [...window.localFallbackQuestions];
         window.closeCustomModal();
+        window.updateSetDropdown();
         window.showCustomModal("Mod Tempatan", "Menggunakan set soalan rujukan Makroekonomi STPM setempat (Bab 1 - Bab 5). Sila letakkan URL code.gs di ruangan tetapan untuk menggunakan sistem awan.", "check-circle", true);
         return true;
       }
@@ -1419,19 +1445,7 @@
             explanation: q.explanation || q.Explanation || ""
           }));
           
-          // Kemaskini dropdown pilihan pelajar dengan Set terbaharu secara automatik
-          const uniqueSets = [...new Set(window.globalQuestions.map(q => q.sheetName))];
-          const setSelect = document.getElementById('student-set-selector');
-          if (setSelect) {
-            setSelect.innerHTML = '<option value="0">Semua Set Soalan</option>';
-            uniqueSets.forEach(setStr => {
-              const opt = document.createElement('option');
-              opt.value = setStr.replace(/[^0-9]/g, '');
-              opt.text = setStr;
-              setSelect.appendChild(opt);
-            });
-          }
-
+          window.updateSetDropdown();
           window.closeCustomModal();
           window.showCustomModal("Kemaskini Awan Berjaya! ☁️", `${window.globalQuestions.length} soalan berjaya disegerakkan daripada pelayan Google Apps Script.`, "check-circle", true);
           return true;
@@ -1442,6 +1456,7 @@
         console.warn("GAS fetch questions fallback:", e);
         window.globalQuestions = [...window.localFallbackQuestions];
         window.closeCustomModal();
+        window.updateSetDropdown();
         window.showCustomModal("Sistem Tergendala", `Gagal memuat turun soalan dari awan: ${e.message}. Menggunakan bank soalan sedia ada.`, "alert-triangle", false);
         return false;
       }
@@ -1751,15 +1766,7 @@
           `Ditemui <strong>${parsedQuestions.length} soalan STPM</strong> dalam helaian <em>'${window.escapeHtml(tabInput)}'</em>. Adakah anda ingin memasukkan soalan ini ke dalam bank latihan portal sebagai <strong>${window.escapeHtml(setName)}</strong>?`,
           () => {
             window.globalQuestions = window.globalQuestions.concat(parsedQuestions);
-
-            const setSelector = document.getElementById('student-set-selector');
-            if (setSelector) {
-              const opt = document.createElement('option');
-              opt.value = setName.replace(/[^0-9]/g, '') || setName;
-              opt.text = `${setName} (${parsedQuestions.length} Soalan Sheets)`;
-              opt.selected = true;
-              setSelector.appendChild(opt);
-            }
+            window.updateSetDropdown();
 
             window.showCustomModal(
               "Import Soalan Berjaya! 🎉",
@@ -2028,6 +2035,9 @@
           classInfoEl.classList.add('hidden');
         }
       }
+      
+      // Update senarai dropdown secara dinamik
+      window.updateSetDropdown();
       window.updateGlobalLeaderboard();
       window.renderD3PerformanceChart();
       window.initLucide();
@@ -2247,7 +2257,9 @@
           id: fq.QuestionID, chapter: fq.Chapter.toString(), sheetName: `Set ${nextSetNum}`, text: fq.Question,
           options: [fq.OptionA, fq.OptionB, fq.OptionC, fq.OptionD], answer: ['A','B','C','D'].indexOf(fq.CorrectAnswer.toUpperCase()), explanation: fq.Explanation
         }));
+        
         window.globalQuestions = window.globalQuestions.concat(newPortalQuestions);
+        window.updateSetDropdown(); // Kemaskini dropdown serta merta
 
         if (destination === 'sheets-drive') {
           if (window.googleAccessToken) {
@@ -2348,7 +2360,9 @@
       let pool = window.globalQuestions && window.globalQuestions.length > 0 ? window.globalQuestions : window.localFallbackQuestions;
 
       if (selectedChap !== "0") pool = pool.filter(q => q.chapter === selectedChap);
-      if (selectedSet !== "0") pool = pool.filter(q => q.sheetName && q.sheetName.replace(/[^0-9]/g, '') === selectedSet.replace(/[^0-9]/g, ''));
+      
+      // Logik tapisan Set kini menggunakan nilai sheetName yang tepat
+      if (selectedSet !== "0") pool = pool.filter(q => q.sheetName === selectedSet);
 
       if (pool.length === 0) {
         window.showCustomModal("Tiada Soalan Ditemui", "Tiada soalan bagi bab dan set yang dipilih.", "info");
@@ -2357,7 +2371,7 @@
 
       window.state.quizState.questions = pool.slice(0, 20);
       window.state.quizState.chapter = selectedChap === "0" ? "Semua Bab" : `Bab ${selectedChap}`;
-      window.state.quizState.set = selectedSet === "0" ? "Semua Set" : `Set ${selectedSet}`;
+      window.state.quizState.set = selectedSet === "0" ? "Semua Set" : selectedSet;
       window.state.quizState.mode = selectedMode;
       window.state.quizState.currentIndex = 0;
       window.state.quizState.answers = {};
