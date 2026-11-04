@@ -81,6 +81,16 @@
     .animate-slide-in {
       animation: slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
+    
+    /* Konfigurasi Mesra Cetakan (Print Media Query) */
+    @media print {
+      body { background-color: #ffffff !important; color: #000000 !important; overflow: visible !important; }
+      #navbar, footer, main, .no-print { display: none !important; }
+      #view-print-exam { display: block !important; position: static !important; background-color: #ffffff !important; margin: 0 !important; padding: 0 !important; }
+      .page-break { page-break-before: always; }
+      .break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+      ::-webkit-scrollbar { display: none; }
+    }
   </style>
 
   <!-- Global Application Logic & Initial State -->
@@ -858,6 +868,30 @@
         </div>
       </div>
 
+      <!-- CSV to STPM Exam Converter Section -->
+      <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-blue-500/20 relative overflow-hidden">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="p-3 bg-gradient-to-tr from-blue-500 to-indigo-500 rounded-2xl text-white shadow-lg shadow-blue-500/20">
+            <i data-lucide="printer" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-extrabold text-white">Penjana Kertas Cetakan STPM</h2>
+            <p class="text-zinc-400 text-xs sm:text-sm">Muat naik fail soalan berformat CSV untuk ditukarkan menjadi Kertas Peperiksaan fizikal STPM yang sedia dicetak.</p>
+          </div>
+        </div>
+        
+        <div class="flex flex-col sm:flex-row gap-4 items-center bg-zinc-950/50 p-5 rounded-2xl border border-white/5">
+           <div class="flex-grow w-full">
+              <p class="text-sm text-zinc-300 font-bold mb-1">Pilih Fail CSV Janaan AI</p>
+              <p class="text-xs text-zinc-500">Hanya menyokong fail berformat .csv yang dimuat turun daripada portal ini.</p>
+           </div>
+           <input type="file" id="csv-print-upload" accept=".csv" class="hidden" onchange="window.handleCSVUpload(event)">
+           <button onclick="document.getElementById('csv-print-upload').click()" class="w-full sm:w-auto px-6 py-3 bg-white hover:bg-zinc-200 text-black font-extrabold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap active:scale-[0.98]">
+              <i data-lucide="file-up" class="w-4 h-4"></i> Muat Naik & Jana Cetakan
+           </button>
+        </div>
+      </div>
+
       <!-- Live Student List Section -->
       <div class="bg-zinc-950 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
         <div class="p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -1166,6 +1200,29 @@
 
   </main>
 
+  <!-- VIEW 7: PRINTABLE EXAM (OUTSIDE MAIN CONTAINER) -->
+  <div id="view-print-exam" class="hidden flex-col min-h-screen z-50 absolute inset-0">
+    <div class="no-print bg-zinc-950 text-white p-4 sm:px-8 flex justify-between items-center sticky top-0 shadow-xl border-b border-zinc-800 z-10 w-full">
+       <div class="flex items-center gap-3 sm:gap-4">
+          <button onclick="window.closePrintView()" class="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-all border border-white/10 flex items-center justify-center">
+             <i data-lucide="arrow-left" class="w-5 h-5 text-zinc-300"></i>
+          </button>
+          <span class="font-black text-base sm:text-lg tracking-tight">Pratonton Cetakan STPM</span>
+       </div>
+       <button onclick="window.print()" class="px-4 sm:px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold rounded-xl shadow-lg flex items-center gap-2 transition-all active:scale-[0.98]">
+          <i data-lucide="printer" class="w-4 h-4"></i> 
+          <span class="hidden sm:inline">Cetak / Simpan PDF</span>
+       </button>
+    </div>
+    
+    <div class="w-full flex justify-center p-4 sm:p-8 overflow-y-auto print:p-0 print:overflow-visible flex-grow">
+       <!-- A4 Paper Element -->
+       <div id="print-content-container" class="bg-white w-full max-w-[21cm] min-h-[29.7cm] p-8 sm:p-14 text-black font-serif text-[12pt] leading-relaxed shadow-2xl print:shadow-none print:max-w-none print:w-auto print:h-auto print:min-h-0 print:p-0">
+          <!-- Kandungan soalan akan dimasukkan di sini oleh JS -->
+       </div>
+    </div>
+  </div>
+
   <!-- FOOTER -->
   <footer class="border-t border-white/5 py-4 px-4 text-center text-xs text-zinc-500 mt-8">
     <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
@@ -1178,24 +1235,41 @@
   <script>
     // Navigation & View Routing
     window.showView = function(viewId) {
-      const views = ['view-loading', 'view-auth', 'view-teacher-dashboard', 'view-student-dashboard', 'view-quiz', 'view-results'];
+      const views = ['view-loading', 'view-auth', 'view-teacher-dashboard', 'view-student-dashboard', 'view-quiz', 'view-results', 'view-print-exam'];
       views.forEach(v => {
         const el = document.getElementById(v);
         if (el) el.classList.add('hidden');
+        if (el && viewId === 'view-print-exam' && el.id === 'view-print-exam') {
+            el.classList.replace('hidden', 'flex');
+        }
       });
 
       const target = document.getElementById(viewId);
-      if (target) {
+      if (target && viewId !== 'view-print-exam') {
         target.classList.remove('hidden');
       }
 
       const navbar = document.getElementById('navbar');
       if (navbar) {
-        if (viewId !== 'view-loading' && viewId !== 'view-auth') {
+        if (viewId !== 'view-loading' && viewId !== 'view-auth' && viewId !== 'view-print-exam') {
           navbar.classList.remove('hidden');
         } else {
           navbar.classList.add('hidden');
         }
+      }
+
+      // Hide main structure when printing
+      const mainEl = document.querySelector('main');
+      const footerEl = document.querySelector('footer');
+      
+      if (viewId === 'view-print-exam') {
+          if(mainEl) mainEl.classList.add('hidden');
+          if(footerEl) footerEl.classList.add('hidden');
+          document.body.style.backgroundColor = '#e4e4e7'; // zinc-200 for print preview bg
+      } else {
+          if(mainEl) mainEl.classList.remove('hidden');
+          if(footerEl) footerEl.classList.remove('hidden');
+          document.body.style.backgroundColor = '#09090b'; // restore original dark bg
       }
 
       window.scrollTo(0, 0);
@@ -2624,6 +2698,133 @@
       window.updateStudentDashboardUI();
       window.showView('view-student-dashboard');
     };
+
+    // --- CSV PARSING & STPM EXAM FORMATTER LOGIC ---
+    window.handleCSVUpload = function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const text = e.target.result;
+        window.generatePrintableExam(text);
+      };
+      reader.readAsText(file);
+      event.target.value = ''; // Reset input to allow re-uploading same file
+    };
+
+    window.parseCSV = function(csvText) {
+        let result = [];
+        let row = [];
+        let inQuotes = false;
+        let val = '';
+        for (let i = 0; i < csvText.length; i++) {
+            let char = csvText[i];
+            let nextChar = csvText[i + 1];
+
+            if (char === '"' && inQuotes && nextChar === '"') {
+                val += '"';
+                i++; // Skip the escaped quote
+            } else if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                row.push(val);
+                val = '';
+            } else if ((char === '\n' || char === '\r') && !inQuotes) {
+                if (char === '\r' && nextChar === '\n') i++; // Handle \r\n
+                row.push(val);
+                if (row.some(c => c !== '')) result.push(row);
+                row = [];
+                val = '';
+            } else {
+                val += char;
+            }
+        }
+        if (val || row.length > 0) {
+            row.push(val);
+            if (row.some(c => c !== '')) result.push(row);
+        }
+        return result;
+    };
+
+    window.generatePrintableExam = function(csvText) {
+       const rows = window.parseCSV(csvText);
+       if (rows.length < 2) {
+          window.showCustomModal("Ralat Fail CSV", "Fail CSV yang dimuat naik kelihatan kosong atau tidak mempunyai format yang sah.", "alert-triangle");
+          return;
+       }
+       
+       const headers = rows[0].map(h => String(h).trim().toLowerCase());
+       
+       // Detect required columns
+       const colQ = headers.findIndex(h => h.includes('question') || h.includes('soalan'));
+       const colA = headers.findIndex(h => h === 'optiona' || h.includes('pilihan a'));
+       const colB = headers.findIndex(h => h === 'optionb' || h.includes('pilihan b'));
+       const colC = headers.findIndex(h => h === 'optionc' || h.includes('pilihan c'));
+       const colD = headers.findIndex(h => h === 'optiond' || h.includes('pilihan d'));
+       const colAns = headers.findIndex(h => h.includes('correctanswer') || h.includes('jawapan'));
+
+       if(colQ === -1 || colA === -1) {
+           window.showCustomModal("Format CSV Tidak Sah", "Fail CSV tidak mempunyai lajur Soalan dan Pilihan (A, B, C, D) yang diwajibkan. Sila guna fail CSV yang dimuat turun dari portal ini sahaja.", "alert-triangle");
+           return;
+       }
+
+       let examHTML = `
+          <div class="text-center font-bold mb-10 pb-6 border-b-2 border-black">
+             <h1 class="text-xl sm:text-2xl uppercase tracking-wider mb-2">Sijil Tinggi Persekolahan Malaysia (STPM)</h1>
+             <h2 class="text-lg sm:text-xl uppercase">Makroekonomi (Latih Tubi Lanjutan)</h2>
+             <p class="mt-4 text-sm font-normal text-right pr-2">Masa: 2 Jam</p>
+          </div>
+          <div class="mb-8 font-serif text-[12pt]">
+             <p class="font-bold underline mb-2">Arahan kepada calon:</p>
+             <p>Jawab <strong>semua</strong> soalan dalam bahagian ini. Bulatkan jawapan yang paling tepat.</p>
+          </div>
+          <div class="space-y-8 text-justify font-serif text-[12pt]">
+       `;
+
+       let answersHTML = `<div class="page-break mt-16 pt-8 border-t-2 border-black"><h3 class="text-xl font-bold mb-6 text-center uppercase">Skema Jawapan Objektif</h3><div class="grid grid-cols-2 sm:grid-cols-4 gap-y-4 gap-x-8 text-center text-[12pt]">`;
+
+       let qNumber = 1;
+       for (let i = 1; i < rows.length; i++) {
+          let row = rows[i];
+          if(row.length < 5 || !row[colQ] || String(row[colQ]).trim() === '') continue; // Skip empty rows
+          
+          let qText = row[colQ];
+          let optA = row[colA] || "";
+          let optB = row[colB] || "";
+          let optC = row[colC] || "";
+          let optD = row[colD] || "";
+          let ans = row[colAns] || "-";
+
+          examHTML += `
+             <div class="flex gap-4 break-inside-avoid">
+                <div class="font-bold w-6 shrink-0 text-right">${qNumber}.</div>
+                <div class="flex-1">
+                   <div class="mb-3">${window.escapeHtml(qText).replace(/\\n/g, '<br>')}</div>
+                   <div class="grid grid-cols-1 gap-2 pl-2">
+                      <div><strong>A.</strong> ${window.escapeHtml(optA)}</div>
+                      <div><strong>B.</strong> ${window.escapeHtml(optB)}</div>
+                      <div><strong>C.</strong> ${window.escapeHtml(optC)}</div>
+                      <div><strong>D.</strong> ${window.escapeHtml(optD)}</div>
+                   </div>
+                </div>
+             </div>
+          `;
+          answersHTML += `<div class="p-2 border border-zinc-300"><strong>${qNumber}.</strong> ${window.escapeHtml(ans)}</div>`;
+          qNumber++;
+       }
+
+       answersHTML += `</div></div>`;
+       examHTML += `</div>` + answersHTML; // Combine paper and scheme
+
+       document.getElementById('print-content-container').innerHTML = examHTML;
+       window.showView('view-print-exam');
+    };
+
+    window.closePrintView = function() {
+       window.showView('view-teacher-dashboard');
+    };
+    // -------------------------------------------------------------
 
     window.initApp = function() {
       let p = localStorage.getItem('macronexus_user_profile');
